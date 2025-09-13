@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Deshabilitar completamente los overlays de desarrollo
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
+  // Configuración para deshabilitar el panel de desarrollo
+  experimental: {
+    // Deshabilitar el panel de desarrollo
+    clientRouterFilter: false,
+  },
 };
 
 export default nextConfig;

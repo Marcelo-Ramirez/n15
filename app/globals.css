@@ -40,3 +40,23 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Ocultar el panel de desarrollo de Next.js */
+nextjs-portal {
+  display: none !important;
+}
+
+/* También ocultar cualquier overlay de desarrollo */
+[data-nextjs-dev-overlay] {
+  display: none !important;
+}
+
+/* Ocultar el botón flotante del panel de desarrollo */
+button[data-nextjs-toast-close] {
+  display: none !important;
+}
+
+/* Ocultar cualquier elemento con el ID del portal de Next.js */
+#__next-dev-client-pages-browser {
+  display: none !important;
+}
