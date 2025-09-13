@@ -7,81 +7,69 @@ import {
   Stack,
   Card,
   Input,
-  Field,
   Link,
-  Separator,
   VStack,
-  HStack,
 } from "@chakra-ui/react";
-import { Checkbox } from "@chakra-ui/react";
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 interface RegisterFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
+  username: string;
+  name: string;
   password: string;
   confirmPassword: string;
-  phone: string;
-  acceptTerms: boolean;
-  newsletter: boolean;
+  registerKey: string;
 }
 
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<RegisterFormData>({
-    firstName: "",
-    lastName: "",
-    email: "",
+    username: "",
+    name: "",
     password: "",
     confirmPassword: "",
-    phone: "",
-    acceptTerms: false,
-    newsletter: true,
+    registerKey: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleInputChange = (field: keyof RegisterFormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof RegisterFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-    setError(""); // Limpiar errores al escribir
+    setError("");
   };
 
-  const validateForm = (): boolean => {
-    if (!formData.firstName.trim()) {
-      setError("El nombre es requerido");
+  const validateForm = () => {
+    setError("");
+    
+    if (!formData.username.trim()) {
+      setError("Username is required");
       return false;
     }
-    if (!formData.lastName.trim()) {
-      setError("El apellido es requerido");
+    if (!formData.name.trim()) {
+      setError("Name is required");
       return false;
     }
-    if (!formData.email.trim()) {
-      setError("El email es requerido");
+    if (!formData.password.trim()) {
+      setError("Password is required");
       return false;
     }
-    if (!formData.password) {
-      setError("La contraseña es requerida");
-      return false;
-    }
-    if (formData.password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters");
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError("Passwords don't match");
       return false;
     }
-    if (!formData.acceptTerms) {
-      setError("Debes aceptar los términos y condiciones");
+    if (!formData.registerKey.trim()) {
+      setError("Registration key is required");
       return false;
     }
+    
     return true;
   };
 
@@ -96,236 +84,146 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      // Registrar el usuario
+      // Register the user
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: formData.email,
-          name: `${formData.firstName} ${formData.lastName}`,
+          username: formData.username,
+          name: formData.name,
           password: formData.password,
+          registerKey: formData.registerKey,
         }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        setSuccess("¡Cuenta creada exitosamente! Iniciando sesión...");
-        
-        // Iniciar sesión automáticamente después del registro
-        const result = await signIn("credentials", {
-          email: formData.email,
-          password: formData.password,
-          redirect: false,
-        });
-
-        if (result?.ok) {
-          router.push("/"); // Redirigir al dashboard
-        } else {
-          setError("Registro exitoso, pero error al iniciar sesión. Intenta iniciar sesión manualmente.");
-        }
-      } else {
-        setError(data.error || "Error al crear la cuenta");
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed");
       }
-    } catch (error) {
-      setError("Error de conexión. Intenta nuevamente.");
+
+      setSuccess("Registration successful! Redirecting to login...");
+      
+      // Redirect to login page after successful registration
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+
+    } catch (error: any) {
+      setError(error.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleRegister = async () => {
-    try {
-      await signIn("google", { callbackUrl: "/" });
-    } catch (error) {
-      setError("Error al registrarse con Google");
-    }
-  };
-
   return (
-    <Box minH="100vh" bg="gray.50" py={10} px={4}>
-      <Stack gap={8} maxW="md" mx="auto">
-        {/* Header */}
-        <Stack gap={4} textAlign="center">
-          <Heading size="3xl" color="blue.600">
-            Crear Cuenta
-          </Heading>
-          <Text fontSize="lg" color="gray.600">
-            Completa el formulario para registrarte
-          </Text>
-        </Stack>
+    <Box 
+      minH="100vh" 
+      display="flex" 
+      alignItems="center" 
+      justifyContent="center"
+      bg="gray.50"
+      p={4}
+    >
+      <Card.Root maxW="md" w="full" p={6}>
+        <VStack gap={6} align="stretch">
+          <Box textAlign="center">
+            <Heading size="lg" mb={2}>Create Account</Heading>
+            <Text color="gray.600">Join our inventory management system</Text>
+          </Box>
 
-        {/* Registration Form */}
-        <Card.Root boxShadow="md" borderRadius="3xl" overflow="hidden">
-          <Card.Body p={8}>
-            <form onSubmit={handleSubmit}>
-              <VStack gap={6} align="stretch">
-                {/* Error Message */}
-                {error && (
-                  <Text color="red.500" textAlign="center" fontSize="sm">
-                    {error}
-                  </Text>
-                )}
+          {error && (
+            <Box p={3} bg="red.50" border="1px" borderColor="red.200" borderRadius="md">
+              <Text color="red.600" fontSize="sm">{error}</Text>
+            </Box>
+          )}
 
-                {/* Success Message */}
-                {success && (
-                  <Text color="green.500" textAlign="center" fontSize="sm">
-                    {success}
-                  </Text>
-                )}
+          {success && (
+            <Box p={3} bg="green.50" border="1px" borderColor="green.200" borderRadius="md">
+              <Text color="green.600" fontSize="sm">{success}</Text>
+            </Box>
+          )}
 
-                {/* Name Fields */}
-                <HStack gap={4}>
-                  <Field.Root>
-                    <Field.Label>Nombre</Field.Label>
-                    <Input 
-                      placeholder="Tu nombre" 
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange("firstName", e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </Field.Root>
-                  <Field.Root>
-                    <Field.Label>Apellido</Field.Label>
-                    <Input 
-                      placeholder="Tu apellido" 
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange("lastName", e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </Field.Root>
-                </HStack>
-
-                {/* Email */}
-                <Field.Root>
-                  <Field.Label>Email</Field.Label>
-                  <Input 
-                    type="email" 
-                    placeholder="tu@email.com" 
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    disabled={isLoading}
-                  />
-                </Field.Root>
-
-                {/* Password */}
-                <Field.Root>
-                  <Field.Label>Contraseña</Field.Label>
-                  <Input 
-                    type="password" 
-                    placeholder="Mínimo 6 caracteres" 
-                    value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
-                    disabled={isLoading}
-                  />
-                </Field.Root>
-
-                {/* Confirm Password */}
-                <Field.Root>
-                  <Field.Label>Confirmar Contraseña</Field.Label>
-                  <Input 
-                    type="password" 
-                    placeholder="Repite tu contraseña" 
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                    disabled={isLoading}
-                  />
-                </Field.Root>
-
-                {/* Phone */}
-                <Field.Root>
-                  <Field.Label>Teléfono (opcional)</Field.Label>
-                  <Input 
-                    type="tel" 
-                    placeholder="+1 (555) 000-0000" 
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    disabled={isLoading}
-                  />
-                </Field.Root>
-
-                <Separator />
-
-                {/* Terms and Conditions */}
-                <Checkbox.Root 
-                  checked={formData.acceptTerms}
-                  onCheckedChange={(details) => handleInputChange("acceptTerms", details.checked)}
+          <form onSubmit={handleSubmit}>
+            <Stack gap={4}>
+              <Box>
+                <Text mb={2} fontSize="sm" fontWeight="medium">Username</Text>
+                <Input
+                  placeholder="Enter username"
+                  value={formData.username}
+                  onChange={(e) => handleInputChange("username", e.target.value)}
                   disabled={isLoading}
-                >
-                  <Checkbox.HiddenInput />
-                  <Checkbox.Control />
-                  <Checkbox.Label>
-                    Acepto los{" "}
-                    <Link color="blue.500" href="#" textDecoration="underline">
-                      términos y condiciones
-                    </Link>
-                  </Checkbox.Label>
-                </Checkbox.Root>
+                />
+              </Box>
 
-                {/* Newsletter */}
-                <Checkbox.Root 
-                  checked={formData.newsletter}
-                  onCheckedChange={(details) => handleInputChange("newsletter", details.checked)}
+              <Box>
+                <Text mb={2} fontSize="sm" fontWeight="medium">Full Name</Text>
+                <Input
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                   disabled={isLoading}
-                >
-                  <Checkbox.HiddenInput />
-                  <Checkbox.Control />
-                  <Checkbox.Label>
-                    Quiero recibir noticias y actualizaciones por email
-                  </Checkbox.Label>
-                </Checkbox.Root>
+                />
+              </Box>
 
-                {/* Submit Button */}
-                <Button 
-                  type="submit"
-                  colorScheme="blue" 
-                  size="lg" 
-                  w="full"
-                  mt={4}
-                  loading={isLoading}
+              <Box>
+                <Text mb={2} fontSize="sm" fontWeight="medium">Password</Text>
+                <Input
+                  type="password"
+                  placeholder="Enter password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
                   disabled={isLoading}
-                >
-                  {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
-                </Button>
+                />
+              </Box>
 
-                {/* Login Link */}
-                <Text textAlign="center" color="gray.600">
-                  ¿Ya tienes cuenta?{" "}
-                  <Link color="blue.500" href="/login" fontWeight="medium">
-                    Iniciar sesión
-                  </Link>
-                </Text>
-              </VStack>
-            </form>
-          </Card.Body>
-        </Card.Root>
-
-        {/* Alternative Registration */}
-        <Card.Root>
-          <Card.Body p={6}>
-            <VStack gap={4}>
-              <Text color="gray.600" textAlign="center">
-                O regístrate con
-              </Text>
-              <HStack gap={4} w="full">
-                <Button 
-                  variant="outline" 
-                  flex={1}
-                  onClick={handleGoogleRegister}
+              <Box>
+                <Text mb={2} fontSize="sm" fontWeight="medium">Confirm Password</Text>
+                <Input
+                  type="password"
+                  placeholder="Confirm password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                   disabled={isLoading}
-                >
-                  🔍 Google
-                </Button>
-                <Button variant="outline" flex={1} disabled>
-                  📘 Facebook
-                </Button>
-              </HStack>
-            </VStack>
-          </Card.Body>
-        </Card.Root>
-      </Stack>
+                />
+              </Box>
+
+              <Box>
+                <Text mb={2} fontSize="sm" fontWeight="medium">Registration Key</Text>
+                <Input
+                  type="password"
+                  placeholder="Enter registration key"
+                  value={formData.registerKey}
+                  onChange={(e) => handleInputChange("registerKey", e.target.value)}
+                  disabled={isLoading}
+                />
+              </Box>
+
+              <Button
+                type="submit"
+                colorScheme="blue"
+                size="lg"
+                loading={isLoading}
+                loadingText="Creating account..."
+                disabled={isLoading || success !== ""}
+              >
+                Create Account
+              </Button>
+            </Stack>
+          </form>
+
+          <Box textAlign="center">
+            <Text fontSize="sm" color="gray.600">
+              Already have an account?{" "}
+              <Link href="/login" color="blue.500" fontWeight="medium">
+                Sign in here
+              </Link>
+            </Text>
+          </Box>
+        </VStack>
+      </Card.Root>
     </Box>
   );
 }
