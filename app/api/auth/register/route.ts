@@ -3,21 +3,29 @@ import { createUser } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, name, password } = await request.json();
+    const { username, name, password, registerKey } = await request.json();
 
     // Validar que todos los campos están presentes
-    if (!email || !name || !password) {
+    if (!username || !name || !password || !registerKey) {
       return NextResponse.json(
-        { error: 'Todos los campos son requeridos' },
+        { error: 'Todos los campos son requeridos incluyendo la clave de registro' },
         { status: 400 }
       );
     }
 
-    // Validar email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Validar clave de registro
+    if (registerKey !== process.env.REGISTER_SECRET_KEY) {
       return NextResponse.json(
-        { error: 'Email inválido' },
+        { error: 'Clave de registro inválida' },
+        { status: 401 }
+      );
+    }
+
+    // Validar username (solo letras, números y guiones bajos)
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      return NextResponse.json(
+        { error: 'El nombre de usuario solo puede contener letras, números y guiones bajos' },
         { status: 400 }
       );
     }
@@ -39,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear el usuario
-    const user = await createUser(email, name, password);
+    const user = await createUser(username, name, password);
 
     if (user) {
       return NextResponse.json(
@@ -47,7 +55,7 @@ export async function POST(request: NextRequest) {
           message: 'Usuario creado exitosamente',
           user: {
             id: user.id,
-            email: user.email,
+            username: user.username,
             name: user.name
           }
         },
@@ -66,7 +74,7 @@ export async function POST(request: NextRequest) {
     // Si el error es por usuario duplicado
     if (error.message === 'El usuario ya existe') {
       return NextResponse.json(
-        { error: 'Este email ya está registrado' },
+        { error: 'Este nombre de usuario ya está registrado' },
         { status: 409 }
       );
     }

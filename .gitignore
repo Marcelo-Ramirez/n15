@@ -41,3 +41,11 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+./prisma/migrations
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+/prisma/database.sqlite

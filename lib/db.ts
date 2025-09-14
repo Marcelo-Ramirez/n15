@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 // Tipo para el usuario (basado en el modelo Prisma)
 export interface User {
   id: number;
-  email: string;
+  username: string;
   name: string;
   createdAt: Date;
 }
@@ -19,11 +19,11 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 // Función para crear un nuevo usuario
-export async function createUser(email: string, name: string, password: string): Promise<User | null> {
+export async function createUser(username: string, name: string, password: string): Promise<User | null> {
   try {
     // Verificar si el usuario ya existe
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { username },
     });
 
     if (existingUser) {
@@ -36,13 +36,13 @@ export async function createUser(email: string, name: string, password: string):
     // Crear el nuevo usuario
     const newUser = await prisma.user.create({
       data: {
-        email,
+        username,
         name,
         password: hashedPassword,
       },
       select: {
         id: true,
-        email: true,
+        username: true,
         name: true,
         createdAt: true,
       },
@@ -56,11 +56,11 @@ export async function createUser(email: string, name: string, password: string):
 }
 
 // Función para verificar las credenciales del usuario
-export async function verifyUser(email: string, password: string): Promise<User | null> {
+export async function verifyUser(username: string, password: string): Promise<User | null> {
   try {
-    // Buscar el usuario por email (incluyendo password para verificación)
+    // Buscar el usuario por username (incluyendo password para verificación)
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { username },
     });
 
     if (!user) {
@@ -90,7 +90,7 @@ export async function getUserById(id: number): Promise<User | null> {
       where: { id },
       select: {
         id: true,
-        email: true,
+        username: true,
         name: true,
         createdAt: true,
       },
@@ -103,14 +103,14 @@ export async function getUserById(id: number): Promise<User | null> {
   }
 }
 
-// Función para obtener un usuario por email
-export async function getUserByEmail(email: string): Promise<User | null> {
+// Función para obtener un usuario por username
+export async function getUserByUsername(username: string): Promise<User | null> {
   try {
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { username },
       select: {
         id: true,
-        email: true,
+        username: true,
         name: true,
         createdAt: true,
       },
@@ -118,7 +118,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
     return user;
   } catch (error) {
-    console.error('Error obteniendo usuario por email:', error);
+    console.error('Error obteniendo usuario por username:', error);
     return null;
   }
 }

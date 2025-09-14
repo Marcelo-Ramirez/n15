@@ -1,25 +1,23 @@
 "use client";
 import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { 
-  Box, 
-  Heading, 
-  Text, 
-  Button, 
+import {
+  Box,
+  Heading,
+  Text,
+  Button,
   Stack,
   Card,
   Input,
   Field,
   Link,
   VStack,
-  HStack,
   Alert,
 } from "@chakra-ui/react";
-import { Checkbox } from "@chakra-ui/react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +30,7 @@ export default function LoginPage() {
 
     try {
       const result = await signIn("credentials", {
-        email,
+        username,
         password,
         redirect: false,
       });
@@ -48,10 +46,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
   };
 
   return (
@@ -78,14 +72,14 @@ export default function LoginPage() {
                   </Alert.Root>
                 )}
 
-                {/* Email */}
+                {/* Username */}
                 <Field.Root>
-                  <Field.Label>Email</Field.Label>
-                  <Input 
-                    type="email" 
-                    placeholder="test@test.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                  <Field.Label>Nombre de Usuario</Field.Label>
+                  <Input
+                    type="text"
+                    placeholder="admin"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </Field.Root>
@@ -93,32 +87,20 @@ export default function LoginPage() {
                 {/* Password */}
                 <Field.Root>
                   <Field.Label>Contraseña</Field.Label>
-                  <Input 
-                    type="password" 
-                    placeholder="password" 
+                  <Input
+                    type="password"
+                    placeholder="contraseña"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </Field.Root>
 
-                {/* Remember Me */}
-                <HStack justify="space-between">
-                  <Checkbox.Root defaultChecked={false}>
-                    <Checkbox.HiddenInput />
-                    <Checkbox.Control />
-                    <Checkbox.Label>Recordarme</Checkbox.Label>
-                  </Checkbox.Root>
-                  <Link color="blue.500" href="#" fontSize="sm">
-                    ¿Olvidaste tu contraseña?
-                  </Link>
-                </HStack>
-
                 {/* Submit Button */}
-                <Button 
+                <Button
                   type="submit"
-                  colorScheme="blue" 
-                  size="lg" 
+                  colorScheme="blue"
+                  size="lg"
                   w="full"
                   mt={4}
                   loading={isLoading}
@@ -126,45 +108,14 @@ export default function LoginPage() {
                   {isLoading ? "Iniciando..." : "Iniciar Sesión"}
                 </Button>
 
-                {/* Register Link */}
-                <Text textAlign="center" color="gray.600">
-                  ¿No tienes cuenta?{" "}
-                  <Link color="blue.500" href="/register" fontWeight="medium">
-                    Crear cuenta
+                <Box textAlign="center">
+                  <Link href="/register"  fontWeight="medium" fontSize={"sm"}>
+                    Register
                   </Link>
-                </Text>
+                </Box>
+
               </VStack>
             </form>
-          </Card.Body>
-        </Card.Root>
-
-        {/* Alternative Login */}
-        <Card.Root>
-          <Card.Body p={6}>
-            <VStack gap={4}>
-              <Text color="gray.600" textAlign="center">
-                O inicia sesión con
-              </Text>
-              <HStack gap={4} w="full">
-                <Button variant="outline" flex={1} onClick={handleGoogleSignIn}>
-                  🔍 Google
-                </Button>
-                <Button variant="outline" flex={1}>
-                  📘 Facebook
-                </Button>
-              </HStack>
-            </VStack>
-          </Card.Body>
-        </Card.Root>
-
-        {/* Credenciales de prueba */}
-        <Card.Root bg="blue.50" borderColor="blue.200">
-          <Card.Body p={4}>
-            <Text fontSize="sm" color="blue.800" textAlign="center">
-              <strong>Credenciales de prueba:</strong><br />
-              Email: test@test.com<br />
-              Password: password
-            </Text>
           </Card.Body>
         </Card.Root>
       </Stack>
