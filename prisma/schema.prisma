@@ -18,5 +18,9 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // 2FA
+  twoFactorEnabled   Boolean  @default(false)
+  twoFactorSecret    String?  
+  twoFactorUpdatedAt DateTime? 
   @@map("users")
 }
