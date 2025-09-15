@@ -1,20 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function ProfileContent() {
-  const { user, setUser } = useAuth(); // <-- agregamos setUser
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const { user, setUser } = useAuth();
   const [qrCode, setQrCode] = useState("");
   const [token, setToken] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (user?.twoFactorEnabled) setTwoFAEnabled(true);
-  }, [user]);
 
   const handleGenerate2FA = async () => {
     setLoading(true);
@@ -47,13 +42,11 @@ export default function ProfileContent() {
       });
       if (!res.ok) throw new Error("Token inválido");
 
-      // Actualizamos estado local
-      setTwoFAEnabled(true);
       setMessage("2FA activado correctamente");
       setQrCode("");
       setToken("");
 
-      // Actualizamos el usuario global para reflejar 2FA activado
+      // Actualiza el usuario global
       if (setUser) setUser({ ...user, twoFactorEnabled: true });
     } catch (err: any) {
       setError(err.message || "Error al verificar token");
@@ -89,15 +82,17 @@ export default function ProfileContent() {
 
       <h2 style={{ marginTop: "30px", color: "#222" }}>Seguridad: Autenticación 2FA</h2>
 
-      {twoFAEnabled ? (
+      {user?.twoFactorEnabled ? (
         <div style={{
           padding: "10px",
           backgroundColor: "#d4edda",
           color: "#155724",
           borderRadius: "5px",
-          marginTop: "10px"
+          marginTop: "10px",
+          textAlign: "center",
+          fontWeight: "bold"
         }}>
-          {message || "2FA ya está activado"}
+          Verificación en dos pasos ya activada
         </div>
       ) : (
         <div style={{ marginTop: "10px" }}>
@@ -152,7 +147,7 @@ export default function ProfileContent() {
             </div>
           )}
 
-          {message && !twoFAEnabled && (
+          {message && !user?.twoFactorEnabled && (
             <div style={{
               padding: "10px",
               backgroundColor: "#d4edda",
@@ -163,6 +158,7 @@ export default function ProfileContent() {
               {message}
             </div>
           )}
+
           {error && (
             <div style={{
               padding: "10px",
