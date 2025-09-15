@@ -1,4 +1,5 @@
 "use client";
+import ProfileContent from "@/app/dashboard/components/ProfileContent";
 import {
   Box,
   Heading,
@@ -244,7 +245,8 @@ export default function MainContent({ activeMenuItem }: MainContentProps) {
       case "settings":
         return <GenericContent title="Configuración" icon="⚙️" description="Ajustes y preferencias del sistema" />;
       case "profile":
-        return <GenericContent title="Perfil" icon="👤" description="Información personal y configuración de cuenta" />;
+  return <ProfileContent />;
+
       case "notifications":
         return <GenericContent title="Notificaciones" icon="🔔" description="Centro de notificaciones y alertas" />;
       default:
