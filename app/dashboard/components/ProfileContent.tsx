@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function ProfileContent() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth(); // <-- agregamos setUser
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [qrCode, setQrCode] = useState("");
   const [token, setToken] = useState("");
@@ -13,7 +13,7 @@ export default function ProfileContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if ((user as any)?.twoFactorEnabled) setTwoFAEnabled(true);
+    if (user?.twoFactorEnabled) setTwoFAEnabled(true);
   }, [user]);
 
   const handleGenerate2FA = async () => {
@@ -46,10 +46,15 @@ export default function ProfileContent() {
         body: JSON.stringify({ userId: user?.id, token }),
       });
       if (!res.ok) throw new Error("Token inválido");
+
+      // Actualizamos estado local
       setTwoFAEnabled(true);
       setMessage("2FA activado correctamente");
       setQrCode("");
       setToken("");
+
+      // Actualizamos el usuario global para reflejar 2FA activado
+      if (setUser) setUser({ ...user, twoFactorEnabled: true });
     } catch (err: any) {
       setError(err.message || "Error al verificar token");
     } finally {
@@ -65,11 +70,19 @@ export default function ProfileContent() {
       border: "2px solid #333",
       borderRadius: "10px",
       fontFamily: "Arial, sans-serif",
-      backgroundColor: "#f9f9f9"
+      backgroundColor: "#f9f9f9",
+      color: "#222"
     }}>
       <h1 style={{ textAlign: "center", color: "#222" }}>Perfil de Usuario</h1>
 
-      <div style={{ margin: "20px 0", padding: "10px", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #ccc" }}>
+      <div style={{
+        margin: "20px 0",
+        padding: "10px",
+        backgroundColor: "#fff",
+        borderRadius: "8px",
+        border: "1px solid #ccc",
+        color: "#222"
+      }}>
         <p><strong>Nombre:</strong> {user?.name || "Usuario"}</p>
         <p><strong>Email:</strong> {user?.email || "-"}</p>
       </div>
@@ -77,7 +90,13 @@ export default function ProfileContent() {
       <h2 style={{ marginTop: "30px", color: "#222" }}>Seguridad: Autenticación 2FA</h2>
 
       {twoFAEnabled ? (
-        <div style={{ padding: "10px", backgroundColor: "#d4edda", color: "#155724", borderRadius: "5px", marginTop: "10px" }}>
+        <div style={{
+          padding: "10px",
+          backgroundColor: "#d4edda",
+          color: "#155724",
+          borderRadius: "5px",
+          marginTop: "10px"
+        }}>
           {message || "2FA ya está activado"}
         </div>
       ) : (
@@ -99,7 +118,7 @@ export default function ProfileContent() {
           </button>
 
           {qrCode && (
-            <div style={{ marginTop: "15px" }}>
+            <div style={{ marginTop: "15px", color: "#222" }}>
               <p>Escanea este QR con Google Authenticator:</p>
               <img src={qrCode} alt="QR Code 2FA" width={200} height={200} style={{ display: "block", marginBottom: "10px" }} />
               <input
@@ -107,7 +126,14 @@ export default function ProfileContent() {
                 placeholder="Ingresa el código de Google Authenticator"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                style={{ padding: "8px", width: "100%", marginBottom: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                style={{
+                  padding: "8px",
+                  width: "100%",
+                  marginBottom: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #ccc",
+                  color: "#222"
+                }}
               />
               <button
                 onClick={handleVerify2FA}
@@ -127,12 +153,24 @@ export default function ProfileContent() {
           )}
 
           {message && !twoFAEnabled && (
-            <div style={{ padding: "10px", backgroundColor: "#d4edda", color: "#155724", borderRadius: "5px", marginTop: "10px" }}>
+            <div style={{
+              padding: "10px",
+              backgroundColor: "#d4edda",
+              color: "#155724",
+              borderRadius: "5px",
+              marginTop: "10px"
+            }}>
               {message}
             </div>
           )}
           {error && (
-            <div style={{ padding: "10px", backgroundColor: "#f8d7da", color: "#721c24", borderRadius: "5px", marginTop: "10px" }}>
+            <div style={{
+              padding: "10px",
+              backgroundColor: "#f8d7da",
+              color: "#721c24",
+              borderRadius: "5px",
+              marginTop: "10px"
+            }}>
               {error}
             </div>
           )}
