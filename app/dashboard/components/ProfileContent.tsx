@@ -12,7 +12,6 @@ export default function ProfileContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Verificar si el usuario ya tiene 2FA activado
   useEffect(() => {
     if ((user as any)?.twoFactorEnabled) setTwoFAEnabled(true);
   }, [user]);
@@ -20,12 +19,15 @@ export default function ProfileContent() {
   const handleGenerate2FA = async () => {
     setLoading(true);
     setError("");
+    setMessage("");
     try {
       const res = await fetch("/api/auth/2fa/generate");
       if (!res.ok) throw new Error("No se pudo generar QR");
       const data = await res.json();
       setQrCode(data.qrDataUrl);
-      setMessage("Escanea el QR con Google Authenticator y luego ingresa el código para activarlo.");
+      setMessage(
+        "Escanea el QR con Google Authenticator y luego ingresa el código para activarlo."
+      );
     } catch (err: any) {
       setError(err.message || "Error al generar QR");
     } finally {
@@ -56,38 +58,84 @@ export default function ProfileContent() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Perfil</h1>
-      <p>Usuario: {user?.name || "Usuario"}</p>
-      <p>Email: {user?.email}</p>
+    <div style={{
+      maxWidth: "500px",
+      margin: "40px auto",
+      padding: "20px",
+      border: "2px solid #333",
+      borderRadius: "10px",
+      fontFamily: "Arial, sans-serif",
+      backgroundColor: "#f9f9f9"
+    }}>
+      <h1 style={{ textAlign: "center", color: "#222" }}>Perfil de Usuario</h1>
 
-      <h2>Seguridad: Autenticación de 2 factores</h2>
+      <div style={{ margin: "20px 0", padding: "10px", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #ccc" }}>
+        <p><strong>Nombre:</strong> {user?.name || "Usuario"}</p>
+        <p><strong>Email:</strong> {user?.email || "-"}</p>
+      </div>
+
+      <h2 style={{ marginTop: "30px", color: "#222" }}>Seguridad: Autenticación 2FA</h2>
+
       {twoFAEnabled ? (
-        <p>2FA ya está activado</p>
+        <div style={{ padding: "10px", backgroundColor: "#d4edda", color: "#155724", borderRadius: "5px", marginTop: "10px" }}>
+          {message || "2FA ya está activado"}
+        </div>
       ) : (
-        <div>
-          <button onClick={handleGenerate2FA} disabled={loading}>
-            {loading ? "Cargando..." : "Generar QR / Activar 2FA"}
+        <div style={{ marginTop: "10px" }}>
+          <button
+            onClick={handleGenerate2FA}
+            disabled={loading || !!qrCode}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#007bff",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: loading || qrCode ? "not-allowed" : "pointer",
+              marginBottom: "15px"
+            }}
+          >
+            {loading && !qrCode ? "Cargando..." : qrCode ? "QR generado" : "Generar QR / Activar 2FA"}
           </button>
 
           {qrCode && (
-            <div>
+            <div style={{ marginTop: "15px" }}>
               <p>Escanea este QR con Google Authenticator:</p>
-              <img src={qrCode} alt="QR Code 2FA" width={200} />
+              <img src={qrCode} alt="QR Code 2FA" width={200} height={200} style={{ display: "block", marginBottom: "10px" }} />
               <input
                 type="text"
                 placeholder="Ingresa el código de Google Authenticator"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
+                style={{ padding: "8px", width: "100%", marginBottom: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
               />
-              <button onClick={handleVerify2FA} disabled={loading}>
-                Verificar Token
+              <button
+                onClick={handleVerify2FA}
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#28a745",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: loading ? "not-allowed" : "pointer"
+                }}
+              >
+                {loading ? "Verificando..." : "Verificar Token"}
               </button>
             </div>
           )}
 
-          {message && <p style={{ color: "green" }}>{message}</p>}
-          {error && <p style={{ color: "red" }}>{error}</p>}
+          {message && !twoFAEnabled && (
+            <div style={{ padding: "10px", backgroundColor: "#d4edda", color: "#155724", borderRadius: "5px", marginTop: "10px" }}>
+              {message}
+            </div>
+          )}
+          {error && (
+            <div style={{ padding: "10px", backgroundColor: "#f8d7da", color: "#721c24", borderRadius: "5px", marginTop: "10px" }}>
+              {error}
+            </div>
+          )}
         </div>
       )}
     </div>
