@@ -50,13 +50,6 @@ const menuItems: MenuItem[] = [
     href: "/config",
     description: "Ajustes del sistema"
   },
-  {
-    id: "profile",
-    label: "Perfil",
-    icon: "👤",
-    href: "/profile",
-    description: "Mi perfil personal"
-  },
 ];
 
 interface SidebarProps {
@@ -125,7 +118,15 @@ export default function Sidebar({
 
         {/* User Info */}
         {isOpen && (
-          <Box p={4} borderBottom="1px solid" borderColor="gray.200">
+          <Box 
+            p={4} 
+            borderBottom="1px solid" 
+            borderColor="gray.200"
+            cursor="pointer"
+            _hover={{ bg: "gray.50" }}
+            transition="background-color 0.2s"
+            onClick={() => handleNavigation("/profile")}
+          >
             <Flex align="center" gap={3}>
               <Avatar.Root size="sm">
                 <Avatar.Fallback>
