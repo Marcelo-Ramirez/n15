@@ -42,7 +42,7 @@ const ProductForm = () => {
 
   return (
     <Box>
-      <VStack spacing={4} align="start">
+      <VStack gap={4} align="start">
         <FormControl>
           <FormLabel>Criterio de clasificación ABC</FormLabel>
           <Select

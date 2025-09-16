@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function ProfileContent() {
-  const { user, setUser } = useAuth();
+  const { user } = useAuth();
+  const [currentUser, setCurrentUser] = useState(user);
   const [qrCode, setQrCode] = useState("");
   const [token, setToken] = useState("");
   const [message, setMessage] = useState("");
@@ -46,8 +47,10 @@ export default function ProfileContent() {
       setQrCode("");
       setToken("");
 
-      // Actualiza el usuario global
-      if (setUser) setUser({ ...user, twoFactorEnabled: true });
+      // ✅ Verificar que user existe antes de actualizar
+      if (user) {
+        setCurrentUser({ ...user, twoFactorEnabled: true });
+      }
     } catch (err: any) {
       setError(err.message || "Error al verificar token");
     } finally {
@@ -82,7 +85,7 @@ export default function ProfileContent() {
 
       <h2 style={{ marginTop: "30px", color: "#222" }}>Seguridad: Autenticación 2FA</h2>
 
-      {user?.twoFactorEnabled ? (
+      {currentUser?.twoFactorEnabled ? (
         <div style={{
           padding: "10px",
           backgroundColor: "#d4edda",

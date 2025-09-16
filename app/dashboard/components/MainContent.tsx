@@ -24,7 +24,7 @@ interface MainContentProps {
 // Componente Dashboard
 const DashboardContent = () => {
   const { user } = useAuth();
-  
+
   return (
     <VStack gap={6} align="stretch">
       <Box>
@@ -245,8 +245,7 @@ export default function MainContent({ activeMenuItem }: MainContentProps) {
       case "settings":
         return <GenericContent title="Configuración" icon="⚙️" description="Ajustes y preferencias del sistema" />;
       case "profile":
-  return <ProfileContent />;
-
+        return <ProfileContent />;
       case "notifications":
         return <GenericContent title="Notificaciones" icon="🔔" description="Centro de notificaciones y alertas" />;
       default:
