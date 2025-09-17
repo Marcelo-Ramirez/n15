@@ -8,7 +8,6 @@ export interface User {
   name: string;
   twoFactorEnabled: boolean;
   twoFactorSecret?: string | null;
-  twoFactorUpdatedAt?: Date | null;
   createdAt: Date;
 }
 
@@ -33,7 +32,6 @@ export async function createUser(username: string, name: string, password: strin
         name: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
-        twoFactorUpdatedAt: true,
         createdAt: true,
       },
     });
@@ -57,7 +55,6 @@ export async function verifyUser(username: string, password: string): Promise<Us
         password: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
-        twoFactorUpdatedAt: true,
         createdAt: true,
       },
     });
@@ -86,7 +83,6 @@ export async function getUserById(id: number): Promise<User | null> {
         name: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
-        twoFactorUpdatedAt: true,
         createdAt: true,
       },
     });
@@ -108,7 +104,6 @@ export async function getUserByUsername(username: string): Promise<User | null> 
         name: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
-        twoFactorUpdatedAt: true,
         createdAt: true,
       },
     });

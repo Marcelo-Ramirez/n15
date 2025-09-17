@@ -15,11 +15,13 @@ export async function GET() {
     // Calcular el estado de cada ingrediente
     const ingredientsWithStatus = ingredients.map(ingredient => ({
       ...ingredient,
-      status: ingredient.currentQuantity <= ingredient.minStock 
-        ? 'critico' 
-        : ingredient.currentQuantity <= ingredient.minStock * 1.5 
-        ? 'bajo' 
-        : 'normal'
+      status: ingredient.reorderPoint 
+        ? ingredient.currentQuantity <= ingredient.reorderPoint 
+          ? 'critico' 
+          : ingredient.currentQuantity <= ingredient.reorderPoint * 1.5 
+          ? 'bajo' 
+          : 'normal'
+        : 'normal' // Si no hay punto de reorden definido, siempre es normal
     }));
 
     return NextResponse.json(ingredientsWithStatus);
@@ -40,11 +42,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { name, unit, minStock, pricePerUnit, initialQuantity = 0 } = await req.json();
+    const { name, unit, reorderPoint, pricePerUnit } = await req.json();
 
-    if (!name || !unit || minStock === undefined || pricePerUnit === undefined) {
+    if (!name || !unit || pricePerUnit === undefined) {
       return NextResponse.json(
-        { error: "Faltan campos requeridos" },
+        { error: "Faltan campos requeridos (name, unit, pricePerUnit)" },
         { status: 400 }
       );
     }
@@ -53,29 +55,11 @@ export async function POST(req: Request) {
       data: {
         name,
         unit,
-        minStock,
+        reorderPoint: reorderPoint !== undefined && reorderPoint !== null ? parseFloat(reorderPoint) : null,
         pricePerUnit,
-        currentQuantity: initialQuantity,
-        status: initialQuantity <= minStock ? 'critico' : 'normal'
+        currentQuantity: 0, // Siempre inicia en 0
       }
     });
-
-    // Si hay cantidad inicial, crear el movimiento inicial
-    if (initialQuantity > 0) {
-      await prisma.inventoryMovement.create({
-        data: {
-          ingredientId: ingredient.id,
-          userId: Number(session.user.id),
-          movementType: 'entrada',
-          reason: 'ajuste',
-          quantity: initialQuantity,
-          previousQuantity: 0,
-          newQuantity: initialQuantity,
-          notes: 'Stock inicial',
-          createdBy: Number(session.user.id),
-        }
-      });
-    }
 
     return NextResponse.json(ingredient, { status: 201 });
   } catch (error) {

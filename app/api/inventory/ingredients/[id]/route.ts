@@ -30,12 +30,9 @@ export async function GET(
       include: {
         user: {
           select: { id: true, name: true }
-        },
-        createdByUser: {
-          select: { id: true, name: true }
         }
       },
-      orderBy: { movementDate: 'desc' }
+      orderBy: { createdAt: 'desc' }
     });
 
     return NextResponse.json({
@@ -64,7 +61,7 @@ export async function POST(
   try {
     const resolvedParams = await params;
     const ingredientId = parseInt(resolvedParams.id);
-    const { movementType, reason, quantity, unitPrice, notes } = await req.json();
+    const { movementType, reason, quantity } = await req.json();
 
     if (!movementType || !reason || quantity === undefined) {
       return NextResponse.json(
@@ -97,11 +94,6 @@ export async function POST(
       );
     }
 
-    // Calcular costos para compras
-    const totalCost = movementType === 'entrada' && reason === 'compra' && unitPrice 
-      ? quantity * unitPrice 
-      : undefined;
-
     // Crear el movimiento en una transacción
     const result = await prisma.$transaction(async (tx) => {
       // Crear el movimiento
@@ -114,10 +106,6 @@ export async function POST(
           quantity: Math.abs(quantity),
           previousQuantity,
           newQuantity,
-          unitPrice,
-          totalCost,
-          notes,
-          createdBy: Number(session.user.id),
         }
       });
 
@@ -126,11 +114,6 @@ export async function POST(
         where: { id: ingredientId },
         data: {
           currentQuantity: newQuantity,
-          status: newQuantity <= ingredient.minStock 
-            ? 'critico' 
-            : newQuantity <= ingredient.minStock * 1.5 
-            ? 'bajo' 
-            : 'normal'
         }
       });
 
@@ -142,6 +125,61 @@ export async function POST(
     console.error("Error creating movement:", error);
     return NextResponse.json(
       { error: "Error al crear movimiento" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Actualizar un ingrediente
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const resolvedParams = await params;
+    const ingredientId = parseInt(resolvedParams.id);
+    const { name, unit, reorderPoint, pricePerUnit } = await req.json();
+
+    if (!name || !unit || pricePerUnit === undefined) {
+      return NextResponse.json(
+        { error: "Faltan campos requeridos (name, unit, pricePerUnit)" },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que el ingrediente existe
+    const existingIngredient = await prisma.ingredient.findUnique({
+      where: { id: ingredientId }
+    });
+
+    if (!existingIngredient) {
+      return NextResponse.json(
+        { error: "Ingrediente no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Actualizar el ingrediente
+    const updatedIngredient = await prisma.ingredient.update({
+      where: { id: ingredientId },
+      data: {
+        name,
+        unit,
+        reorderPoint: reorderPoint !== undefined && reorderPoint !== null ? parseFloat(reorderPoint) : null,
+        pricePerUnit
+      }
+    });
+
+    return NextResponse.json(updatedIngredient);
+  } catch (error) {
+    console.error("Error updating ingredient:", error);
+    return NextResponse.json(
+      { error: "Error al actualizar ingrediente" },
       { status: 500 }
     );
   }

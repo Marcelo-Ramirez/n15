@@ -83,7 +83,7 @@ export default function ProfilePage() {
       {/* Información Personal */}
       <Box bg="white" p={6} borderRadius="lg" boxShadow="sm" border="1px" borderColor="gray.200" mb={6}>
         <Text fontWeight="semibold" mb={4} color="gray.700">Información Personal</Text>
-        <VStack align="start" gap={2}>
+        <VStack align="start" gap={2} color="gray.600">
           <Text><strong>Nombre:</strong> {user?.name || "No disponible"}</Text>
           <Text><strong>Email:</strong> {user?.email}</Text>
           <Text><strong>ID de Usuario:</strong> {user?.id}</Text>

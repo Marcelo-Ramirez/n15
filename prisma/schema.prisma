@@ -16,17 +16,13 @@ model User {
   name      String
   password  String
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
 
   // 2FA
   twoFactorEnabled   Boolean  @default(false)
   twoFactorSecret    String?  
-  twoFactorUpdatedAt DateTime? 
 
   // Relaciones de inventario
-  movementsCreated   InventoryMovement[] @relation("MovementCreatedBy")
-  movementsUser      InventoryMovement[] @relation("MovementUser")
-  batchesCreated     ProductionBatch[]   @relation("BatchCreatedBy")
+  movements          InventoryMovement[] @relation("MovementUser")
   
   @@map("users")
 }
@@ -36,15 +32,14 @@ model Ingredient {
   name            String
   currentQuantity Float   @default(0) @map("current_quantity")
   unit            String  // 'kg', 'unidades', 'litros'
-  minStock        Float   @map("min_stock")
+  reorderPoint    Float?  @map("reorder_point") // Punto de reorden (opcional si no se ha calculado EOQ)
   pricePerUnit    Float   @map("price_per_unit")
-  status          String  @default("normal") // 'normal', 'bajo', 'critico'
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  
 
   // Relaciones
   movements       InventoryMovement[]
-  productionIngredients ProductionIngredient[]
   
   @@map("ingredients")
 }
@@ -58,49 +53,11 @@ model InventoryMovement {
   quantity         Float
   previousQuantity Float   @map("previous_quantity")
   newQuantity      Float   @map("new_quantity")
-  unitPrice        Float?  @map("unit_price") // Solo para compras
-  totalCost        Float?  @map("total_cost") // Solo para compras
-  notes            String?
-  movementDate     DateTime @default(now()) @map("movement_date")
-  createdBy        Int     @map("created_by")
   createdAt        DateTime @default(now()) @map("created_at")
 
   // Relaciones
   ingredient       Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
   user             User       @relation("MovementUser", fields: [userId], references: [id])
-  createdByUser    User       @relation("MovementCreatedBy", fields: [createdBy], references: [id])
-  productionIngredient ProductionIngredient?
   
   @@map("inventory_movements")
-}
-
-model ProductionBatch {
-  id               Int     @id @default(autoincrement())
-  batchCode        String  @unique @map("batch_code") // "BATCH-20241215-001"
-  productName      String  @map("product_name") // "Gomitas Fresa 100g"
-  quantityProduced Int     @map("quantity_produced")
-  productionDate   DateTime @map("production_date")
-  createdBy        Int     @map("created_by")
-  createdAt        DateTime @default(now()) @map("created_at")
-
-  // Relaciones
-  createdByUser    User @relation("BatchCreatedBy", fields: [createdBy], references: [id])
-  ingredients      ProductionIngredient[]
-  
-  @@map("production_batches")
-}
-
-model ProductionIngredient {
-  id           Int   @id @default(autoincrement())
-  batchId      Int   @map("batch_id")
-  ingredientId Int   @map("ingredient_id")
-  quantityUsed Float @map("quantity_used")
-  movementId   Int   @unique @map("movement_id") // Referencia al movimiento de salida
-
-  // Relaciones
-  batch        ProductionBatch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  ingredient   Ingredient        @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
-  movement     InventoryMovement @relation(fields: [movementId], references: [id])
-  
-  @@map("production_ingredients")
 }

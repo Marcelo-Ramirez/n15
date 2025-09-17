@@ -24,8 +24,7 @@ export default function IngredientHistoryPage() {
   const [movementForm, setMovementForm] = useState({
     movementType: 'entrada' as 'entrada' | 'salida',
     quantity: '',
-    reason: '',
-    notes: ''
+    reason: ''
   })
 
   const ingredientId = Array.isArray(params.id) ? params.id[0] : params.id
@@ -54,7 +53,7 @@ export default function IngredientHistoryPage() {
 
   const handleAddMovement = async () => {
     if (!movementForm.quantity || !movementForm.reason) {
-      alert('Por favor completa todos los campos requeridos')
+      alert("Por favor completa todos los campos requeridos")
       return
     }
 
@@ -68,27 +67,25 @@ export default function IngredientHistoryPage() {
           movementType: movementForm.movementType,
           quantity: parseFloat(movementForm.quantity),
           reason: movementForm.reason,
-          notes: movementForm.notes,
         }),
       })
 
       if (response.ok) {
-        alert('Movimiento registrado correctamente')
+        alert("Movimiento registrado correctamente")
         setMovementForm({
           movementType: 'entrada',
           quantity: '',
-          reason: '',
-          notes: ''
+          reason: ''
         })
         setIsAddingMovement(false)
         await fetchIngredientData()
       } else {
         const errorData = await response.json()
-        alert(errorData.error || 'Error al registrar movimiento')
+        alert(errorData.error || "Error al registrar movimiento")
       }
     } catch (error) {
       console.error('Error adding movement:', error)
-      alert('Error de conexión')
+      alert("Error de conexión - No se pudo conectar con el servidor")
     }
   }
 
@@ -124,14 +121,23 @@ export default function IngredientHistoryPage() {
         {/* Info del ingrediente */}
         <Box border="1px solid" borderColor="gray.200" borderRadius="md" p={4}>
           <VStack align="start" gap={2}>
-            <Text fontSize="lg" fontWeight="bold">{ingredient.name}</Text>
-            <Text>Stock Actual: {ingredient.currentQuantity} {ingredient.unit}</Text>
-            <Text>Precio: ${ingredient.pricePerUnit} por {ingredient.unit}</Text>
-            <Text>Stock Mínimo: {ingredient.minStock} {ingredient.unit}</Text>
+            <Text fontSize="lg" fontWeight="bold" color="#2d3748">{ingredient.name}</Text>
+            <Text color="#4a5568">Stock Actual: {ingredient.currentQuantity} {ingredient.unit}</Text>
+            <Text color="#4a5568">Precio: ${ingredient.pricePerUnit} por {ingredient.unit}</Text>
+            <Text color="#4a5568">
+              Punto de Reorden: {ingredient.reorderPoint ? `${ingredient.reorderPoint} ${ingredient.unit}` : 'No definido'}
+            </Text>
             <Badge 
-              colorScheme={ingredient.currentQuantity <= ingredient.minStock ? 'red' : 'green'}
+              colorScheme={
+                ingredient.reorderPoint && ingredient.currentQuantity < ingredient.reorderPoint 
+                  ? 'red' 
+                  : 'green'
+              }
             >
-              {ingredient.currentQuantity <= ingredient.minStock ? 'Stock Bajo' : 'Stock OK'}
+              {ingredient.reorderPoint && ingredient.currentQuantity < ingredient.reorderPoint 
+                ? 'Stock Bajo' 
+                : 'Stock OK'
+              }
             </Badge>
           </VStack>
         </Box>
@@ -140,7 +146,7 @@ export default function IngredientHistoryPage() {
         {isAddingMovement && (
           <Box border="1px solid" borderColor="blue.200" borderRadius="md" p={4} bg="blue.50">
             <VStack align="stretch" gap={4}>
-              <Heading size="md">Registrar Movimiento</Heading>
+              <Heading size="md" color="#2d3748">Registrar Movimiento</Heading>
               
               <HStack>
                 <Button
@@ -166,17 +172,24 @@ export default function IngredientHistoryPage() {
                 onChange={(e) => setMovementForm({...movementForm, quantity: e.target.value})}
               />
 
-              <Input
-                placeholder="Motivo (ej: compra, producción, venta)"
+              <select
+                style={{
+                  padding: '8px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  width: '100%',
+                  fontSize: '16px'
+                }}
                 value={movementForm.reason}
                 onChange={(e) => setMovementForm({...movementForm, reason: e.target.value})}
-              />
-
-              <Input
-                placeholder="Notas adicionales (opcional)"
-                value={movementForm.notes}
-                onChange={(e) => setMovementForm({...movementForm, notes: e.target.value})}
-              />
+              >
+                <option value="">Selecciona el motivo</option>
+                <option value="compra">Compra</option>
+                <option value="produccion">Producción</option>
+                <option value="ajuste">Ajuste de inventario</option>
+                <option value="vencimiento">Vencimiento</option>
+                <option value="daño">Daño o pérdida</option>
+              </select>
 
               <HStack>
                 <Button 
@@ -198,7 +211,7 @@ export default function IngredientHistoryPage() {
 
         {/* Historial de movimientos */}
         <Box>
-          <Heading size="md" mb={4}>Historial de Movimientos</Heading>
+          <Heading size="md" mb={4} color="#2d3748">Historial de Movimientos</Heading>
           {movements.length > 0 ? (
             <VStack align="stretch" gap={3}>
               {movements.map((movement) => (
@@ -219,13 +232,12 @@ export default function IngredientHistoryPage() {
                           {movement.movementType === 'entrada' ? '+' : '-'}{movement.quantity} {ingredient.unit}
                         </Text>
                       </HStack>
-                      <Text fontSize="sm">Motivo: {movement.reason}</Text>
-                      {movement.notes && <Text fontSize="sm" color="gray.600">Notas: {movement.notes}</Text>}
-                      <Text fontSize="sm" color="gray.500">
+                      <Text fontSize="sm" color="#4a5568">Motivo: {movement.reason}</Text>
+                      <Text fontSize="sm" color="#718096">
                         Usuario: {movement.user?.name || 'Sistema'}
                       </Text>
                     </VStack>
-                    <Text fontSize="sm" color="gray.500">
+                    <Text fontSize="sm" color="#718096">
                       {new Date(movement.createdAt).toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'short',
@@ -239,7 +251,7 @@ export default function IngredientHistoryPage() {
               ))}
             </VStack>
           ) : (
-            <Text color="gray.500" textAlign="center" py={8}>
+            <Text color="#718096" textAlign="center" py={8}>
               No hay movimientos registrados para este ingrediente
             </Text>
           )}
