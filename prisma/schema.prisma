@@ -1,3 +1,5 @@
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,26 +10,53 @@ datasource db {
 }
 
 model User {
-  id                 Int       @id @default(autoincrement())
-  username           String    @unique
-  name               String
-  password           String
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-  twoFactorEnabled   Boolean   @default(false)
-  twoFactorSecret    String?
-  twoFactorUpdatedAt DateTime?
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
 
+  // 2FA
+  twoFactorEnabled   Boolean  @default(false)
+  twoFactorSecret    String?  
+
+  // Relaciones de inventario
+  movements          InventoryMovement[] @relation("MovementUser")
+  
   @@map("users")
 }
 
-model Product {
-  id                Int       @id @default(autoincrement())
-  name              String
-  unitPrice         Float
-  annualConsumption Int
-  createdAt         DateTime? @default(now())
-  updatedAt         DateTime? @default(now()) @updatedAt
+model Ingredient {
+  id              Int     @id @default(autoincrement())
+  name            String
+  currentQuantity Float   @default(0) @map("current_quantity")
+  unit            String  // 'kg', 'unidades', 'litros'
+  reorderPoint    Float?  @map("reorder_point") // Punto de reorden (opcional si no se ha calculado EOQ)
+  pricePerUnit    Float   @map("price_per_unit")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
 
-  @@map("products")
+  // Relaciones
+  movements       InventoryMovement[]
+  
+  @@map("ingredients")
+}
+
+model InventoryMovement {
+  id               Int     @id @default(autoincrement())
+  ingredientId     Int     @map("ingredient_id")
+  userId           Int     @map("user_id")
+  movementType     String  @map("movement_type") // 'entrada', 'salida'
+  reason           String  // 'compra', 'produccion', 'ajuste', 'vencimiento', 'daño'
+  quantity         Float
+  previousQuantity Float   @map("previous_quantity")
+  newQuantity      Float   @map("new_quantity")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  ingredient       Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  user             User       @relation("MovementUser", fields: [userId], references: [id])
+  
+  @@map("inventory_movements")
 }

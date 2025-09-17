@@ -22,7 +22,6 @@ export async function POST(req: Request) {
     data: {
       twoFactorSecret: encryptedSecret,
       twoFactorEnabled: true,
-      twoFactorUpdatedAt: new Date(),
     },
   });
 

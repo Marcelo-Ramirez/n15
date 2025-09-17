@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Box, Spinner, Center, Flex } from "@chakra-ui/react";
-import Sidebar from "./components/Sidebar";
-import MainContent from "./components/MainContent";
+import Sidebar from "@/app/components/layout/Sidebar";
 
-export default function DashboardLayout({
+export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -14,7 +13,6 @@ export default function DashboardLayout({
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeMenuItem, setActiveMenuItem] = useState("dashboard");
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -44,8 +42,6 @@ export default function DashboardLayout({
       <Sidebar 
         isOpen={isSidebarOpen}
         onToggle={toggleSidebar}
-        activeItem={activeMenuItem}
-        onItemSelect={setActiveMenuItem}
       />
       
       {/* Main Content Area */}
@@ -55,7 +51,6 @@ export default function DashboardLayout({
         transition="margin-left 0.3s ease"
         p={6}
       >
-        <MainContent activeMenuItem={activeMenuItem} />
         {children}
       </Box>
     </Flex>

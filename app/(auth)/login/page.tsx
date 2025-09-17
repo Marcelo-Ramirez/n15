@@ -151,13 +151,9 @@ export default function LoginPage() {
                   size="lg"
                   w="full"
                   mt={4}
-                  isLoading={isLoading}
+                  loading={isLoading} // ✅ Cambiar isLoading por loading
                 >
-                  {isLoading
-                    ? "Procesando..."
-                    : requires2FA
-                    ? "Verificar Token"
-                    : "Iniciar Sesión"}
+                  Iniciar Sesión
                 </Button>
 
                 {!requires2FA && (

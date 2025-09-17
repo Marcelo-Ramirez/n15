@@ -49,3 +49,5 @@ next-env.d.ts
 *.sqlite3
 *.db
 /prisma/database.sqlite
+
+.codeviz/

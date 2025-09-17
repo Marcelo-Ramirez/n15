@@ -34,6 +34,7 @@ export const authOptions: AuthOptions = {
                 id: user.id.toString(),
                 name: user.name,
                 username: user.username,
+                twoFactorEnabled: user.twoFactorEnabled,
                 requires2FA: true,
               };
             }
@@ -51,6 +52,7 @@ export const authOptions: AuthOptions = {
             id: user.id.toString(),
             name: user.name,
             username: user.username,
+            twoFactorEnabled: user.twoFactorEnabled,
             requires2FA: false,
           };
         } catch {
@@ -69,6 +71,7 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.username = user.username;
         token.requires2FA = user.requires2FA || false;
+        token.twoFactorEnabled = user.twoFactorEnabled || false;
       }
       return token;
     },
@@ -77,6 +80,7 @@ export const authOptions: AuthOptions = {
         (session.user as any).id = token.id;
         (session.user as any).username = token.username;
         (session.user as any).requires2FA = token.requires2FA || false;
+        (session.user as any).twoFactorEnabled = token.twoFactorEnabled || false;
       }
       return session;
     },

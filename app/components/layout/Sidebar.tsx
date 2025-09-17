@@ -11,11 +11,13 @@ import {
 import { Avatar } from "@chakra-ui/react";
 import { signOut } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
+import { useRouter, usePathname } from "next/navigation";
 
 interface MenuItem {
   id: string;
   label: string;
   icon: string;
+  href: string;
   description?: string;
 }
 
@@ -24,57 +26,55 @@ const menuItems: MenuItem[] = [
     id: "dashboard",
     label: "Dashboard",
     icon: "🏠",
+    href: "/dashboard",
     description: "Página principal"
   },
   {
-    id: "analytics",
-    label: "Analytics",
+    id: "inventory",
+    label: "Inventario",
+    icon: "📦",
+    href: "/inventory",
+    description: "Gestión de inventario"
+  },
+  {
+    id: "reports",
+    label: "Reportes",
     icon: "📊",
-    description: "Estadísticas y métricas"
+    href: "/reports",
+    description: "Análisis y reportes"
   },
   {
-    id: "users",
-    label: "Usuarios",
-    icon: "👥",
-    description: "Gestión de usuarios"
-  },
-  {
-    id: "settings",
+    id: "config",
     label: "Configuración",
     icon: "⚙️",
+    href: "/config",
     description: "Ajustes del sistema"
-  },
-  {
-    id: "profile",
-    label: "Perfil",
-    icon: "👤",
-    description: "Mi perfil personal"
-  },
-  {
-    id: "notifications",
-    label: "Notificaciones",
-    icon: "🔔",
-    description: "Centro de notificaciones"
   },
 ];
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
-  activeItem: string;
-  onItemSelect: (itemId: string) => void;
 }
 
 export default function Sidebar({ 
   isOpen, 
-  onToggle, 
-  activeItem, 
-  onItemSelect 
+  onToggle
 }: SidebarProps) {
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     signOut({ callbackUrl: "/login" });
+  };
+
+  const handleNavigation = (href: string) => {
+    router.push(href);
+  };
+
+  const isActiveRoute = (href: string) => {
+    return pathname === href || pathname.startsWith(href + '/');
   };
 
   return (
@@ -103,7 +103,7 @@ export default function Sidebar({
         >
           {isOpen && (
             <Text fontSize="xl" fontWeight="bold" color="blue.600">
-              Mi App
+              N15 App
             </Text>
           )}
           <IconButton
@@ -118,7 +118,15 @@ export default function Sidebar({
 
         {/* User Info */}
         {isOpen && (
-          <Box p={4} borderBottom="1px solid" borderColor="gray.200">
+          <Box 
+            p={4} 
+            borderBottom="1px solid" 
+            borderColor="gray.200"
+            cursor="pointer"
+            _hover={{ bg: "gray.50" }}
+            transition="background-color 0.2s"
+            onClick={() => handleNavigation("/profile")}
+          >
             <Flex align="center" gap={3}>
               <Avatar.Root size="sm">
                 <Avatar.Fallback>
@@ -154,12 +162,12 @@ export default function Sidebar({
           {menuItems.map((item) => (
             <Button
               key={item.id}
-              variant={activeItem === item.id ? "solid" : "ghost"}
-              colorScheme={activeItem === item.id ? "blue" : "gray"}
+              variant={isActiveRoute(item.href) ? "solid" : "ghost"}
+              colorScheme={isActiveRoute(item.href) ? "blue" : "gray"}
               justifyContent={isOpen ? "flex-start" : "center"}
               size="md"
               h="48px"
-              onClick={() => onItemSelect(item.id)}
+              onClick={() => handleNavigation(item.href)}
               title={isOpen ? undefined : item.label}
             >
               <Flex align="center" gap={3} w="full">
