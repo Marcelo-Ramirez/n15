@@ -1,10 +1,20 @@
 import { ProductInput } from '@/types/product'
 
+type Thresholds = { A: number; B: number; C: number }
+
 export function enrichProducts(
   products: ProductInput[],
-  criterio: 'valor' | 'precio' | 'utilidad'
+  criterio: 'valor' | 'precio' | 'utilidad',
+  thresholds: Thresholds = { A: 80, B: 95, C: 100 } // Ahora C también se puede definir
 ) {
-  const enriched = products.map(p => {
+  if (products.length === 0) return []
+
+  // Validación de thresholds
+  if (!(thresholds.A < thresholds.B && thresholds.B < thresholds.C && thresholds.C <= 100)) {
+    throw new Error('Los thresholds deben cumplir: A < B < C ≤ 100')
+  }
+
+  const enriched = products.map((p, i) => {
     let baseValue = 0
 
     if (criterio === 'valor') {
@@ -12,12 +22,14 @@ export function enrichProducts(
     } else if (criterio === 'precio') {
       baseValue = p.unitPrice
     } else if (criterio === 'utilidad') {
-      baseValue = (p.utilityPerUnit ?? 0) * p.annualConsumption
+      const utilityPerUnit = p.unitPrice - p.costPerUnit
+      baseValue = utilityPerUnit * p.annualConsumption
     }
 
     return {
       ...p,
       annualValue: baseValue,
+      id: i + 1,
     }
   })
 
@@ -25,19 +37,31 @@ export function enrichProducts(
   const sorted = [...enriched].sort((a, b) => b.annualValue - a.annualValue)
 
   let accumulated = 0
-  return sorted.map(p => {
-    accumulated += p.annualValue
-    const percentage = (accumulated / total) * 100
 
-    let abcCategory: 'A' | 'B' | 'C' = 'C'
-    if (percentage <= 85) abcCategory = 'A'
-    else if (percentage <= 95) abcCategory = 'B'
-    else abcCategory = 'C'
+  return sorted.map((p, index) => {
+    accumulated += p.annualValue
+    const individualPercentage = (p.annualValue / total) * 100
+    const accumulatedPercentage = (accumulated / total) * 100
+
+    let abcCategory: 'A' | 'B' | 'C'
+
+    if (sorted.length === 1) {
+      abcCategory = 'A'
+    } else if (sorted.length <= 3) {
+      if (index === 0) abcCategory = 'A'
+      else if (index === 1) abcCategory = 'B'
+      else abcCategory = 'C'
+    } else {
+      if (accumulatedPercentage <= thresholds.A) abcCategory = 'A'
+      else if (accumulatedPercentage <= thresholds.B) abcCategory = 'B'
+      else abcCategory = 'C'
+    }
 
     return {
       ...p,
       abcCategory,
-      percentageOfTotal: percentage,
+      individualPercentage,
+      accumulatedPercentage,
     }
   })
 }

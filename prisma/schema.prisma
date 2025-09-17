@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,16 +8,26 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  name      String
-  password  String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                 Int       @id @default(autoincrement())
+  username           String    @unique
+  name               String
+  password           String
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  twoFactorEnabled   Boolean   @default(false)
+  twoFactorSecret    String?
+  twoFactorUpdatedAt DateTime?
 
-  // 2FA
-  twoFactorEnabled   Boolean  @default(false)
-  twoFactorSecret    String?  
-  twoFactorUpdatedAt DateTime? 
   @@map("users")
+}
+
+model Product {
+  id                Int       @id @default(autoincrement())
+  name              String
+  unitPrice         Float
+  annualConsumption Int
+  createdAt         DateTime? @default(now())
+  updatedAt         DateTime? @default(now()) @updatedAt
+
+  @@map("products")
 }
