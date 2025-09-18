@@ -91,6 +91,42 @@ export default function InventoryPage() {
     }
   };
 
+  const handleDeleteIngredient = async () => {
+    if (!editingIngredient) return;
+
+    const confirmDelete = confirm(
+      `¿Estás seguro de que quieres eliminar "${editingIngredient.name}"?\n\n` +
+      `Esta acción eliminará:\n` +
+      `- El ingrediente de la base de datos\n` +
+      `- Todos los movimientos relacionados\n` +
+      `- El historial completo del ingrediente\n\n` +
+      `Esta acción NO se puede deshacer.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`/api/inventory/ingredients/${editingIngredient.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(
+          `${result.message}\n` +
+          `Movimientos eliminados: ${result.deletedMovements}`
+        );
+        fetchIngredients();
+        setShowEditModal(false);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar');
+      }
+    } catch (error) {
+      alert("Error al eliminar el ingrediente: " + (error instanceof Error ? error.message : 'Error desconocido'));
+    }
+  };
+
   const handleAddIngredient = async () => {
     if (!addForm.name || !addForm.unit || !addForm.pricePerUnit) {
       alert("Por favor completa todos los campos requeridos (nombre, unidad, precio)");
@@ -422,19 +458,28 @@ export default function InventoryPage() {
                 />
               </Box>
               
-              <HStack pt={4}>
+              <HStack pt={4} justify="space-between">
                 <Button 
                   variant="ghost" 
                   onClick={() => setShowEditModal(false)}
                 >
                   Cancelar
                 </Button>
-                <Button 
-                  colorScheme="blue" 
-                  onClick={handleSaveEdit}
-                >
-                  Guardar
-                </Button>
+                <HStack>
+                  <Button 
+                    colorScheme="red" 
+                    variant="outline"
+                    onClick={handleDeleteIngredient}
+                  >
+                    Eliminar
+                  </Button>
+                  <Button 
+                    colorScheme="blue" 
+                    onClick={handleSaveEdit}
+                  >
+                    Guardar
+                  </Button>
+                </HStack>
               </HStack>
             </VStack>
           </Box>
