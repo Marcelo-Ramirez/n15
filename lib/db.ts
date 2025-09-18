@@ -16,8 +16,6 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefi
 export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-// =================== FUNCIONES USUARIO ===================
-
 // Función para crear un nuevo usuario
 export async function createUser(username: string, name: string, password: string): Promise<User | null> {
   try {
@@ -114,41 +112,4 @@ export async function getUserByUsername(username: string): Promise<User | null> 
     console.error("Error obteniendo usuario por username:", error);
     return null;
   }
-}
-
-// =================== FUNCIONES PRODUCTOS ===================
-
-// Tipos de productos (según ProductInput)
-export interface Product {
-  id: number;
-  name: string;
-  unitPrice: number;
-  costPerUnit: number;
-  annualConsumption: number;
-  createdAt: Date;
-}
-
-// Traer todos los productos
-export async function getProducts(): Promise<Product[]> {
-  return prisma.product.findMany();
-}
-
-// Crear un producto
-export async function createProduct(data: Omit<Product, 'id' | 'createdAt'>): Promise<Product> {
-  return prisma.product.create({ data });
-}
-
-// Traer un producto por ID
-export async function getProductById(id: number): Promise<Product | null> {
-  return prisma.product.findUnique({ where: { id } });
-}
-
-// Actualizar un producto
-export async function updateProduct(id: number, data: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<Product> {
-  return prisma.product.update({ where: { id }, data });
-}
-
-// Borrar un producto
-export async function deleteProduct(id: number): Promise<Product> {
-  return prisma.product.delete({ where: { id } });
 }
