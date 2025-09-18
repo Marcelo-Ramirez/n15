@@ -1,5 +1,5 @@
 -- Eliminar la tabla si ya existe
-DROP TABLE IF EXISTS products;
+/*DROP TABLE IF EXISTS products;
 
 -- Crear tabla products
 CREATE TABLE products (
@@ -48,3 +48,4 @@ INSERT INTO products (name, unitPrice, annualConsumption) VALUES
 ('Artículo 32', 450, 426),
 ('Artículo 21', 635, 221),
 ('Artículo 4', 450, 255);
+*/*/ *///
