@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import InventoryABC from "@/app/components/InventoryABC"; 
 import {
   Box,
   VStack,
@@ -17,6 +18,7 @@ import type { Ingredient } from "@/types/inventory";
 
 export default function InventoryPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [view, setView] = useState<"inventory" | "abc">("inventory");
   const [loading, setLoading] = useState(true);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [editForm, setEditForm] = useState({
@@ -144,17 +146,42 @@ export default function InventoryPage() {
   return (
     <Box p={6}>
       <VStack align="stretch">
-        <HStack justify="space-between" align="center">
-          <Heading size="lg" color="gray.900">Inventario de Ingredientes</Heading>
-          <Button 
-            colorScheme="green" 
-            onClick={() => setShowAddModal(true)}
-          >
-            Agregar Ingrediente
-          </Button>
-        </HStack>
+        <HStack justify="space-between" align="center" gap={4} wrap="wrap">
+  <Heading size="lg" color="gray.900">Inventario de Ingredientes</Heading>
+
+  <HStack gap={2}>
+    {/* Botón solo visible en vista inventory */}
+    {view === "inventory" && (
+      <Button 
+        colorScheme="green" 
+        onClick={() => setShowAddModal(true)}
+        size="sm"
+      >
+        Agregar Ingrediente
+      </Button>
+    )}
+
+    <Button
+      colorScheme={view === "inventory" ? "blue" : "gray"}
+      onClick={() => setView("inventory")}
+      size="sm"
+    >
+      Inventario
+    </Button>
+
+    <Button
+      colorScheme={view === "abc" ? "blue" : "gray"}
+      onClick={() => setView("abc")}
+      size="sm"
+    >
+      ABC
+    </Button>
+  </HStack>
+</HStack>
+
         
         {/* Tabla con HTML tradicional */}
+        {view === "inventory" ? (
         <Box overflowX="auto">
           <table style={{ 
             width: '100%', 
@@ -280,7 +307,9 @@ export default function InventoryPage() {
             </tbody>
           </table>
         </Box>
-
+) : (
+  <InventoryABC />
+)}
         {ingredients.length === 0 && (
           <Box textAlign="center" py={8}>
             <Text color="gray.500">No hay ingredientes registrados</Text>

@@ -19,6 +19,7 @@ interface InventoryProduct {
   abcCategory?: 'A' | 'B' | 'C'
 }
 
+// Mapea inventario a formato que usa enrichProducts
 const mapInventoryToProducts = (ingredients: Ingredient[], movements: InventoryMovement[]): InventoryProduct[] => {
   return ingredients.map(ingredient => {
     // Solo consideramos salidas
@@ -37,7 +38,7 @@ const mapInventoryToProducts = (ingredients: Ingredient[], movements: InventoryM
 const InventoryABC = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [movements, setMovements] = useState<InventoryMovement[]>([])
-  const [thresholds, setThresholds] = useState({ A: 85, B: 95, C: 100 }) // Thresholds ABC
+  const [thresholds, setThresholds] = useState({ A: 85, B: 95, C: 100 })
   const criterio: 'valor' | 'precio' | 'utilidad' = 'valor'
 
   useEffect(() => {
@@ -85,7 +86,7 @@ const InventoryABC = () => {
       {/* Inputs para thresholds */}
       <Box mb={4} display="flex" gap={4}>
         <Box>
-          <label style={{ fontSize: '0.8rem', display: 'block' }}>A (%)</label>
+          <label style={{ fontSize: '0.8rem', display: 'block', color: '#000' }}>A (%)</label>
           <Input
             type="number"
             value={thresholds.A}
@@ -99,15 +100,17 @@ const InventoryABC = () => {
             }}
             width="80px"
             size="sm"
+            bg="white"
+            color="black"
           />
         </Box>
         <Box>
-          <label style={{ fontSize: '0.8rem', display: 'block' }}>B (%)</label>
+          <label style={{ fontSize: '0.8rem', display: 'block', color: '#000' }}>B (%)</label>
           <Input
             type="number"
             value={thresholds.B}
             min={thresholds.A + 1}
-            max={100}
+            max={99}
             onChange={e => {
               const value = Number(e.target.value)
               if (value > thresholds.A && value <= 100) {
@@ -116,27 +119,38 @@ const InventoryABC = () => {
             }}
             width="80px"
             size="sm"
+            bg="white"
+            color="black"
           />
         </Box>
       </Box>
 
       {/* Tabla de inventario ABC */}
       <Box mt={8} overflowX="auto">
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
           <thead>
-            <tr>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Ingrediente</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Precio Unitario</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Consumo Anual</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Valor Anual</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Porcentaje Individual %</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Acumulado %</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Categoría ABC</th>
+            <tr style={{ backgroundColor: '#f5f5f5' }}>
+              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Ingrediente</th>
+              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Precio Unitario</th>
+              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Consumo Anual</th>
+              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Valor Anual</th>
+              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Porcentaje Individual %</th>
+              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Acumulado %</th>
+              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Categoría ABC</th>
             </tr>
           </thead>
           <tbody>
             {enriched.map(p => (
-              <tr key={p.id}>
+              <tr
+                key={p.id}
+                style={{
+                  color: '#000',
+                  backgroundColor:
+                    p.abcCategory === 'A' ? '#ffe5e5' :
+                    p.abcCategory === 'B' ? '#e5f0ff' :
+                    '#e5ffe5'
+                }}
+              >
                 <td style={{ padding: '8px' }}>{p.name}</td>
                 <td style={{ padding: '8px' }}>
                   Bs {p.unitPrice.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -153,10 +167,10 @@ const InventoryABC = () => {
                 </td>
                 <td style={{ padding: '8px' }}>
                   <Badge
-                    colorScheme={p.abcCategory === 'A' ? 'red' : p.abcCategory === 'B' ? 'orange' : 'green'}
+                    colorScheme={p.abcCategory === 'A' ? 'red' : p.abcCategory === 'B' ? 'blue' : 'green'}
                     variant="solid"
                     color="white"
-                    px={2}
+                    px={3}
                     py={1}
                     borderRadius="md"
                   >
@@ -170,7 +184,7 @@ const InventoryABC = () => {
       </Box>
 
       {/* Resumen ABC */}
-     <ABCSummary summary={summaryABC} thresholds={thresholds} />
+      <ABCSummary summary={summaryABC} thresholds={thresholds} />
 
       {/* Diagrama Pareto */}
       <Box mt={8}>
