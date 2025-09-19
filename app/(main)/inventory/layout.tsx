@@ -9,7 +9,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
   const getCurrentView = () => {
     if (pathname?.includes('/inventory/ingredient')) return 'inventory'
     if (pathname?.includes('/inventory/abc')) return 'abc'
-    if (pathname?.includes('/inventory/products')) return 'products'
+    if (pathname?.includes('/inventory/product')) return 'product'
     return 'inventory'
   }
 
@@ -19,7 +19,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
     switch (newView) {
       case 'inventory': router.push('/inventory/ingredient'); break
       case 'abc': router.push('/inventory/abc'); break
-      case 'products': router.push('/inventory/products'); break
+      case 'products': router.push('/inventory/product'); break
     }
   }
 
