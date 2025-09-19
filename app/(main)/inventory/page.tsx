@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import InventoryABC from "@/app/components/InventoryABC"; 
+import { PrintButtons } from '@/app/components/PrintableSection'
 import {
   Box,
   VStack,
@@ -20,6 +21,7 @@ export default function InventoryPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [view, setView] = useState<"inventory" | "abc">("inventory");
   const [loading, setLoading] = useState(true);
+    const printRef = useRef<HTMLDivElement>(null) // Ref para el contenido imprimible
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -159,7 +161,9 @@ export default function InventoryPage() {
       >
         Agregar Ingrediente
       </Button>
-    )}
+      
+    )
+    }
 
     <Button
       colorScheme={view === "inventory" ? "blue" : "gray"}
@@ -182,7 +186,13 @@ export default function InventoryPage() {
         
         {/* Tabla con HTML tradicional */}
         {view === "inventory" ? (
-        <Box overflowX="auto">
+        <Box overflowX="auto"  ref={printRef}>
+           <PrintButtons 
+                    targetRef={printRef}
+                    printLabel="Imprimir Inventario"
+                    colorScheme="teal"
+                    buttonSize="sm"
+                  />
           <table style={{ 
             width: '100%', 
             borderCollapse: 'collapse',

@@ -20,10 +20,13 @@ import {
 } from '@chakra-ui/react'
 
 type PrintButtonProps = {
-  targetRef: RefObject<HTMLElement>
+  targetRef: React.RefObject<HTMLElement | null>
   printLabel?: string
   pdfLabel?: string
   colorScheme?: string
+  // Nuevas props para PrintableSection
+  showButtons?: boolean
+  buttonSize?: 'sm' | 'md' | 'lg'
   onBeforePrint?: () => Promise<void> | void
   onAfterPrint?: () => void
   onPrintError?: (error: Error) => void
@@ -34,6 +37,8 @@ const Printer = ({
   printLabel = 'Imprimir',
   pdfLabel = 'Guardar PDF',
   colorScheme = 'teal',
+  showButtons = true, // Nueva prop
+  buttonSize = 'md', // Nueva prop
   onBeforePrint,
   onAfterPrint,
   onPrintError
@@ -55,11 +60,10 @@ const Printer = ({
       onAfterPrint?.()
     },
     onPrintError: (error: unknown) => {
-  const err: Error = error instanceof Error ? error : new Error(String(error))
-  console.error('Error:', err)
-  onPrintError?.(err)
-}
-,
+      const err: Error = error instanceof Error ? error : new Error(String(error))
+      console.error('Error:', err)
+      onPrintError?.(err)
+    },
     pageStyle: `
       @page {
         margin: 15mm;
@@ -127,6 +131,11 @@ const Printer = ({
     }, 200)
   }
 
+  // Si showButtons es false, no renderizar nada (para PrintableSection)
+  if (!showButtons) {
+    return null
+  }
+
   return (
     <ButtonGroup gap={3}>
       {/* Botón de Imprimir */}
@@ -134,7 +143,7 @@ const Printer = ({
         colorScheme={colorScheme} 
         onClick={handleDirectPrint}
         disabled={!targetRef.current}
-        size="md"
+        size={buttonSize}
       >
         🖨️ {printLabel}
       </Button>
@@ -150,7 +159,7 @@ const Printer = ({
           <Button 
             colorScheme="blue" 
             disabled={!targetRef.current}
-            size="md"
+            size={buttonSize}
           >
             📄 {pdfLabel}
           </Button>

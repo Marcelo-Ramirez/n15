@@ -1,13 +1,13 @@
 'use client'
 
-import { Box, Badge, Input, Button } from '@chakra-ui/react'
+import { Box, Input, Button } from '@chakra-ui/react'
 import { useState, useEffect, useRef } from 'react'
 import { enrichProducts } from '@/lib/abcUtils'
 import { InventoryMovement, Ingredient } from '@/types/inventory'
 import ABCSummary from './ABCsummary'
-import Printer from './printer'
 import ParetoChart from './recharts'
-  
+import { PrintButtons } from '@/app/components/PrintableSection'
+
 // Este tipo simula ProductInput usando movimientos de salida
 interface InventoryProduct {
   id: number
@@ -41,12 +41,10 @@ const InventoryABC = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [thresholds, setThresholds] = useState({ A: 85, B: 95, C: 100 })
-  const [showInputs, setShowInputs] = useState(false) // controla si se muestran los inputs de thresholds
+  const [showInputs, setShowInputs] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null) // Ref para el contenido imprimible
   const criterio: 'valor' | 'precio' | 'utilidad' = 'valor'
   
-  // Referencia para la impresión
-  const printRef = useRef<HTMLDivElement>(null)
-
   useEffect(() => {
     // Traer ingredientes y movimientos
     Promise.all([
@@ -89,20 +87,24 @@ const InventoryABC = () => {
 
   return (
     <Box p={4}>
-      {/* Controles que NO se imprimen */}
-      <Box mb={4} display="flex" gap={4} alignItems="center">
-        <Printer 
-          targetRef={printRef} 
-          label="Imprimir ABC" 
-          colorScheme="teal"
-        />
-        
+      
+      {/* Barra de botones A LA MISMA ALTURA */}
+      <Box mb={4} display="flex" gap={4} alignItems="center" justifyContent="space-between">
+        {/* Tu botón de configuración */}
         <Button
           colorScheme="blue"
           onClick={() => setShowInputs(prev => !prev)}
         >
           {showInputs ? 'Ocultar Configuración' : 'Configurar Umbrales'}
         </Button>
+        
+        {/* Los botones de impresión al mismo nivel usando el PrintButtons */}
+        <PrintButtons 
+          targetRef={printRef}
+          printLabel="Imprimir Inventario"
+          colorScheme="teal"
+          buttonSize="sm"
+        />
       </Box>
 
       {/* Inputs para thresholds - NO se imprimen */}
