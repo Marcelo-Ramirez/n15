@@ -1,12 +1,13 @@
 'use client'
 
-import { Box, Badge, Input } from '@chakra-ui/react'
-import { useState, useEffect } from 'react'
+import { Box, Badge, Input, Button } from '@chakra-ui/react'
+import { useState, useEffect, useRef } from 'react'
 import { enrichProducts } from '@/lib/abcUtils'
 import { InventoryMovement, Ingredient } from '@/types/inventory'
 import ABCSummary from './ABCsummary'
+import Printer from './printer'
 import ParetoChart from './recharts'
-
+  
 // Este tipo simula ProductInput usando movimientos de salida
 interface InventoryProduct {
   id: number
@@ -20,7 +21,8 @@ interface InventoryProduct {
 }
 
 // Mapea inventario a formato que usa enrichProducts
-const mapInventoryToProducts = (ingredients: Ingredient[], movements: InventoryMovement[]): InventoryProduct[] => {
+const mapInventoryToProducts = (ingredients: Ingredient[], movements: InventoryMovement[]): 
+InventoryProduct[] => {
   return ingredients.map(ingredient => {
     // Solo consideramos salidas
     const salidaMovs = movements.filter(m => m.ingredientId === ingredient.id && m.movementType === 'salida')
@@ -39,7 +41,11 @@ const InventoryABC = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [thresholds, setThresholds] = useState({ A: 85, B: 95, C: 100 })
+  const [showInputs, setShowInputs] = useState(false) // controla si se muestran los inputs de thresholds
   const criterio: 'valor' | 'precio' | 'utilidad' = 'valor'
+  
+  // Referencia para la impresión
+  const printRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Traer ingredientes y movimientos
@@ -55,7 +61,7 @@ const InventoryABC = () => {
   // Transformamos a formato que espera enrichProducts
   const products = mapInventoryToProducts(ingredients, movements)
   const enriched = enrichProducts(products, criterio, thresholds)
-
+  
   // Resumen ABC
   const summaryABC = ['A', 'B', 'C'].map(category => {
     const items = enriched.filter(p => p.abcCategory === category)
@@ -82,113 +88,172 @@ const InventoryABC = () => {
   }))
 
   return (
-    <Box>
-      {/* Inputs para thresholds */}
-      <Box mb={4} display="flex" gap={4}>
-        <Box>
-          <label style={{ fontSize: '0.8rem', display: 'block', color: '#000' }}>A (%)</label>
-          <Input
-            type="number"
-            value={thresholds.A}
-            min={0}
-            max={thresholds.B - 1}
-            onChange={e => {
-              const value = Number(e.target.value)
-              if (value >= 0 && value < thresholds.B) {
-                setThresholds({ ...thresholds, A: value })
-              }
-            }}
-            width="80px"
-            size="sm"
-            bg="white"
-            color="black"
-          />
-        </Box>
-        <Box>
-          <label style={{ fontSize: '0.8rem', display: 'block', color: '#000' }}>B (%)</label>
-          <Input
-            type="number"
-            value={thresholds.B}
-            min={thresholds.A + 1}
-            max={99}
-            onChange={e => {
-              const value = Number(e.target.value)
-              if (value > thresholds.A && value <= 100) {
-                setThresholds({ ...thresholds, B: value })
-              }
-            }}
-            width="80px"
-            size="sm"
-            bg="white"
-            color="black"
-          />
-        </Box>
+    <Box p={4}>
+      {/* Controles que NO se imprimen */}
+      <Box mb={4} display="flex" gap={4} alignItems="center">
+        <Printer 
+          targetRef={printRef} 
+          label="Imprimir ABC" 
+          colorScheme="teal"
+        />
+        
+        <Button
+          colorScheme="blue"
+          onClick={() => setShowInputs(prev => !prev)}
+        >
+          {showInputs ? 'Ocultar Configuración' : 'Configurar Umbrales'}
+        </Button>
       </Box>
 
-      {/* Tabla de inventario ABC */}
-      <Box mt={8} overflowX="auto">
-        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f5f5f5' }}>
-              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Ingrediente</th>
-              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Precio Unitario</th>
-              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Consumo Anual</th>
-              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Valor Anual</th>
-              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Porcentaje Individual %</th>
-              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Acumulado %</th>
-              <th style={{ padding: '8px', textAlign: 'left', color: '#000' }}>Categoría ABC</th>
-            </tr>
-          </thead>
-          <tbody>
-            {enriched.map(p => (
-              <tr
-                key={p.id}
-                style={{
-                  color: '#000',
-                  backgroundColor:
-                    p.abcCategory === 'A' ? '#ffe5e5' :
-                    p.abcCategory === 'B' ? '#e5f0ff' :
-                    '#e5ffe5'
+      {/* Inputs para thresholds - NO se imprimen */}
+      {showInputs && (
+        <Box mb={6} p={4} bg="gray.50" borderRadius="md">
+          <Box display="flex" gap={4} alignItems="end">
+            <Box>
+              <label style={{ fontSize: '0.8rem', display: 'block', color: '#000', marginBottom: '4px' }}>
+                Umbral A (%)
+              </label>
+              <Input
+                type="number"
+                value={thresholds.A}
+                min={0}
+                max={thresholds.B - 1}
+                onChange={e => {
+                  const value = Number(e.target.value)
+                  if (value >= 0 && value < thresholds.B) {
+                    setThresholds({ ...thresholds, A: value })
+                  }
                 }}
-              >
-                <td style={{ padding: '8px' }}>{p.name}</td>
-                <td style={{ padding: '8px' }}>
-                  Bs {p.unitPrice.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                <td style={{ padding: '8px' }}>{p.annualConsumption.toLocaleString('es-BO')}</td>
-                <td style={{ padding: '8px' }}>
-                  Bs {(p.annualValue || 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                <td style={{ padding: '8px' }}>
-                  {p.individualPercentage?.toLocaleString('es-BO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
-                </td>
-                <td style={{ padding: '8px' }}>
-                  {p.accumulatedPercentage?.toLocaleString('es-BO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
-                </td>
-                <td style={{ padding: '8px' }}>
-                  <Badge
-                    colorScheme={p.abcCategory === 'A' ? 'red' : p.abcCategory === 'B' ? 'blue' : 'green'}
-                    variant="solid"
-                    color="white"
-                    px={3}
-                    py={1}
-                    borderRadius="md"
-                  >
-                    {p.abcCategory}
-                  </Badge>
-                </td>
+                width="100px"
+                size="sm"
+                bg="white"
+                color="black"
+              />
+            </Box>
+            <Box>
+              <label style={{ fontSize: '0.8rem', display: 'block', color: '#000', marginBottom: '4px' }}>
+                Umbral B (%)
+              </label>
+              <Input
+                type="number"
+                value={thresholds.B}
+                min={thresholds.A + 1}
+                max={99}
+                onChange={e => {
+                  const value = Number(e.target.value)
+                  if (value > thresholds.A && value <= 100) {
+                    setThresholds({ ...thresholds, B: value })
+                  }
+                }}
+                width="100px"
+                size="sm"
+                bg="white"
+                color="black"
+              />
+            </Box>
+          </Box>
+        </Box>
+      )}
+
+      {/* Contenido que SÍ se imprime */}
+      <Box ref={printRef}>
+        {/* Título del reporte */}
+        <Box mb={6} textAlign="center">
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#000', marginBottom: '8px' }}>
+            Análisis ABC de Inventario
+          </h1>
+          <p style={{ color: '#666', fontSize: '14px' }}>
+            Fecha: {new Date().toLocaleDateString('es-BO')}
+          </p>
+        </Box>
+
+        {/* Tabla de inventario ABC */}
+        <Box overflowX="auto" mb={8}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f5f5f5' }}>
+                <th style={{ padding: '12px 8px', textAlign: 'left', color: '#000', borderBottom: '2px solid #ddd' }}>
+                  Ingrediente
+                </th>
+                <th style={{ padding: '12px 8px', textAlign: 'right', color: '#000', borderBottom: '2px solid #ddd' }}>
+                  Precio Unitario
+                </th>
+                <th style={{ padding: '12px 8px', textAlign: 'right', color: '#000', borderBottom: '2px solid #ddd' }}>
+                  Consumo Anual
+                </th>
+                <th style={{ padding: '12px 8px', textAlign: 'right', color: '#000', borderBottom: '2px solid #ddd' }}>
+                  Valor Anual
+                </th>
+                <th style={{ padding: '12px 8px', textAlign: 'right', color: '#000', borderBottom: '2px solid #ddd' }}>
+                  % Individual
+                </th>
+                <th style={{ padding: '12px 8px', textAlign: 'right', color: '#000', borderBottom: '2px solid #ddd' }}>
+                  % Acumulado
+                </th>
+                <th style={{ padding: '12px 8px', textAlign: 'center', color: '#000', borderBottom: '2px solid #ddd' }}>
+                  Categoría
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Box>
+            </thead>
+            <tbody>
+              {enriched.map((p, index) => (
+                <tr
+                  key={p.id}
+                  style={{
+                    color: '#000',
+                    backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9',
+                    borderLeft: `4px solid ${
+                      p.abcCategory === 'A' ? '#e53e3e' :
+                      p.abcCategory === 'B' ? '#3182ce' :
+                      '#38a169'
+                    }`
+                  }}
+                >
+                  <td style={{ padding: '12px 8px', borderBottom: '1px solid #eee' }}>
+                    {p.name}
+                  </td>
+                  <td style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '1px solid #eee' }}>
+                    Bs {p.unitPrice.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '1px solid #eee' }}>
+                    {p.annualConsumption.toLocaleString('es-BO')}
+                  </td>
+                  <td style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '1px solid #eee' }}>
+                    Bs {(p.annualValue || 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '1px solid #eee' }}>
+                    {p.individualPercentage?.toLocaleString('es-BO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                  </td>
+                  <td style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '1px solid #eee' }}>
+                    {p.accumulatedPercentage?.toLocaleString('es-BO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                  </td>
+                  <td style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
+                    <span
+                      style={{
+                        backgroundColor: p.abcCategory === 'A' ? '#e53e3e' : p.abcCategory === 'B' ? '#3182ce' : '#38a169',
+                        color: 'white',
+                        padding: '4px 12px',
+                        borderRadius: '4px',
+                        fontWeight: 'bold',
+                        fontSize: '14px'
+                      }}
+                    >
+                      {p.abcCategory}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Box>
+                
+        {/* Resumen ABC */}
+        <ABCSummary summary={summaryABC} thresholds={thresholds} />
 
-      {/* Resumen ABC */}
-      <ABCSummary summary={summaryABC} thresholds={thresholds} />
-
-      {/* Diagrama Pareto */}
-      <Box mt={8}>
-        <ParetoChart data={paretoData} thresholds={thresholds} />
+        {/* Diagrama Pareto */}
+        <Box mt={8}>
+          <ParetoChart data={paretoData} thresholds={thresholds} />
+        </Box>
       </Box>
     </Box>
   )
