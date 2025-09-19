@@ -33,7 +33,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
         <Button colorScheme={view === 'abc' ? 'blue' : 'gray'} onClick={() => handleChangeView('abc')}>
           ABC
         </Button>
-        <Button colorScheme={view === 'products' ? 'blue' : 'gray'} onClick={() => handleChangeView('products')}>
+        <Button colorScheme={view === 'product' ? 'blue' : 'gray'} onClick={() => handleChangeView('products')}>
           Productos
         </Button>
       </HStack>
