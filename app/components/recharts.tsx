@@ -1,37 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartOptions,
-  TooltipItem,
-  Tick
-} from 'chart.js'
-import ChartDataLabels, { Context as DatalabelsContext } from 'chartjs-plugin-datalabels'
-import annotationPlugin from 'chartjs-plugin-annotation'
-import { Chart } from 'react-chartjs-2'
 import { Box, Button } from '@chakra-ui/react'
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Title,
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-  ChartDataLabels,
-  annotationPlugin
-)
+  ResponsiveContainer,
+  ReferenceLine,
+  LabelList
+} from 'recharts'
 
 type ParetoData = {
   name: string
@@ -48,176 +31,133 @@ type ParetoChartProps = {
 const ParetoChart = ({
   data,
   thresholds = { A: 70, B: 90, C: 100 },
-  chartHeight = 500,
+  chartHeight = 600,
 }: ParetoChartProps) => {
   const [showABC, setShowABC] = useState(false)
 
-  const labels = data.map(d => d.name)
-  const values = data.map(d => d.value)
-  const accumulated = data.map(d => d.accumulated)
+  // Mantener datos exactamente como el original
+  const chartData = data.map(item => ({
+    name: item.name,
+    value: item.value,
+    accumulated: item.accumulated
+  }))
 
-  // Definir colores ABC
-  const categories = [
-    { name: 'A', maxAccum: thresholds.A, color: '#e53e3e' }, // rojo
-    { name: 'B', maxAccum: thresholds.B, color: '#3182ce' }, // azul
-    { name: 'C', maxAccum: thresholds.C, color: '#38a169' }, // verde
-  ]
-
-  const dataChart = {
-    labels,
-    datasets: [
-      {
-        type: 'bar' as const,
-        label: 'Valor',
-        data: values,
-        backgroundColor: '#4299e1', // azul claro para las barras
-        borderColor: '#2b6cb0',
-        borderWidth: 1,
-        yAxisID: 'y1',
-      },
-      {
-        type: 'line' as const,
-        label: 'Acumulado',
-        data: accumulated,
-        borderColor: '#f56500', // naranja
-        backgroundColor: '#f56500',
-        yAxisID: 'y2',
-        tension: 0.2,
-        fill: false,
-        pointBackgroundColor: '#f56500',
-        pointBorderColor: '#c53030',
-        pointRadius: 4,
-        borderWidth: 3,
-      },
-    ],
+  // Tooltip exacto al original
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          color: '#2d3748',
+          border: '1px solid #e2e8f0',
+          borderRadius: '4px',
+          padding: '8px'
+        }}>
+          <p style={{ margin: '0 0 4px 0' }}>{label}</p>
+          {payload.map((entry: any, index: number) => {
+            if (entry.dataKey === 'accumulated') {
+              return <p key={index} style={{ margin: '0', color: entry.color }}>
+                Acumulado: {(entry.value as number).toFixed(1)}%
+              </p>
+            } else {
+              return <p key={index} style={{ margin: '0', color: entry.color }}>
+                Valor: {(entry.value as number).toLocaleString()}
+              </p>
+            }
+          })}
+        </div>
+      )
+    }
+    return null
   }
 
-  // Anotaciones solo si showABC es true
-  const abcAnnotations = showABC
-    ? categories.reduce((acc, cat) => {
-        acc[cat.name + '_line'] = {
-          type: 'line' as const,
-          yMin: cat.maxAccum,
-          yMax: cat.maxAccum,
-          borderColor: cat.color,
-          borderWidth: 2,
-          borderDash: [5, 5], // línea punteada
-          yScaleID: 'y2',
-        }
-        acc[cat.name + '_label'] = {
-          type: 'label' as const,
-          xValue: Math.floor(labels.length / 2),
-          yValue: cat.maxAccum,
-          xScaleID: 'x',
-          yScaleID: 'y2',
-          backgroundColor: cat.color,
-          color: 'white',
-          font: { size: 12, weight: 'bold' },
-          content: [`Categoría ${cat.name}`],
-          yAdjust: 15,
-          position: 'center',
-          borderRadius: 4,
-          padding: 2,
-        }
-        return acc
-      }, {} as Record<string, any>)
-    : {}
+  // Labels para barras mejorados - posición ajustada para evitar solapamiento
+  const renderBarLabel = (props: any) => {
+    const { x, y, width, value } = props
+    return (
+      <g>
+        <rect
+          x={x + width/2 - 25}
+          y={y - 25}
+          width="50"
+          height="18"
+          fill="rgba(255, 255, 255, 0.9)"
+          stroke="rgba(0, 0, 0, 0.1)"
+          strokeWidth="1"
+          rx="4"
+        />
+        <text
+          x={x + width/2}
+          y={y - 12}
+          fill="#2d3748"
+          textAnchor="middle"
+          fontSize="10"
+          fontWeight="bold"
+        >
+          {value.toLocaleString()}
+        </text>
+      </g>
+    )
+  }
 
-  const options: ChartOptions<'bar' | 'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { 
-        labels: { 
-          color: '#2d3748', // texto oscuro
-          font: { size: 12, weight: 'bold' }
-        } 
-      },
-      tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        titleColor: '#2d3748',
-        bodyColor: '#2d3748',
-        borderColor: '#e2e8f0',
-        borderWidth: 1,
-        callbacks: {
-          label: function (tooltipItem: TooltipItem<'bar' | 'line'>) {
-            if (tooltipItem.dataset.type === 'line') {
-              return `Acumulado: ${(tooltipItem.raw as number).toFixed(1)}%`
-            }
-            const value = tooltipItem.raw as number
-            return `Valor: ${value.toLocaleString()}`
-          },
-        },
-      },
-      datalabels: {
-        color: '#2d3748', // texto oscuro
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        borderRadius: 3,
-        padding: 2,
-        font: { size: 10, weight: 'bold' },
-        anchor: 'end',
-        align: 'top',
-        formatter: (value: number, context: DatalabelsContext) => {
-          if (context.dataset.type === 'line') {
-            return (value as number).toFixed(1) + '%';
-          }
-          return value.toLocaleString();
-        },
-      },
-      annotation: {
-        annotations: abcAnnotations,
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: '#2d3748', // texto oscuro
-          font: { size: 11 }
-        },
-        grid: {
-          color: '#e2e8f0', // gris claro
-          lineWidth: 1,
-        }
-      },
-      y1: {
-        type: 'linear',
-        position: 'left',
-        ticks: {
-          color: '#2d3748', // texto oscuro
-          font: { size: 11 }
-        },
-        grid: {
-          color: '#e2e8f0', // gris claro
-          lineWidth: 1,
-        },
-        title: { 
-          display: true, 
-          text: 'Valor', 
-          color: '#2d3748',
-          font: { size: 12, weight: 'bold' }
-        },
-      },
-      y2: {
-        type: 'linear',
-        position: 'right',
-        ticks: {
-          color: '#f56500', // naranja para el eje acumulado
-          font: { size: 11 },
-          callback: (tickValue: string | number, index: number, ticks: Tick[]) =>
-            typeof tickValue === 'number' ? `${tickValue}%` : tickValue,
-        },
-        grid: { 
-          drawOnChartArea: false,
-          color: '#fed7aa', // naranja claro
-        },
-        title: { 
-          display: true, 
-          text: 'Acumulado %', 
-          color: '#f56500',
-          font: { size: 12, weight: 'bold' }
-        },
-      },
-    },
+  // Labels para línea mejorados - posición ajustada
+  const renderLineLabel = (props: any) => {
+    const { x, y, value } = props
+    return (
+      <g>
+        <rect
+          x={x - 20}
+          y={y + 8}
+          width="40"
+          height="16"
+          fill="rgba(255, 255, 255, 0.9)"
+          stroke="rgba(245, 101, 0, 0.3)"
+          strokeWidth="1"
+          rx="3"
+        />
+        <text
+          x={x}
+          y={y + 20}
+          fill="#f56500"
+          textAnchor="middle"
+          fontSize="10"
+          fontWeight="bold"
+        >
+          {(value as number).toFixed(1)}%
+        </text>
+      </g>
+    )
+  }
+
+  // Componente personalizado para los labels de categorías ABC mejorado
+  const CustomReferenceLabel = ({ viewBox, value, color }: any) => {
+    const { x, y, width } = viewBox
+    const centerX = Math.floor(width / 2)
+    
+    return (
+      <g>
+        <rect
+          x={centerX - 35}
+          y={y + 0}
+          width="70"
+          height="22"
+          fill={color}
+          rx="6"
+          stroke="rgba(255, 255, 255, 0.3)"
+          strokeWidth="1"
+        />
+        <text
+          x={centerX}
+          y={y+20}
+          fill="white"
+          textAnchor="middle"
+          fontSize="12"
+          fontWeight="bold"
+        >
+          Cat. {value}
+        </text>
+      </g>
+    )
   }
 
   return (
@@ -232,7 +172,143 @@ const ParetoChart = ({
       </Button>
       
       <Box w="100%" h={`${chartHeight}px`} bg="gray.50" borderRadius="md" p={2}>
-        <Chart type="bar" data={dataChart} options={options} />
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart 
+            data={chartData} 
+            margin={{ top: 50, right: 50, left: 60, bottom: 80 }}
+          >
+            {/* Grid igual al original */}
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            
+            {/* Eje X mejorado - nombres en vertical y mejor espaciado */}
+            <XAxis 
+              dataKey="name" 
+              tick={{ fontSize: 10, fill: '#2d3748' }}
+              axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+              tickLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+              angle={-45}
+              textAnchor="end"
+              height={80}
+              interval={0}
+            />
+            
+            {/* Eje Y izquierdo mejorado - más espacio para evitar solapamiento */}
+            <YAxis 
+              yAxisId="y1"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickCount={8}
+              tick={{ fontSize: 11, fill: '#2d3748' }}
+              axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+              tickLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+              tickFormatter={(value) => value.toLocaleString()}
+              width={50}
+              label={{ 
+                value: 'Valor', 
+                angle: -90, 
+                position: 'insideLeft',
+                style: { 
+                  textAnchor: 'middle', 
+                  fill: '#2d3748',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                },
+                offset: -10
+              }}
+            />
+            
+            {/* Eje Y derecho mejorado - más espacio */}
+            <YAxis 
+              yAxisId="y2" 
+              orientation="right"
+              domain={[0, 100]}
+              ticks={[0, 20, 40, 60, 80, 100]}
+              tick={{ fontSize: 11, fill: '#f56500' }}
+              axisLine={{ stroke: '#fed7aa', strokeWidth: 1 }}
+              tickLine={{ stroke: '#fed7aa', strokeWidth: 1 }}
+              tickFormatter={(value) => `${value}%`}
+              width={50}
+              label={{ 
+                value: 'Acumulado %', 
+                angle: 90, 
+                position: 'insideRight',
+                style: { 
+                  textAnchor: 'middle', 
+                  fill: '#f56500',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                },
+                offset: -10
+              }}
+            />
+            
+            <Tooltip content={<CustomTooltip />} />
+            
+            <Legend 
+              wrapperStyle={{ 
+                paddingTop: '20px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                color: '#2d3748'
+              }}
+            />
+            
+            {/* Barras exactas al original */}
+            <Bar 
+              yAxisId="y1"
+              dataKey="value" 
+              fill="#4299e1"
+              stroke="#2b6cb0"
+              strokeWidth={1}
+              name="Valor"
+            >
+              <LabelList content={renderBarLabel} />
+            </Bar>
+            
+            {/* Línea exacta al original */}
+            <Line 
+              yAxisId="y2"
+              type="monotone" 
+              dataKey="accumulated" 
+              stroke="#f56500" 
+              strokeWidth={3}
+              dot={{ fill: '#f56500', stroke: '#c53030', strokeWidth: 2, r: 4 }}
+              name="Acumulado"
+            >
+              <LabelList content={renderLineLabel} />
+            </Line>
+            
+            {/* Líneas ABC con labels personalizados mejorados */}
+            {showABC && (
+              <>
+                <ReferenceLine 
+                  yAxisId="y2"
+                  y={thresholds.A} 
+                  stroke="#e53e3e" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  label={<CustomReferenceLabel value="A" color="#e53e3e" />}
+                />
+                <ReferenceLine 
+                  yAxisId="y2"
+                  y={thresholds.B} 
+                  stroke="#3182ce" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  label={<CustomReferenceLabel value="B" color="#3182ce" />}
+                />
+                <ReferenceLine 
+                  yAxisId="y2"
+                  y={thresholds.C} 
+                  stroke="#38a169" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  label={<CustomReferenceLabel value="C" color="#38a169" />}
+                />
+              </>
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
       </Box>
     </Box>
   )

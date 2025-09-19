@@ -6,11 +6,11 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 // GET - Obtener historial de movimientos de un ingrediente
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const resolvedParams = await params;
-const ingredientId = parseInt(resolvedParams.id);
+    const ingredientId = parseInt(resolvedParams.id);
 
     // Obtener el ingrediente
     const ingredient = await prisma.ingredient.findUnique({
@@ -51,7 +51,7 @@ const ingredientId = parseInt(resolvedParams.id);
 // POST - Crear un movimiento de inventario
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -129,7 +129,7 @@ export async function POST(
 // PUT - Actualizar un ingrediente
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -137,7 +137,8 @@ export async function PUT(
   }
 
   try {
-    const ingredientId = parseInt(params.id);
+    const resolvedParams = await params;
+    const ingredientId = parseInt(resolvedParams.id);
     const { name, unit, reorderPoint, pricePerUnit } = await req.json();
 
     if (!name || !unit || pricePerUnit === undefined) {

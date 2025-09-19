@@ -77,42 +77,177 @@ const Printer = ({
           font-family: 'Arial', sans-serif;
         }
         
+        /* === CONTROL DE SALTOS DE PÁGINA PARA TABLAS === */
         table {
-          page-break-inside: avoid;
+          page-break-inside: auto !important;
           border-collapse: collapse !important;
           width: 100% !important;
+          /* Evita que se corte al final de página */
+          break-inside: auto !important;
         }
         
         thead {
-          display: table-header-group;
+          display: table-header-group !important;
+          /* Repetir encabezados en cada página */
+          break-inside: avoid !important;
+        }
+        
+        tbody {
+          display: table-row-group !important;
         }
         
         tr {
-          page-break-inside: avoid;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
         }
         
         th, td {
           border: 1px solid #ddd !important;
           padding: 8px !important;
           font-size: 12px !important;
+          page-break-inside: avoid !important;
         }
         
-        /* Ocultar elementos innecesarios */
-        button, .no-print, nav, aside {
+        /* === CONTROL DE SALTOS DE PÁGINA PARA GRÁFICOS === */
+        /* Contenedores de gráficos de Recharts */
+        .recharts-wrapper,
+        .recharts-responsive-container {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          /* Si es muy alto, permitir salto antes */
+          page-break-before: auto !important;
+          margin-bottom: 20px !important;
+          /* Asegurar que se muestren todos los elementos */
+          overflow: visible !important;
+        }
+        
+        /* Canvas y SVG de gráficos */
+        canvas, svg {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          max-width: 100% !important;
+          height: auto !important;
+          /* Ajustar altura máxima para que quepa en página */
+          max-height: 250mm !important;
+          /* CRÍTICO: Forzar visibilidad de todos los elementos SVG */
+          overflow: visible !important;
+        }
+        
+        /* === ESTILOS ESPECÍFICOS PARA RECHARTS === */
+        /* Asegurar que se impriman todos los elementos del gráfico */
+        .recharts-cartesian-axis,
+        .recharts-cartesian-axis-tick,
+        .recharts-cartesian-axis-tick-line,
+        .recharts-cartesian-axis-tick-value {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        
+        /* Eje Y derecho específicamente */
+        .recharts-yAxis.recharts-yAxis-right,
+        .recharts-yAxis.recharts-yAxis-right .recharts-cartesian-axis-tick-value {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          fill: #f56500 !important;
+        }
+        
+        /* Labels y texto en general */
+        .recharts-text,
+        .recharts-label {
+          fill: #000 !important;
+          font-size: 11px !important;
+          font-family: 'Arial', sans-serif !important;
+        }
+        
+        /* Líneas y barras */
+        .recharts-bar,
+        .recharts-line,
+        .recharts-area {
+          opacity: 1 !important;
+        }
+        
+        /* Grid y ejes */
+        .recharts-cartesian-grid line {
+          stroke: #e2e8f0 !important;
+          stroke-dasharray: 3 3 !important;
+        }
+        
+        /* Leyenda */
+        .recharts-legend-wrapper {
+          display: block !important;
+          visibility: visible !important;
+        }
+        
+        /* Tooltip debe estar oculto en impresión */
+        .recharts-tooltip-wrapper {
           display: none !important;
         }
         
-        /* Mejorar legibilidad */
-        h1, h2, h3 {
-          color: #000 !important;
-          page-break-after: avoid;
+        /* === ELEMENTOS GENERALES === */
+        /* Contenedores de componentes */
+        .chart-container,
+        .table-container,
+        .print-section {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          margin-bottom: 15px !important;
         }
         
-        /* Estilos para gráficos */
-        canvas {
-          page-break-inside: avoid;
-          max-width: 100% !important;
-          height: auto !important;
+        /* Títulos y encabezados */
+        h1, h2, h3, h4, h5, h6 {
+          color: #000 !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+          /* Mantener con el contenido siguiente */
+          orphans: 3 !important;
+          widows: 3 !important;
+        }
+        
+        /* Párrafos y contenido de texto */
+        p, div {
+          orphans: 2 !important;
+          widows: 2 !important;
+        }
+        
+        /* === FORZAR SALTO DE PÁGINA === */
+        /* Clase utilitaria para forzar salto antes */
+        .page-break-before {
+          page-break-before: always !important;
+          break-before: page !important;
+        }
+        
+        /* Clase utilitaria para forzar salto después */
+        .page-break-after {
+          page-break-after: always !important;
+          break-after: page !important;
+        }
+        
+        /* Clase para evitar saltos dentro del elemento */
+        .keep-together {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        /* Ocultar elementos innecesarios */
+        button, .no-print, nav, aside, .print-hide {
+          display: none !important;
+        }
+        
+        /* === ESPACIADO Y MÁRGENES === */
+        /* Espaciado entre secciones */
+        .print-section + .print-section {
+          margin-top: 25px !important;
+        }
+        
+        /* Ajuste de márgenes para mejor uso del espacio */
+        * {
+          margin-top: 0 !important;
+        }
+        
+        *:first-child {
+          margin-top: 0 !important;
         }
       }
     `

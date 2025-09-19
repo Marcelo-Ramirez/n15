@@ -88,8 +88,8 @@ const InventoryABC = () => {
   return (
     <Box p={4}>
       
-      {/* Barra de botones A LA MISMA ALTURA */}
-      <Box mb={4} display="flex" gap={4} alignItems="center" justifyContent="space-between">
+      {/* Barra de botones A LA MISMA ALTURA - NO SE IMPRIME */}
+      <Box mb={4} display="flex" gap={4} alignItems="center" justifyContent="space-between" className="no-print">
         {/* Tu botón de configuración */}
         <Button
           colorScheme="blue"
@@ -109,7 +109,7 @@ const InventoryABC = () => {
 
       {/* Inputs para thresholds - NO se imprimen */}
       {showInputs && (
-        <Box mb={6} p={4} bg="gray.50" borderRadius="md">
+        <Box mb={6} p={4} bg="gray.50" borderRadius="md" className="no-print">
           <Box display="flex" gap={4} alignItems="end">
             <Box>
               <label style={{ fontSize: '0.8rem', display: 'block', color: '#000', marginBottom: '4px' }}>
@@ -169,8 +169,8 @@ const InventoryABC = () => {
           </p>
         </Box>
 
-        {/* Tabla de inventario ABC */}
-        <Box overflowX="auto" mb={8}>
+        {/* Tabla de inventario ABC - MANTENER JUNTAS LAS FILAS */}
+        <Box overflowX="auto" mb={8} className="keep-together">
           <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
             <thead>
               <tr style={{ backgroundColor: '#f5f5f5' }}>
@@ -249,11 +249,16 @@ const InventoryABC = () => {
           </table>
         </Box>
                 
-        {/* Resumen ABC */}
-        <ABCSummary summary={summaryABC} thresholds={thresholds} />
+        {/* Resumen ABC - MANTENER JUNTO */}
+        <Box className="keep-together">
+          <ABCSummary summary={summaryABC} thresholds={thresholds} />
+        </Box>
 
-        {/* Diagrama Pareto */}
-        <Box mt={8}>
+        {/* Diagrama Pareto - CONTENEDOR ESPECIAL PARA IMPRESIÓN */}
+        <Box mt={8} className="keep-together chart-container">
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#000', marginBottom: '16px' }}>
+            Diagrama de Pareto
+          </h2>
           <ParetoChart data={paretoData} thresholds={thresholds} />
         </Box>
       </Box>

@@ -143,7 +143,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <Box p={6}>
+    <Box p={6} ref={printRef}>
       <VStack align="stretch">
         <HStack justify="space-between" align="center" gap={4} wrap="wrap">
           <Heading size="lg" color="gray.900">Inventario de Ingredientes</Heading>
@@ -166,7 +166,7 @@ export default function InventoryPage() {
           </HStack>
         </HStack>
 
-        <Box overflowX="auto" ref={printRef}>
+        <Box overflowX="auto" >
           <table style={{ 
             width: '100%', 
             borderCollapse: 'collapse',
