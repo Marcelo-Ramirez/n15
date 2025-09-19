@@ -22,6 +22,10 @@ model User {
 
   // Relaciones de inventario
   movements          InventoryMovement[] @relation("MovementUser")
+
+  // Relaciones de productos
+  productMovements   ProductMovement[]
+  orders             OrderClient[]
   
   @@map("users")
 }
@@ -35,10 +39,10 @@ model Ingredient {
   pricePerUnit    Float   @map("price_per_unit")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
-  
 
   // Relaciones
   movements       InventoryMovement[]
+  products        ProductIngredient[]
   
   @@map("ingredients")
 }
@@ -59,4 +63,70 @@ model InventoryMovement {
   user             User       @relation("MovementUser", fields: [userId], references: [id])
   
   @@map("inventory_movements")
+}
+
+model Product {
+  id              Int               @id @default(autoincrement())
+  name            String
+  description     String?
+  costPerUnit     Float             @map("cost_per_unit")
+  tipo            String
+  sabor           String?
+  currentQuantity Float   @default(0) @map("current_quantity")
+  imagePath       String?           @map("image_path")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relaciones
+  movements       ProductMovement[]
+  orders          OrderClient[]
+  ingredients     ProductIngredient[]
+
+  @@map("products")
+}
+
+model ProductMovement {
+  id               Int      @id @default(autoincrement())
+  productId        Int      @map("product_id")
+  userId           Int      @map("user_id")
+  typeMovement     String   @map("movement_type") // 'entrada', 'salida'
+  reason           String   // 'compra', 'venta', 'ajuste', etc.
+  quantity         Float
+  previousQuantity Float    @map("previous_quantity")
+  newQuantity      Float    @map("new_quantity")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@map("product_movements")
+}
+
+model OrderClient {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  productId  Int      @map("product_id")
+  quantity   Int
+  status     String   // 'pendiente', 'pagado', 'cancelado', etc.
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  user       User     @relation(fields: [userId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_clients")
+}
+
+model ProductIngredient {
+  id           Int        @id @default(autoincrement())
+  productId    Int        @map("product_id")
+  ingredientId Int        @map("ingredient_id")
+  quantity     Float      // cantidad de ingrediente usada en el producto
+
+  // Relaciones
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@map("product_ingredients")
 }

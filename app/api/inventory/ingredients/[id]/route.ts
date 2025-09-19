@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params;
-    const ingredientId = parseInt(resolvedParams.id);
+const ingredientId = parseInt(resolvedParams.id);
 
     // Obtener el ingrediente
     const ingredient = await prisma.ingredient.findUnique({
@@ -86,7 +86,6 @@ export async function POST(
     const quantityChange = movementType === 'entrada' ? quantity : -quantity;
     const newQuantity = previousQuantity + quantityChange;
 
-    // Validar que no quede en negativo
     if (newQuantity < 0) {
       return NextResponse.json(
         { error: "No hay suficiente stock disponible" },
@@ -94,9 +93,7 @@ export async function POST(
       );
     }
 
-    // Crear el movimiento en una transacción
     const result = await prisma.$transaction(async (tx) => {
-      // Crear el movimiento
       const movement = await tx.inventoryMovement.create({
         data: {
           ingredientId,
@@ -109,7 +106,6 @@ export async function POST(
         }
       });
 
-      // Actualizar el stock del ingrediente
       const updatedIngredient = await tx.ingredient.update({
         where: { id: ingredientId },
         data: {
@@ -141,8 +137,7 @@ export async function PUT(
   }
 
   try {
-    const resolvedParams = await params;
-    const ingredientId = parseInt(resolvedParams.id);
+    const ingredientId = parseInt(params.id);
     const { name, unit, reorderPoint, pricePerUnit } = await req.json();
 
     if (!name || !unit || pricePerUnit === undefined) {
@@ -152,7 +147,6 @@ export async function PUT(
       );
     }
 
-    // Verificar que el ingrediente existe
     const existingIngredient = await prisma.ingredient.findUnique({
       where: { id: ingredientId }
     });
@@ -164,7 +158,6 @@ export async function PUT(
       );
     }
 
-    // Actualizar el ingrediente
     const updatedIngredient = await prisma.ingredient.update({
       where: { id: ingredientId },
       data: {
