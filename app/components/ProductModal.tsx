@@ -7,6 +7,7 @@ import {
   Button,
   Input,
 } from "@chakra-ui/react";
+import { ImageUpload } from '@/app/components/ImageUpload';
 
 type Product = {
   id: number;
@@ -40,7 +41,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     costPerUnit: "",
     tipo: "",
     sabor: "",
-    currentQuantity: ""
+    currentQuantity: "",
+    imagePath: ""
   });
 
   // Función para limpiar el formulario
@@ -51,7 +53,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       costPerUnit: "",
       tipo: "",
       sabor: "",
-      currentQuantity: ""
+      currentQuantity: "",
+      imagePath: ""
     });
   };
 
@@ -70,7 +73,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         costPerUnit: product.costPerUnit.toString(),
         tipo: product.tipo,
         sabor: product.sabor || "",
-        currentQuantity: product.currentQuantity.toString()
+        currentQuantity: product.currentQuantity.toString(),
+        imagePath: product.imagePath || ""
       });
     } else if (mode === 'add' && isOpen) {
       // Limpiar para agregar nuevo
@@ -94,7 +98,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         costPerUnit: formData.costPerUnit,
         tipo: formData.tipo,
         sabor: formData.sabor,
-        currentQuantity: formData.currentQuantity || "0"
+        currentQuantity: formData.currentQuantity || "0",
+        imagePath: formData.imagePath
       };
 
       const res = await fetch(url, {
@@ -137,7 +142,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         bg="white" 
         p={6} 
         borderRadius="md" 
-        width="400px"
+        width="500px"
+        maxHeight="90vh"
+        overflowY="auto"
         boxShadow="xl"
         border="1px solid #e2e8f0"
       >
@@ -146,6 +153,22 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         </Heading>
         
         <VStack gap={4}>
+          <Box width="100%">
+            <label style={{ 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              marginBottom: '8px', 
+              color: '#2d3748',
+              display: 'block'
+            }}>
+              Imagen del Producto
+            </label>
+            <ImageUpload 
+              onUpload={(url) => setFormData({ ...formData, imagePath: url })}
+              initialUrl={formData.imagePath}
+            />
+          </Box>
+
           <Box width="100%">
             <label style={{ 
               fontSize: '14px', 

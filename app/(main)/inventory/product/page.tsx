@@ -9,7 +9,8 @@ import {
   Text,
   Button,
   Spinner,
-  Badge
+  Badge,
+  Image
 } from "@chakra-ui/react";
 import { ProductModal } from '@/app/components/ProductModal';
 
@@ -22,6 +23,41 @@ type Product = {
   sabor?: string;
   imagePath?: string;
   currentQuantity: number;
+};
+
+// Componente para manejar la imagen con fallback
+const ProductImage: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (!src || imageError) {
+    return (
+      <Box
+        boxSize="50px"
+        bg="gray.100"
+        borderRadius="md"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        fontSize="12px"
+        color="gray.500"
+        border="1px solid #e2e8f0"
+      >
+        Sin img
+      </Box>
+    );
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      boxSize="50px"
+      objectFit="cover"
+      borderRadius="md"
+      border="1px solid #e2e8f0"
+      onError={() => setImageError(true)}
+    />
+  );
 };
 
 export default function ProductPage() {
@@ -112,6 +148,15 @@ export default function ProductPage() {
               <tr style={{ backgroundColor: "#f7fafc" }}>
                 <th style={{ 
                   padding: "12px", 
+                  textAlign: "center", 
+                  borderBottom: "2px solid #cbd5e0",
+                  color: "#2d3748",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  width: "80px"
+                }}>Imagen</th>
+                <th style={{ 
+                  padding: "12px", 
                   textAlign: "left", 
                   borderBottom: "2px solid #cbd5e0",
                   color: "#2d3748",
@@ -167,10 +212,31 @@ export default function ProductPage() {
                   backgroundColor: index % 2 === 0 ? "white" : "#f8fafc"
                 }}>
                   <td style={{ 
+                    padding: "8px", 
+                    textAlign: "center"
+                  }}>
+                    <ProductImage 
+                      src={p.imagePath} 
+                      alt={p.name} 
+                    />
+                  </td>
+                  <td style={{ 
                     padding: "12px", 
                     color: "#1a202c",
                     fontWeight: "500"
-                  }}>{p.name}</td>
+                  }}>
+                    <VStack align="start" gap={1}>
+                      <Text fontWeight="600">{p.name}</Text>
+                      {p.description && (
+                        <Text fontSize="12px" color="#718096">
+                          {p.description.length > 50 
+                            ? `${p.description.substring(0, 50)}...` 
+                            : p.description
+                          }
+                        </Text>
+                      )}
+                    </VStack>
+                  </td>
                   <td style={{ 
                     padding: "12px", 
                     color: "#4a5568"
