@@ -19,10 +19,13 @@ const ABCSummary = ({ summary, thresholds }: ABCSummaryProps) => {
   const [showTable, setShowTable] = useState(false) // controla si se muestra la tabla
 
   const rangeTexts = [
-    `0–${thresholds.A}`,                   
-    `${thresholds.A + 1}–${thresholds.B}`, 
-    `${thresholds.B + 1}–${thresholds.C}`  
+    `0–${thresholds.A}`,                       
+    `${thresholds.A + 1}–${thresholds.B}`,     
+    `${thresholds.B + 1}–${thresholds.C}`    
   ]
+
+  // Categorías ABC para usar como keys estables
+  const categories = ['A', 'B', 'C']
 
   return (
     <Box mt={8} overflowX="auto">
@@ -43,7 +46,13 @@ const ABCSummary = ({ summary, thresholds }: ABCSummaryProps) => {
           </thead>
           <tbody>
             {summary.map((row, index) => (
-              <tr key={index} style={{ color: '#000', backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9' }}>
+              <tr 
+                key={`abc-category-${categories[index]}-${row.n}-${row.totalValue}`} 
+                style={{ 
+                  color: '#000', 
+                  backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9' 
+                }}
+              >
                 <td style={{ padding: '8px' }}>{rangeTexts[index % 3]}</td>
                 <td style={{ padding: '8px' }}>{row.n}</td>
                 <td style={{ padding: '8px' }}>

@@ -1,22 +1,19 @@
 import { useReactToPrint } from 'react-to-print'
-import { RefObject, useState } from 'react'
+import { useState } from 'react'
 import { 
   Button, 
   ButtonGroup, 
   VStack, 
   Text, 
   Box,
-  HStack
-} from '@chakra-ui/react'
-import {
-  DialogActionTrigger,
+  HStack,DialogActionTrigger,
   DialogBody,
   DialogCloseTrigger,
   DialogContent,
   DialogHeader,
   DialogRoot,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from '@chakra-ui/react'
 
 type PrintButtonProps = {

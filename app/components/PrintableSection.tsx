@@ -1,4 +1,4 @@
-import { ReactNode, useRef, forwardRef } from 'react'
+import { ReactNode, useRef } from 'react'
 import { Box } from '@chakra-ui/react'
 import Printer from './printer'
 
@@ -13,13 +13,10 @@ type PrintableSectionProps = {
   onBeforePrint?: () => Promise<void> | void
   onAfterPrint?: () => void
   onPrintError?: (error: Error) => void
-  // Nuevo prop para controlar si los botones van inline o separados
   buttonsInline?: boolean
-  // Prop para pasar un ref externo cuando buttonsInline es true
   externalPrintRef?: React.RefObject<HTMLDivElement | null>
 }
 
-// Componente para solo los botones
 export const PrintButtons = ({
   printLabel = 'Imprimir',
   pdfLabel = 'Guardar PDF',
@@ -76,7 +73,6 @@ const PrintableSection = ({
   const internalPrintRef = useRef<HTMLDivElement>(null)
   const printRef = externalPrintRef || internalPrintRef
 
-  // Si buttonsInline es true, solo retornamos los botones
   if (buttonsInline) {
     return (
       <PrintButtons 
@@ -93,10 +89,8 @@ const PrintableSection = ({
     )
   }
 
-  // Layout tradicional (por defecto)
   return (
     <Box>
-      {/* Botones de impresión */}
       <Box mb={showButtons ? 4 : 0}>
         <PrintButtons 
           targetRef={printRef}
@@ -111,20 +105,21 @@ const PrintableSection = ({
         />
       </Box>
 
-      {/* Contenido imprimible */}
       <Box ref={printRef}>
         {printTitle && (
           <Box mb={6} textAlign="center">
-            <style jsx>{`
-              .print-title {
-                display: none;
-              }
-              @media print {
+            <style dangerouslySetInnerHTML={{
+              __html: `
                 .print-title {
-                  display: block !important;
+                  display: none;
                 }
-              }
-            `}</style>
+                @media print {
+                  .print-title {
+                    display: block !important;
+                  }
+                }
+              `
+            }} />
             <div className="print-title">
               <h1 style={{ 
                 fontSize: '24px', 

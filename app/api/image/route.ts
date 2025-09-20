@@ -1,45 +1,60 @@
-// app/api/inventory/product-image/route.ts
+
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
 export const POST = async (req: Request) => {
   try {
-    // Convertimos la request a FormData
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ success: false, error: "No se recibió ningún archivo." }, { status: 400 });
+      return NextResponse.json({
+        success: false,
+        error: "No file received"
+      }, { status: 400 });
     }
 
-    // Validar tipo de archivo
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ success: false, error: "Solo se permiten imágenes." }, { status: 400 });
+      return NextResponse.json({
+        success: false,
+        error: "Only images are allowed"
+      }, { status: 400 });
     }
 
-    // Crear carpeta si no existe
-    const imagesDir = path.join(process.cwd(), "public/images/products");
-    if (!fs.existsSync(imagesDir)) {
-      fs.mkdirSync(imagesDir, { recursive: true });
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({
+        success: false,
+        error: "Image must be less than 5MB"
+      }, { status: 400 });
     }
 
-    // Generar nombre único para la imagen
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
     const timestamp = Date.now();
-    const ext = file.name.split(".").pop();
+    const ext = file.name.split(".").pop()?.toLowerCase();
     const fileName = `product_${timestamp}.${ext}`;
-    const filePath = path.join(imagesDir, fileName);
+    const filePath = path.join(uploadsDir, fileName);
 
-    // Guardar archivo
     const arrayBuffer = await file.arrayBuffer();
     fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
 
-    // Devolver la URL pública
-    const imageUrl = `/images/products/${fileName}`;
-    return NextResponse.json({ success: true, imageUrl });
+    const imageUrl = `/uploads/${fileName}`;
+
+    return NextResponse.json({
+      success: true,
+      imageUrl
+    });
 
   } catch (error) {
-    console.error("Error al subir imagen:", error);
-    return NextResponse.json({ success: false, error: (error as any).message }, { status: 500 });
+    console.error("Error uploading image:", error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error"
+    }, { status: 500 });
   }
 };

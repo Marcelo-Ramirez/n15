@@ -25,11 +25,24 @@ type Product = {
   currentQuantity: number;
 };
 
-// Componente para manejar la imagen con fallback
+// Componente simplificado usando el patrón de tu código anterior
 const ProductImage: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => {
   const [imageError, setImageError] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState(src);
 
-  if (!src || imageError) {
+  // Manejar error como en tu código anterior que funcionaba
+  const handleImageError = () => {
+    console.log('Error cargando imagen:', src);
+    setImageError(true);
+    setCurrentImageUrl('/uploads/default.png'); 
+  };
+
+  useEffect(() => {
+    setCurrentImageUrl(src);
+    setImageError(false);
+  }, [src]);
+
+  if (!currentImageUrl || imageError) {
     return (
       <Box
         boxSize="50px"
@@ -49,13 +62,14 @@ const ProductImage: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => 
 
   return (
     <Image
-      src={src}
+      src={currentImageUrl}
       alt={alt}
       boxSize="50px"
       objectFit="cover"
       borderRadius="md"
       border="1px solid #e2e8f0"
-      onError={() => setImageError(true)}
+      onError={handleImageError}
+      onLoad={() => console.log('Imagen cargada correctamente:', currentImageUrl)}
     />
   );
 };

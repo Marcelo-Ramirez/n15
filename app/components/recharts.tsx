@@ -28,6 +28,176 @@ type ParetoChartProps = {
   chartHeight?: number
 }
 
+type TooltipPayload = {
+  dataKey: string
+  value: number
+  color: string
+}
+
+type CustomTooltipProps = {
+  active?: boolean
+  payload?: TooltipPayload[]
+  label?: string
+}
+
+type LabelProps = {
+  x?: string | number
+  y?: string | number
+  width?: string | number
+  value?: string | number
+}
+
+type LineLabelProps = {
+  x?: string | number
+  y?: string | number
+  value?: string | number
+}
+
+type ReferenceLabelProps = {
+  viewBox?: {
+    y?: number
+    width?: number
+  }
+  value?: string
+  color?: string
+}
+
+// Componente CustomTooltip movido fuera del componente padre
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (active && payload?.length) {
+    return (
+      <div style={{
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        color: '#2d3748',
+        border: '1px solid #e2e8f0',
+        borderRadius: '4px',
+        padding: '8px'
+      }}>
+        <p style={{ margin: '0 0 4px 0' }}>{label}</p>
+        {payload.map((entry, index) => {
+          if (entry.dataKey === 'accumulated') {
+            return <p key={`accumulated-${entry.dataKey}-${index}`} style={{ margin: '0', color: entry.color }}>
+              Acumulado: {entry.value.toFixed(1)}%
+            </p>
+          } else {
+            return <p key={`value-${entry.dataKey}-${index}`} style={{ margin: '0', color: entry.color }}>
+              Valor: {entry.value.toLocaleString()}
+            </p>
+          }
+        })}
+      </div>
+    )
+  }
+  return null
+}
+
+// Labels para barras movido fuera del componente padre
+const renderBarLabel = (props: LabelProps) => {
+  const { x, y, width, value } = props
+  
+  // Convertir a números seguros
+  const xNum = Number(x) || 0
+  const yNum = Number(y) || 0
+  const widthNum = Number(width) || 0
+  const valueNum = Number(value) || 0
+  
+  return (
+    <g>
+      <rect
+        x={xNum + widthNum/2 - 25}
+        y={yNum - 25}
+        width="50"
+        height="18"
+        fill="rgba(255, 255, 255, 0.9)"
+        stroke="rgba(0, 0, 0, 0.1)"
+        strokeWidth="1"
+        rx="4"
+      />
+      <text
+        x={xNum + widthNum/2}
+        y={yNum - 12}
+        fill="#2d3748"
+        textAnchor="middle"
+        fontSize="10"
+        fontWeight="bold"
+      >
+        {valueNum.toLocaleString()}
+      </text>
+    </g>
+  )
+}
+
+// Labels para línea movido fuera del componente padre
+const renderLineLabel = (props: LineLabelProps) => {
+  const { x, y, value } = props
+  
+  // Convertir a números seguros
+  const xNum = Number(x) || 0
+  const yNum = Number(y) || 0
+  const valueNum = Number(value) || 0
+  
+  return (
+    <g>
+      <rect
+        x={xNum - 20}
+        y={yNum + 8}
+        width="40"
+        height="16"
+        fill="rgba(255, 255, 255, 0.9)"
+        stroke="rgba(245, 101, 0, 0.3)"
+        strokeWidth="1"
+        rx="3"
+      />
+      <text
+        x={xNum}
+        y={yNum + 20}
+        fill="#f56500"
+        textAnchor="middle"
+        fontSize="10"
+        fontWeight="bold"
+      >
+        {valueNum.toFixed(1)}%
+      </text>
+    </g>
+  )
+}
+
+// Componente personalizado para los labels de categorías ABC movido fuera del componente padre
+const CustomReferenceLabel = ({ viewBox, value, color }: ReferenceLabelProps) => {
+  // Valores por defecto seguros
+  const y = viewBox?.y || 0
+  const width = viewBox?.width || 100
+  const labelValue = value || ''
+  const labelColor = color || '#000000'
+  
+  const centerX = Math.floor(width / 2)
+  
+  return (
+    <g>
+      <rect
+        x={centerX - 35}
+        y={y + 0}
+        width="70"
+        height="22"
+        fill={labelColor}
+        rx="6"
+        stroke="rgba(255, 255, 255, 0.3)"
+        strokeWidth="1"
+      />
+      <text
+        x={centerX}
+        y={y+20}
+        fill="white"
+        textAnchor="middle"
+        fontSize="12"
+        fontWeight="bold"
+      >
+        Cat. {labelValue}
+      </text>
+    </g>
+  )
+}
+
 const ParetoChart = ({
   data,
   thresholds = { A: 70, B: 90, C: 100 },
@@ -41,124 +211,6 @@ const ParetoChart = ({
     value: item.value,
     accumulated: item.accumulated
   }))
-
-  // Tooltip exacto al original
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          color: '#2d3748',
-          border: '1px solid #e2e8f0',
-          borderRadius: '4px',
-          padding: '8px'
-        }}>
-          <p style={{ margin: '0 0 4px 0' }}>{label}</p>
-          {payload.map((entry: any, index: number) => {
-            if (entry.dataKey === 'accumulated') {
-              return <p key={index} style={{ margin: '0', color: entry.color }}>
-                Acumulado: {(entry.value as number).toFixed(1)}%
-              </p>
-            } else {
-              return <p key={index} style={{ margin: '0', color: entry.color }}>
-                Valor: {(entry.value as number).toLocaleString()}
-              </p>
-            }
-          })}
-        </div>
-      )
-    }
-    return null
-  }
-
-  // Labels para barras mejorados - posición ajustada para evitar solapamiento
-  const renderBarLabel = (props: any) => {
-    const { x, y, width, value } = props
-    return (
-      <g>
-        <rect
-          x={x + width/2 - 25}
-          y={y - 25}
-          width="50"
-          height="18"
-          fill="rgba(255, 255, 255, 0.9)"
-          stroke="rgba(0, 0, 0, 0.1)"
-          strokeWidth="1"
-          rx="4"
-        />
-        <text
-          x={x + width/2}
-          y={y - 12}
-          fill="#2d3748"
-          textAnchor="middle"
-          fontSize="10"
-          fontWeight="bold"
-        >
-          {value.toLocaleString()}
-        </text>
-      </g>
-    )
-  }
-
-  // Labels para línea mejorados - posición ajustada
-  const renderLineLabel = (props: any) => {
-    const { x, y, value } = props
-    return (
-      <g>
-        <rect
-          x={x - 20}
-          y={y + 8}
-          width="40"
-          height="16"
-          fill="rgba(255, 255, 255, 0.9)"
-          stroke="rgba(245, 101, 0, 0.3)"
-          strokeWidth="1"
-          rx="3"
-        />
-        <text
-          x={x}
-          y={y + 20}
-          fill="#f56500"
-          textAnchor="middle"
-          fontSize="10"
-          fontWeight="bold"
-        >
-          {(value as number).toFixed(1)}%
-        </text>
-      </g>
-    )
-  }
-
-  // Componente personalizado para los labels de categorías ABC mejorado
-  const CustomReferenceLabel = ({ viewBox, value, color }: any) => {
-    const { x, y, width } = viewBox
-    const centerX = Math.floor(width / 2)
-    
-    return (
-      <g>
-        <rect
-          x={centerX - 35}
-          y={y + 0}
-          width="70"
-          height="22"
-          fill={color}
-          rx="6"
-          stroke="rgba(255, 255, 255, 0.3)"
-          strokeWidth="1"
-        />
-        <text
-          x={centerX}
-          y={y+20}
-          fill="white"
-          textAnchor="middle"
-          fontSize="12"
-          fontWeight="bold"
-        >
-          Cat. {value}
-        </text>
-      </g>
-    )
-  }
 
   return (
     <Box w="100%" bg="white" border="1px solid" borderColor="gray.200" borderRadius="md" p={4}>

@@ -1,7 +1,47 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import fs from "fs";
+import path from "path";
 
-// POST - crear producto
+const cleanupUnusedImages = async () => {
+  try {
+    const products = await prisma.product.findMany({
+      select: { imagePath: true }
+    });
+    
+    const usedImages = products
+      .map(p => p.imagePath)
+      .filter(Boolean)
+      .map(url => url?.split('/').pop())
+      .filter(Boolean);
+
+    const uploadsDir = path.join(process.cwd(), 'public/uploads');
+    
+    if (!fs.existsSync(uploadsDir)) {
+      return { deleted: 0, total: 0 };
+    }
+
+    const allFiles = fs.readdirSync(uploadsDir);
+    const imageFiles = allFiles.filter(file => 
+      /\.(jpg|jpeg|png|gif|webp)$/i.test(file)
+    );
+
+    let deletedCount = 0;
+    for (const file of imageFiles) {
+      if (!usedImages.includes(file)) {
+        fs.unlinkSync(path.join(uploadsDir, file));
+        deletedCount++;
+      }
+    }
+    
+    return { deleted: deletedCount, total: imageFiles.length };
+    
+  } catch (error) {
+    console.error("Cleanup error:", error);
+    return { deleted: 0, total: 0 };
+  }
+};
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -9,7 +49,7 @@ export async function POST(req: Request) {
 
     if (!name || !tipo || costPerUnit == null) {
       return NextResponse.json(
-        { success: false, error: "Campos obligatorios faltantes: name, tipo, costPerUnit" },
+        { success: false, error: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -26,14 +66,18 @@ export async function POST(req: Request) {
       },
     });
 
+    await cleanupUnusedImages();
+
     return NextResponse.json({ success: true, product });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: (error as any).message }, { status: 500 });
+    console.error("Error creating product:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Internal server error" 
+    }, { status: 500 });
   }
 }
 
-// GET - obtener todos los productos
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
@@ -42,22 +86,24 @@ export async function GET() {
 
     return NextResponse.json({ success: true, products });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: (error as any).message }, { status: 500 });
+    console.error("Error fetching products:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Internal server error" 
+    }, { status: 500 });
   }
 }
 
-// PUT - actualizar producto
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
     const { id, name, description, costPerUnit, tipo, sabor, imagePath, currentQuantity } = body;
 
     if (!id || !name || !tipo || costPerUnit == null) {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Campos obligatorios faltantes: id, name, tipo, costPerUnit" 
-      }, { status: 400 });
+      return NextResponse.json({
+         success: false,
+         error: "Missing required fields"
+       }, { status: 400 });
     }
 
     const updated = await prisma.product.update({
@@ -73,28 +119,43 @@ export async function PUT(req: Request) {
       },
     });
 
+    await cleanupUnusedImages();
+
     return NextResponse.json({ success: true, product: updated });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: (error as any).message }, { status: 500 });
+    console.error("Error updating product:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Internal server error" 
+    }, { status: 500 });
   }
 }
 
-// DELETE - eliminar producto
 export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const id = parseInt(searchParams.get("id") || "0");
 
     if (!id) {
-      return NextResponse.json({ success: false, error: "Falta el id del producto" }, { status: 400 });
+      return NextResponse.json({ 
+        success: false, 
+        error: "Missing product id" 
+      }, { status: 400 });
     }
 
     await prisma.product.delete({ where: { id } });
+    
+    const cleanup = await cleanupUnusedImages();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      cleanup: cleanup
+    });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: (error as any).message }, { status: 500 });
+    console.error("Error deleting product:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Internal server error" 
+    }, { status: 500 });
   }
 }

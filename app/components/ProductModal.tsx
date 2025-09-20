@@ -154,32 +154,41 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         
         <VStack gap={4}>
           <Box width="100%">
-            <label style={{ 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              marginBottom: '8px', 
-              color: '#2d3748',
-              display: 'block'
-            }}>
+            <label 
+              htmlFor="product-image"
+              style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                marginBottom: '8px', 
+                color: '#2d3748',
+                display: 'block'
+              }}
+            >
               Imagen del Producto
             </label>
-            <ImageUpload 
-              onUpload={(url) => setFormData({ ...formData, imagePath: url })}
-              initialUrl={formData.imagePath}
-            />
+            <Box id="product-image">
+              <ImageUpload 
+                onUpload={(url) => setFormData({ ...formData, imagePath: url })}
+                initialUrl={formData.imagePath}
+              />
+            </Box>
           </Box>
 
           <Box width="100%">
-            <label style={{ 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              marginBottom: '8px', 
-              color: '#2d3748',
-              display: 'block'
-            }}>
+            <label 
+              htmlFor="product-name"
+              style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                marginBottom: '8px', 
+                color: '#2d3748',
+                display: 'block'
+              }}
+            >
               Nombre *
             </label>
             <Input
+              id="product-name"
               placeholder="Ej: Yogurt Natural"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -191,16 +200,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </Box>
 
           <Box width="100%">
-            <label style={{ 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              marginBottom: '8px', 
-              color: '#2d3748',
-              display: 'block'
-            }}>
+            <label 
+              htmlFor="product-description"
+              style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                marginBottom: '8px', 
+                color: '#2d3748',
+                display: 'block'
+              }}
+            >
               Descripción
             </label>
             <Input
+              id="product-description"
               placeholder="Descripción del producto"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -212,16 +225,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </Box>
 
           <Box width="100%">
-            <label style={{ 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              marginBottom: '8px', 
-              color: '#2d3748',
-              display: 'block'
-            }}>
+            <label 
+              htmlFor="product-tipo"
+              style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                marginBottom: '8px', 
+                color: '#2d3748',
+                display: 'block'
+              }}
+            >
               Tipo *
             </label>
             <Input
+              id="product-tipo"
               placeholder="Ej: Bebida, Postre, etc."
               value={formData.tipo}
               onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
@@ -233,16 +250,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </Box>
 
           <Box width="100%">
-            <label style={{ 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              marginBottom: '8px', 
-              color: '#2d3748',
-              display: 'block'
-            }}>
+            <label 
+              htmlFor="product-sabor"
+              style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                marginBottom: '8px', 
+                color: '#2d3748',
+                display: 'block'
+              }}
+            >
               Sabor
             </label>
             <Input
+              id="product-sabor"
               placeholder="Ej: Fresa, Vainilla, etc."
               value={formData.sabor}
               onChange={(e) => setFormData({ ...formData, sabor: e.target.value })}
@@ -254,16 +275,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </Box>
 
           <Box width="100%">
-            <label style={{ 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              marginBottom: '8px', 
-              color: '#2d3748',
-              display: 'block'
-            }}>
+            <label 
+              htmlFor="product-cost"
+              style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                marginBottom: '8px', 
+                color: '#2d3748',
+                display: 'block'
+              }}
+            >
               Costo por Unidad *
             </label>
             <Input
+              id="product-cost"
               placeholder="Ej: 15.50"
               type="number"
               step="0.01"
@@ -278,16 +303,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </Box>
 
           <Box width="100%">
-            <label style={{ 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              marginBottom: '8px', 
-              color: '#2d3748',
-              display: 'block'
-            }}>
+            <label 
+              htmlFor="product-quantity"
+              style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                marginBottom: '8px', 
+                color: '#2d3748',
+                display: 'block'
+              }}
+            >
               Cantidad Inicial
             </label>
             <Input
+              id="product-quantity"
               placeholder="0"
               type="number"
               min="0"
