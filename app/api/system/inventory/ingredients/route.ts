@@ -1,3 +1,55 @@
+// PATCH - Editar ingrediente
+export async function PATCH(request: NextRequest) {
+  try {
+    // Verificar sesión desde cookies
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session');
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+    let sessionData;
+    try {
+      sessionData = JSON.parse(sessionCookie.value);
+    } catch {
+      return NextResponse.json({ error: 'Sesión inválida' }, { status: 401 });
+    }
+    if (!['stockroom', 'admin'].includes(sessionData.role)) {
+      return NextResponse.json({ error: 'No tienes permisos para editar ingredientes' }, { status: 403 });
+    }
+    const { searchParams } = new URL(request.url);
+    const ingredientId = searchParams.get('id');
+    if (!ingredientId) {
+      return NextResponse.json({ error: 'ID del ingrediente es requerido' }, { status: 400 });
+    }
+    const { name, unit, pricePerUnit, provider } = await request.json();
+    if (!name || !unit || !pricePerUnit || !provider) {
+      return NextResponse.json({ error: 'Todos los campos son requeridos' }, { status: 400 });
+    }
+    // Actualizar ingrediente
+    const updated = await prisma.ingredient.update({
+      where: { id: parseInt(ingredientId) },
+      data: {
+        name,
+        unit,
+        pricePerUnit: parseFloat(pricePerUnit),
+        provider
+      },
+      select: {
+        id: true,
+        name: true,
+        unit: true,
+        pricePerUnit: true,
+        provider: true,
+        currentQuantity: true,
+        createdAt: true,
+      }
+    });
+    return NextResponse.json({ success: true, ingredient: updated });
+  } catch (error) {
+    console.error('Error al editar ingrediente:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { cookies } from 'next/headers';

@@ -39,6 +39,16 @@ export default function IngredientsPage() {
     pricePerUnit: '',
     provider: ''
   });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [ingredientToEdit, setIngredientToEdit] = useState<Ingredient | null>(null);
+  const [editIngredient, setEditIngredient] = useState({
+    name: '',
+    unit: '',
+    pricePerUnit: '',
+    provider: ''
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchIngredients();
@@ -281,19 +291,15 @@ export default function IngredientsPage() {
                   <Text fontWeight="medium">{ingredient.name}</Text>
                   <Text fontSize="sm" color="gray.500">{ingredient.provider}</Text>
                 </GridItem>
-                
                 <GridItem>
                   <Text>{ingredient.unit}</Text>
                 </GridItem>
-                
                 <GridItem>
                   <Text fontWeight="medium">{ingredient.currentQuantity}</Text>
                 </GridItem>
-                
                 <GridItem>
                   <Text fontWeight="medium">${ingredient.pricePerUnit.toFixed(2)}</Text>
                 </GridItem>
-                
                 <GridItem>
                   <HStack gap={2}>
                     <Button
@@ -313,6 +319,17 @@ export default function IngredientsPage() {
                     <Button
                       size="sm"
                       colorScheme="blue"
+                      onClick={() => {
+                        setIngredientToEdit(ingredient);
+                        setEditIngredient({
+                          name: ingredient.name,
+                          unit: ingredient.unit,
+                          pricePerUnit: ingredient.pricePerUnit.toString(),
+                          provider: ingredient.provider
+                        });
+                        setEditError(null);
+                        setShowEditModal(true);
+                      }}
                     >
                       <HStack gap={1}>
                         <FiEdit />
@@ -322,6 +339,9 @@ export default function IngredientsPage() {
                     <Button
                       size="sm"
                       colorScheme="orange"
+                      onClick={() => {
+                        window.location.href = `/sys/stockroom/ingredients/eoq-model?ingredientId=${ingredient.id}`;
+                      }}
                     >
                       <HStack gap={1}>
                         <FiBarChart />
@@ -360,6 +380,110 @@ export default function IngredientsPage() {
         )}
 
         {/* Add Ingredient Modal */}
+        {/* Edit Ingredient Modal */}
+        {showEditModal && ingredientToEdit && (
+          <Box
+            position="fixed"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            bg="blackAlpha.600"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            zIndex={1000}
+          >
+            <Box
+              bg="white"
+              p={6}
+              borderRadius="lg"
+              boxShadow="xl"
+              maxW="400px"
+              w="90%"
+            >
+              <VStack gap={4} align="stretch">
+                <Heading size="md">Edit ingredient</Heading>
+                <VStack gap={4} align="stretch">
+                  <Box>
+                    <Text fontWeight="medium" mb={2}>name</Text>
+                    <Input
+                      value={editIngredient.name}
+                      onChange={e => setEditIngredient(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </Box>
+                  <Box>
+                    <Text fontWeight="medium" mb={2}>unit</Text>
+                    <Input
+                      value={editIngredient.unit}
+                      onChange={e => setEditIngredient(prev => ({ ...prev, unit: e.target.value }))}
+                    />
+                  </Box>
+                  <Box>
+                    <Text fontWeight="medium" mb={2}>pricePerUnit</Text>
+                    <Input
+                      type="number"
+                      value={editIngredient.pricePerUnit}
+                      onChange={e => setEditIngredient(prev => ({ ...prev, pricePerUnit: e.target.value }))}
+                    />
+                  </Box>
+                  <Box>
+                    <Text fontWeight="medium" mb={2}>providerName</Text>
+                    <Input
+                      value={editIngredient.provider}
+                      onChange={e => setEditIngredient(prev => ({ ...prev, provider: e.target.value }))}
+                    />
+                  </Box>
+                </VStack>
+                {editError && <Text color="red.500">{editError}</Text>}
+                <HStack gap={3} justify="flex-end" mt={4}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowEditModal(false)}
+                    disabled={editLoading}
+                  >
+                    cancel
+                  </Button>
+                  <Button
+                    colorScheme="blue"
+                    onClick={async () => {
+                      if (!editIngredient.name || !editIngredient.unit || !editIngredient.pricePerUnit || !editIngredient.provider) {
+                        setEditError('Completa todos los campos');
+                        return;
+                      }
+                      setEditLoading(true);
+                      setEditError(null);
+                      try {
+                        const res = await fetch(`/api/system/inventory/ingredients?id=${ingredientToEdit.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            name: editIngredient.name,
+                            unit: editIngredient.unit,
+                            pricePerUnit: editIngredient.pricePerUnit,
+                            provider: editIngredient.provider
+                          })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Error al editar ingrediente');
+                        setShowEditModal(false);
+                        setIngredientToEdit(null);
+                        await fetchIngredients();
+                      } catch (err) {
+                        setEditError(err instanceof Error ? err.message : 'Error desconocido');
+                      } finally {
+                        setEditLoading(false);
+                      }
+                    }}
+                    loading={editLoading}
+                  >
+                    Accept
+                  </Button>
+                </HStack>
+              </VStack>
+            </Box>
+          </Box>
+        )}
         {showAddModal && (
           <Box
             position="fixed"

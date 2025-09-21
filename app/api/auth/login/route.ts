@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Establecer cookies de sesión
     const sessionData = JSON.stringify({
-      id: user.id,
+      userId: user.id,
       userName: user.userName,
       name: user.name,
       role: user.role
