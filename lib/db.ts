@@ -4,8 +4,10 @@ import bcrypt from "bcryptjs";
 // Tipo para el usuario (basado en el modelo Prisma)
 export interface User {
   id: number;
-  username: string;
+  userName: string;
   name: string;
+  phone?: string | null;
+  role: string;
   twoFactorEnabled: boolean;
   twoFactorSecret?: string | null;
   createdAt: Date;
@@ -17,19 +19,21 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 // Función para crear un nuevo usuario
-export async function createUser(username: string, name: string, password: string): Promise<User | null> {
+export async function createUser(userName: string, name: string, password: string, phone?: string, role: string = 'cliente'): Promise<User | null> {
   try {
-    const existingUser = await prisma.user.findUnique({ where: { username } });
+    const existingUser = await prisma.user.findUnique({ where: { userName } });
     if (existingUser) throw new Error("El usuario ya existe");
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const newUser = await prisma.user.create({
-      data: { username, name, password: hashedPassword },
+      data: { userName, name, password: hashedPassword, phone, role },
       select: {
         id: true,
-        username: true,
+        userName: true,
         name: true,
+        phone: true,
+        role: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
         createdAt: true,
@@ -44,14 +48,16 @@ export async function createUser(username: string, name: string, password: strin
 }
 
 // Función para verificar las credenciales del usuario
-export async function verifyUser(username: string, password: string): Promise<User | null> {
+export async function verifyUser(userName: string, password: string): Promise<User | null> {
   try {
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { userName },
       select: {
         id: true,
-        username: true,
+        userName: true,
         name: true,
+        phone: true,
+        role: true,
         password: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
@@ -79,8 +85,10 @@ export async function getUserById(id: number): Promise<User | null> {
       where: { id },
       select: {
         id: true,
-        username: true,
+        userName: true,
         name: true,
+        phone: true,
+        role: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
         createdAt: true,
@@ -93,15 +101,17 @@ export async function getUserById(id: number): Promise<User | null> {
   }
 }
 
-// Función para obtener un usuario por username
-export async function getUserByUsername(username: string): Promise<User | null> {
+// Función para obtener un usuario por userName
+export async function getUserByUserName(userName: string): Promise<User | null> {
   try {
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { userName },
       select: {
         id: true,
-        username: true,
+        userName: true,
         name: true,
+        phone: true,
+        role: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
         createdAt: true,
@@ -109,7 +119,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
     });
     return user;
   } catch (error) {
-    console.error("Error obteniendo usuario por username:", error);
+    console.error("Error obteniendo usuario por userName:", error);
     return null;
   }
 }
