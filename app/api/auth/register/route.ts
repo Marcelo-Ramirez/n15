@@ -3,29 +3,37 @@ import { createUser } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, name, password, registerKey } = await request.json();
+    const { userName, name, phone, password, confirmPassword, role, registrationKey } = await request.json();
 
     // Validar que todos los campos están presentes
-    if (!username || !name || !password || !registerKey) {
+    if (!userName || !name || !phone || !password || !confirmPassword || !role || !registrationKey) {
       return NextResponse.json(
-        { error: 'Todos los campos son requeridos incluyendo la clave de registro' },
+        { message: 'Todos los campos son requeridos' },
+        { status: 400 }
+      );
+    }
+
+    // Validar que las contraseñas coinciden
+    if (password !== confirmPassword) {
+      return NextResponse.json(
+        { message: 'Las contraseñas no coinciden' },
         { status: 400 }
       );
     }
 
     // Validar clave de registro
-    if (registerKey !== process.env.REGISTER_SECRET_KEY) {
+    if (registrationKey !== process.env.REGISTRATION_KEY) {
       return NextResponse.json(
-        { error: 'Clave de registro inválida' },
+        { message: 'Clave de registro inválida' },
         { status: 401 }
       );
     }
 
-    // Validar username (solo letras, números y guiones bajos)
+    // Validar userName (solo letras, números y guiones bajos)
     const usernameRegex = /^[a-zA-Z0-9_]+$/;
-    if (!usernameRegex.test(username)) {
+    if (!usernameRegex.test(userName)) {
       return NextResponse.json(
-        { error: 'El nombre de usuario solo puede contener letras, números y guiones bajos' },
+        { message: 'El nombre de usuario solo puede contener letras, números y guiones bajos' },
         { status: 400 }
       );
     }
@@ -33,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Validar contraseña (mínimo 6 caracteres)
     if (password.length < 6) {
       return NextResponse.json(
-        { error: 'La contraseña debe tener al menos 6 caracteres' },
+        { message: 'La contraseña debe tener al menos 6 caracteres' },
         { status: 400 }
       );
     }
@@ -41,13 +49,22 @@ export async function POST(request: NextRequest) {
     // Validar nombre
     if (name.length < 2) {
       return NextResponse.json(
-        { error: 'El nombre debe tener al menos 2 caracteres' },
+        { message: 'El nombre debe tener al menos 2 caracteres' },
         { status: 400 }
       );
     }
 
-    // Crear el usuario
-    const user = await createUser(username, name, password);
+    // Validar rol
+    const validRoles = ['admin', 'stockroom', 'sales'];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json(
+        { message: 'Rol inválido' },
+        { status: 400 }
+      );
+    }
+
+    // Crear el usuario con los nuevos campos
+    const user = await createUser(userName, name, password, phone, role);
 
     if (user) {
       return NextResponse.json(
@@ -55,15 +72,16 @@ export async function POST(request: NextRequest) {
           message: 'Usuario creado exitosamente',
           user: {
             id: user.id,
-            username: user.username,
-            name: user.name
+            userName: user.userName,
+            name: user.name,
+            role: user.role
           }
         },
         { status: 201 }
       );
     } else {
       return NextResponse.json(
-        { error: 'Error al crear el usuario' },
+        { message: 'Error al crear el usuario' },
         { status: 500 }
       );
     }
@@ -74,13 +92,13 @@ export async function POST(request: NextRequest) {
     // Si el error es por usuario duplicado
     if (error.message === 'El usuario ya existe') {
       return NextResponse.json(
-        { error: 'Este nombre de usuario ya está registrado' },
+        { message: 'Este nombre de usuario ya está registrado' },
         { status: 409 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { message: 'Error interno del servidor' },
       { status: 500 }
     );
   }

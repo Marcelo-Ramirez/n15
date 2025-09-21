@@ -1,232 +1,240 @@
+-- ===============================
+-- Script para sembrar datos en la base de datos
+-- ===============================
 
+-- Eliminar tablas si existen para evitar conflictos
+DROP TABLE IF EXISTS "Users";
+DROP TABLE IF EXISTS "Ingredients";
+DROP TABLE IF EXISTS "Ingredients_EOQ_model";
+DROP TABLE IF EXISTS "Inventory_movements";
+DROP TABLE IF EXISTS "Products";
+DROP TABLE IF EXISTS "Order_clients";
+DROP TABLE IF EXISTS "Sale_orders";
+DROP TABLE IF EXISTS "Sale_products";
+
+-- ===============================
+-- Tabla Users
+-- ===============================
+CREATE TABLE "Users" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userName TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    phone TEXT,
+    password TEXT NOT NULL,
+    statusAccount TEXT NOT NULL DEFAULT 'active',
+    role TEXT NOT NULL DEFAULT 'cliente',
+    twoFactorSecret TEXT,
+    twoFactorEnabled INTEGER NOT NULL DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO "Users" (userName, name, phone, password) VALUES
+('administrador', 'Admin General', '123456789', 'admin1234'),
+('usuario1', 'Juan Perez', '987654321', 'user123'),
+('usuario2', 'Maria Lopez', '112233445', 'user456');
 
 -- ===============================
 -- Tabla Ingredients
 -- ===============================
-DROP TABLE IF EXISTS ingredients;
-
-CREATE TABLE ingredients (
+CREATE TABLE "Ingredients" (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    current_quantity REAL DEFAULT 0,
     unit TEXT NOT NULL,
-    reorder_point REAL,
-    price_per_unit REAL NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    pricePerUnit REAL NOT NULL,
+    provider TEXT NOT NULL,
+    currentQuantity REAL DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insertar ingredientes de ejemplo con precios realistas en Bs
-INSERT INTO ingredients (name, current_quantity, unit, reorder_point, price_per_unit) VALUES
-('Gelatina sin sabor', 5000, 'g', 1000, 50.00),
-('Azúcar', 10000, 'g', 2000, 20.00),
-('Colorante rojo', 500, 'ml', 100, 150.00),
-('Colorante azul', 500, 'ml', 100, 150.00),
-('Colorante amarillo', 500, 'ml', 100, 150.00),
-('Sabor fresa', 300, 'ml', 50, 200.00),
-('Sabor limón', 300, 'ml', 50, 200.00),
-('Sabor naranja', 300, 'ml', 50, 200.00),
-('Jarabe de maíz', 2000, 'g', 500, 30.00),
-('Ácido cítrico', 200, 'g', 50, 100.00);
+INSERT INTO "Ingredients" (name, unit, pricePerUnit, provider, currentQuantity) VALUES
+('Gelatina sin sabor', 'g', 50.00, 'Proveedor A', 5000),
+('Azúcar', 'g', 20.00, 'Proveedor B', 10000),
+('Colorante rojo', 'ml', 150.00, 'Proveedor C', 500),
+('Colorante azul', 'ml', 150.00, 'Proveedor C', 500),
+('Colorante amarillo', 'ml', 150.00, 'Proveedor C', 500),
+('Sabor fresa', 'ml', 200.00, 'Proveedor D', 300),
+('Sabor limón', 'ml', 200.00, 'Proveedor D', 300),
+('Sabor naranja', 'ml', 200.00, 'Proveedor D', 300),
+('Jarabe de maíz', 'g', 30.00, 'Proveedor E', 2000),
+('Ácido cítrico', 'g', 100.00, 'Proveedor F', 200);
 
+
+-- Tabla Products (corregida)
 -- ===============================
--- Tabla InventoryMovements
--- ===============================
-DROP TABLE IF EXISTS inventory_movements;
+DROP TABLE IF EXISTS "Products";
 
-CREATE TABLE inventory_movements (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ingredient_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    movement_type TEXT NOT NULL,  -- 'entrada' o 'salida'
-    reason TEXT NOT NULL,
-    quantity REAL NOT NULL,
-    previous_quantity REAL NOT NULL,
-    new_quantity REAL NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE
-);
-
--- Movimientos de salida (10 por ingrediente, user_id = 1)
-INSERT INTO inventory_movements (ingredient_id, user_id, movement_type, reason, quantity, previous_quantity, new_quantity) VALUES
--- Gelatina sin sabor (id=1)
-(1, 1, 'salida', 'produccion', 500, 5000, 4500),
-(1, 1, 'salida', 'produccion', 300, 4500, 4200),
-(1, 1, 'salida', 'produccion', 400, 4200, 3800),
-(1, 1, 'salida', 'produccion', 350, 3800, 3450),
-(1, 1, 'salida', 'produccion', 250, 3450, 3200),
-(1, 1, 'salida', 'produccion', 300, 3200, 2900),
-(1, 1, 'salida', 'produccion', 200, 2900, 2700),
-(1, 1, 'salida', 'produccion', 250, 2700, 2450),
-(1, 1, 'salida', 'produccion', 150, 2450, 2300),
-(1, 1, 'salida', 'produccion', 200, 2300, 2100),
-
--- Azúcar (id=2)
-(2, 1, 'salida', 'produccion', 1000, 10000, 9000),
-(2, 1, 'salida', 'produccion', 800, 9000, 8200),
-(2, 1, 'salida', 'produccion', 700, 8200, 7500),
-(2, 1, 'salida', 'produccion', 600, 7500, 6900),
-(2, 1, 'salida', 'produccion', 500, 6900, 6400),
-(2, 1, 'salida', 'produccion', 400, 6400, 6000),
-(2, 1, 'salida', 'produccion', 300, 6000, 5700),
-(2, 1, 'salida', 'produccion', 500, 5700, 5200),
-(2, 1, 'salida', 'produccion', 200, 5200, 5000),
-(2, 1, 'salida', 'produccion', 300, 5000, 4700),
-
--- Colorante rojo (id=3)
-(3, 1, 'salida', 'produccion', 50, 500, 450),
-(3, 1, 'salida', 'produccion', 30, 450, 420),
-(3, 1, 'salida', 'produccion', 40, 420, 380),
-(3, 1, 'salida', 'produccion', 35, 380, 345),
-(3, 1, 'salida', 'produccion', 25, 345, 320),
-(3, 1, 'salida', 'produccion', 30, 320, 290),
-(3, 1, 'salida', 'produccion', 20, 290, 270),
-(3, 1, 'salida', 'produccion', 25, 270, 245),
-(3, 1, 'salida', 'produccion', 15, 245, 230),
-(3, 1, 'salida', 'produccion', 20, 230, 210),
-
--- Colorante azul (id=4)
-(4, 1, 'salida', 'produccion', 50, 500, 450),
-(4, 1, 'salida', 'produccion', 30, 450, 420),
-(4, 1, 'salida', 'produccion', 40, 420, 380),
-(4, 1, 'salida', 'produccion', 35, 380, 345),
-(4, 1, 'salida', 'produccion', 25, 345, 320),
-(4, 1, 'salida', 'produccion', 30, 320, 290),
-(4, 1, 'salida', 'produccion', 20, 290, 270),
-(4, 1, 'salida', 'produccion', 25, 270, 245),
-(4, 1, 'salida', 'produccion', 15, 245, 230),
-(4, 1, 'salida', 'produccion', 20, 230, 210),
-
--- Colorante amarillo (id=5)
-(5, 1, 'salida', 'produccion', 50, 500, 450),
-(5, 1, 'salida', 'produccion', 30, 450, 420),
-(5, 1, 'salida', 'produccion', 40, 420, 380),
-(5, 1, 'salida', 'produccion', 35, 380, 345),
-(5, 1, 'salida', 'produccion', 25, 345, 320),
-(5, 1, 'salida', 'produccion', 30, 320, 290),
-(5, 1, 'salida', 'produccion', 20, 290, 270),
-(5, 1, 'salida', 'produccion', 25, 270, 245),
-(5, 1, 'salida', 'produccion', 15, 245, 230),
-(5, 1, 'salida', 'produccion', 20, 230, 210),
-
--- Sabor fresa (id=6)
-(6, 1, 'salida', 'produccion', 20, 300, 280),
-(6, 1, 'salida', 'produccion', 15, 280, 265),
-(6, 1, 'salida', 'produccion', 25, 265, 240),
-(6, 1, 'salida', 'produccion', 20, 240, 220),
-(6, 1, 'salida', 'produccion', 15, 220, 205),
-(6, 1, 'salida', 'produccion', 10, 205, 195),
-(6, 1, 'salida', 'produccion', 15, 195, 180),
-(6, 1, 'salida', 'produccion', 10, 180, 170),
-(6, 1, 'salida', 'produccion', 10, 170, 160),
-(6, 1, 'salida', 'produccion', 10, 160, 150),
-
--- Sabor limón (id=7)
-(7, 1, 'salida', 'produccion', 20, 300, 280),
-(7, 1, 'salida', 'produccion', 15, 280, 265),
-(7, 1, 'salida', 'produccion', 25, 265, 240),
-(7, 1, 'salida', 'produccion', 20, 240, 220),
-(7, 1, 'salida', 'produccion', 15, 220, 205),
-(7, 1, 'salida', 'produccion', 10, 205, 195),
-(7, 1, 'salida', 'produccion', 15, 195, 180),
-(7, 1, 'salida', 'produccion', 10, 180, 170),
-(7, 1, 'salida', 'produccion', 10, 170, 160),
-(7, 1, 'salida', 'produccion', 10, 160, 150),
-
--- Sabor naranja (id=8)
-(8, 1, 'salida', 'produccion', 20, 300, 280),
-(8, 1, 'salida', 'produccion', 15, 280, 265),
-(8, 1, 'salida', 'produccion', 25, 265, 240),
-(8, 1, 'salida', 'produccion', 20, 240, 220),
-(8, 1, 'salida', 'produccion', 15, 220, 205),
-(8, 1, 'salida', 'produccion', 10, 205, 195),
-(8, 1, 'salida', 'produccion', 15, 195, 180),
-(8, 1, 'salida', 'produccion', 10, 180, 170),
-(8, 1, 'salida', 'produccion', 10, 170, 160),
-(8, 1, 'salida', 'produccion', 10, 160, 150);
-DROP TABLE IF EXISTS products;
-
-CREATE TABLE products (
+CREATE TABLE "Products" (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    description TEXT,
-    tipo TEXT,
-    sabor TEXT,
-    current_quantity REAL DEFAULT 0,
-    image_path TEXT,
-    cost_per_unit REAL DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    flavor TEXT,
+    type TEXT,
+    imageUrl TEXT,
+    pricePerUnit REAL DEFAULT 0,
+    currentQuantity REAL DEFAULT 0,
+    createdAt TEXT, -- Este campo sigue siendo no nulo en tu esquema de Prisma
+    updatedAt TEXT -- Este campo es opcional en tu esquema de Prisma
 );
 
--- Insertar productos de ejemplo con las nuevas columnas
-INSERT INTO products (name, description, tipo, sabor, current_quantity, cost_per_unit) VALUES
-('Gelatina de fresa', 'Gelatina de fresa deliciosa', 'gelatina', 'fresa', 100, 5.0),
-('Gelatina de limón', 'Gelatina de limón refrescante', 'gelatina', 'limón', 100, 5.0),
-('Gelatina de naranja', 'Gelatina de naranja natural', 'gelatina', 'naranja', 100, 5.0),
-('Gelatina mixta', 'Gelatina mixta surtida', 'gelatina', 'mixta', 100, 5.0),
-('Jugo natural fresa', 'Jugo natural fresa', 'jugo', 'fresa', 50, 3.0),
-('Jugo natural limón', 'Jugo natural limón', 'jugo', 'limón', 50, 3.0),
-('Jugo natural naranja', 'Jugo natural naranja', 'jugo', 'naranja', 50, 3.0);
+-- Insertar productos con valores para createdAt y updatedAt
+INSERT INTO "Products" (name, flavor, type, imageUrl, pricePerUnit, currentQuantity, createdAt, updatedAt) VALUES
+('Gelatina de fresa', 'fresa', 'gelatina', 'https://example.com/images/fresa.jpg', 5.0, 100, '2025-09-21T10:00:00Z', '2025-09-21T10:00:00Z'),
+('Gelatina de limón', 'limón', 'gelatina', 'https://example.com/images/limon.jpg', 5.0, 100, '2025-09-21T10:01:00Z', '2025-09-21T10:01:00Z'),
+('Gelatina de naranja', 'naranja', 'gelatina', 'https://example.com/images/naranja.jpg', 5.0, 100, '2025-09-21T10:02:00Z', '2025-09-21T10:02:00Z'),
+('Gelatina mixta', 'mixta', 'gelatina', 'https://example.com/images/mixta.jpg', 5.0, 100, '2025-09-21T10:03:00Z', '2025-09-21T10:03:00Z'),
+('Jugo natural fresa', 'fresa', 'jugo', 'https://example.com/images/jugo_fresa.jpg', 3.0, 50, '2025-09-21T10:04:00Z', '2025-09-21T10:04:00Z'),
+('Jugo natural limón', 'limón', 'jugo', 'https://example.com/images/jugo_limon.jpg', 3.0, 50, '2025-09-21T10:05:00Z', '2025-09-21T10:05:00Z'),
+('Jugo natural naranja', 'naranja', 'jugo', 'https://example.com/images/jugo_naranja.jpg', 3.0, 50, '2025-09-21T10:06:00Z', '2025-09-21T10:06:00Z');
+-- ===============================
+-- Tabla Order_clients
+-- ===============================
+CREATE TABLE "Order_clients" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pendiente',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES "Users"(id),
+    FOREIGN KEY (product_id) REFERENCES "Products"(id)
+);
 
-DROP TABLE IF EXISTS sale_orders;
-
-CREATE TABLE sale_orders (
+-- ===============================
+-- Tabla Sale_orders
+-- ===============================
+CREATE TABLE "Sale_orders" (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     order_client_id INTEGER NOT NULL,
-    total_cost_order REAL NOT NULL DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (order_client_id) REFERENCES order_clients(id)
+    totalCostOrder REAL NOT NULL DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES "Users"(id),
+    FOREIGN KEY (order_client_id) REFERENCES "Order_clients"(id)
 );
 
--- Ejemplo de inserción (supongamos que order_client_id ya existe)
-INSERT INTO sale_orders (user_id, order_client_id, total_cost_order) VALUES
-(1, 1, 75.00),
-(1, 2, 45.00),
-(1, 3, 30.00);
-
-DROP TABLE IF EXISTS sale_products;
-
-CREATE TABLE sale_products (
+-- ===============================
+-- Tabla Sale_products
+-- ===============================
+CREATE TABLE "Sale_products" (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
-    quantity INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
+    quantity REAL NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES "Users"(id),
+    FOREIGN KEY (product_id) REFERENCES "Products"(id)
 );
 
--- Ejemplo de inserción
-INSERT INTO sale_products (user_id, product_id, quantity) VALUES
-(1, 1, 5),
-(1, 2, 3),
-(1, 3, 2);
-
 -- ===============================
--- Tabla OrderClients (faltante)
+-- Tabla Inventory_movements
 -- ===============================
-DROP TABLE IF EXISTS order_clients;
-
-CREATE TABLE order_clients (
+CREATE TABLE "Inventory_movements" (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
-    quantity INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pendiente', -- pendiente, pagado, cancelado
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
+    ingredient_id INTEGER NOT NULL,
+    movementType TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES "Users"(id),
+    FOREIGN KEY (ingredient_id) REFERENCES "Ingredients"(id) ON DELETE CASCADE
 );
 
--- Insertar pedidos de ejemplo para user_id = 1
-INSERT INTO order_clients (user_id, product_id, quantity, status) VALUES
-(1, 1, 5, 'pendiente'),
-(1, 2, 3, 'pendiente'),
-(1, 3, 2, 'pagado'),
-(1, 4, 1, 'pendiente'),
-(1, 5, 6, 'pagado'),
-(1, 6, 2, 'pendiente'),
-(1, 7, 1, 'pendiente');
+-- Movimientos de inventario (corregidos)
+INSERT INTO "Inventory_movements" (ingredient_id, user_id, movementType, reason, quantity) VALUES
+-- Gelatina sin sabor (id=1)
+(1, 1, 'salida', 'produccion', 500),
+(1, 1, 'salida', 'produccion', 300),
+(1, 1, 'salida', 'produccion', 400),
+(1, 1, 'salida', 'produccion', 350),
+(1, 1, 'salida', 'produccion', 250),
+(1, 1, 'salida', 'produccion', 300),
+(1, 1, 'salida', 'produccion', 200),
+(1, 1, 'salida', 'produccion', 250),
+(1, 1, 'salida', 'produccion', 150),
+(1, 1, 'salida', 'produccion', 200),
+
+-- Azúcar (id=2)
+(2, 1, 'salida', 'produccion', 1000),
+(2, 1, 'salida', 'produccion', 800),
+(2, 1, 'salida', 'produccion', 700),
+(2, 1, 'salida', 'produccion', 600),
+(2, 1, 'salida', 'produccion', 500),
+(2, 1, 'salida', 'produccion', 400),
+(2, 1, 'salida', 'produccion', 300),
+(2, 1, 'salida', 'produccion', 500),
+(2, 1, 'salida', 'produccion', 200),
+(2, 1, 'salida', 'produccion', 300),
+
+-- Colorante rojo (id=3)
+(3, 1, 'salida', 'produccion', 50),
+(3, 1, 'salida', 'produccion', 30),
+(3, 1, 'salida', 'produccion', 40),
+(3, 1, 'salida', 'produccion', 35),
+(3, 1, 'salida', 'produccion', 25),
+(3, 1, 'salida', 'produccion', 30),
+(3, 1, 'salida', 'produccion', 20),
+(3, 1, 'salida', 'produccion', 25),
+(3, 1, 'salida', 'produccion', 15),
+(3, 1, 'salida', 'produccion', 20),
+
+-- Colorante azul (id=4)
+(4, 1, 'salida', 'produccion', 50),
+(4, 1, 'salida', 'produccion', 30),
+(4, 1, 'salida', 'produccion', 40),
+(4, 1, 'salida', 'produccion', 35),
+(4, 1, 'salida', 'produccion', 25),
+(4, 1, 'salida', 'produccion', 30),
+(4, 1, 'salida', 'produccion', 20),
+(4, 1, 'salida', 'produccion', 25),
+(4, 1, 'salida', 'produccion', 15),
+(4, 1, 'salida', 'produccion', 20),
+
+-- Colorante amarillo (id=5)
+(5, 1, 'salida', 'produccion', 50),
+(5, 1, 'salida', 'produccion', 30),
+(5, 1, 'salida', 'produccion', 40),
+(5, 1, 'salida', 'produccion', 35),
+(5, 1, 'salida', 'produccion', 25),
+(5, 1, 'salida', 'produccion', 30),
+(5, 1, 'salida', 'produccion', 20),
+(5, 1, 'salida', 'produccion', 25),
+(5, 1, 'salida', 'produccion', 15),
+(5, 1, 'salida', 'produccion', 20),
+
+-- Sabor fresa (id=6)
+(6, 1, 'salida', 'produccion', 20),
+(6, 1, 'salida', 'produccion', 15),
+(6, 1, 'salida', 'produccion', 25),
+(6, 1, 'salida', 'produccion', 20),
+(6, 1, 'salida', 'produccion', 15),
+(6, 1, 'salida', 'produccion', 10),
+(6, 1, 'salida', 'produccion', 15),
+(6, 1, 'salida', 'produccion', 10),
+(6, 1, 'salida', 'produccion', 10),
+(6, 1, 'salida', 'produccion', 10),
+
+-- Sabor limón (id=7)
+(7, 1, 'salida', 'produccion', 20),
+(7, 1, 'salida', 'produccion', 15),
+(7, 1, 'salida', 'produccion', 25),
+(7, 1, 'salida', 'produccion', 20),
+(7, 1, 'salida', 'produccion', 15),
+(7, 1, 'salida', 'produccion', 10),
+(7, 1, 'salida', 'produccion', 15),
+(7, 1, 'salida', 'produccion', 10),
+(7, 1, 'salida', 'produccion', 10),
+(7, 1, 'salida', 'produccion', 10),
+
+-- Sabor naranja (id=8)
+(8, 1, 'salida', 'produccion', 20),
+(8, 1, 'salida', 'produccion', 15),
+(8, 1, 'salida', 'produccion', 25),
+(8, 1, 'salida', 'produccion', 20),
+(8, 1, 'salida', 'produccion', 15),
+(8, 1, 'salida', 'produccion', 10),
+(8, 1, 'salida', 'produccion', 15),
+(8, 1, 'salida', 'produccion', 10),
+(8, 1, 'salida', 'produccion', 10),
+(8, 1, 'salida', 'produccion', 10);

@@ -1,3 +1,6 @@
+// This is your Prisma schema file.
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,158 +10,130 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ---------------------------
-// TABLA ORIGINAL: USER
-// ---------------------------
 model User {
-  id           Int           @id @default(autoincrement())
-  username     String        @unique
-  name         String
-  password     String
-  createdAt    DateTime      @default(now()) @map("created_at")
+  id                Int      @id @default(autoincrement())
+  userName          String   @unique @map("userName")
+  name              String
+  phone             String?
+  password          String
+  statusAccount     String   @default("active") @map("statusAccount")
+  role              String   @default("cliente")
+  twoFactorSecret   String?  @map("twoFactorSecret")
+  twoFactorEnabled  Boolean  @default(false) @map("twoFactorEnabled")
+  createdAt         DateTime @default(now()) @map("createdAt")
+  updatedAt         DateTime @updatedAt @map("updatedAt")
 
-  // 2FA
-  twoFactorEnabled Boolean  @default(false)
-  twoFactorSecret  String?  
+  // Relaciones
+  inventoryMovements InventoryMovement[]
+  saleOrders         SaleOrder[]
 
-  // Relaciones originales
-  movements    InventoryMovement[] @relation("MovementUser")
-  orders       OrderClient[]
-
-  // Relaciones nuevas de ventas
-  saleOrders   SaleOrder[]
-  saleProducts SaleProduct[]
-
-  @@map("users")
+  @@map("Users")
 }
 
-// ---------------------------
-// TABLA ORIGINAL: INGREDIENT
-// ---------------------------
 model Ingredient {
-  id              Int           @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   name            String
-  currentQuantity Float         @default(0) @map("current_quantity")
   unit            String
-  reorderPoint    Float?       @map("reorder_point")
-  pricePerUnit    Float        @map("price_per_unit")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  pricePerUnit    Float    @map("pricePerUnit")
+  provider        String
+  currentQuantity Float    @map("currentQuantity")
+  createdAt       DateTime @default(now()) @map("createdAt")
+  updatedAt       DateTime @updatedAt @map("updatedAt")
 
   // Relaciones
-  movements       InventoryMovement[]
-  eoqModel        IngredientEOQ?
+  inventoryMovements InventoryMovement[]
+  ingredientEOQ      IngredientEOQModel?
 
-  @@map("ingredients")
+  @@map("Ingredients")
 }
 
-// ---------------------------
-// TABLA ORIGINAL: INVENTORY MOVEMENT
-// ---------------------------
+model IngredientEOQModel {
+  id                     Int      @id @default(autoincrement())
+  idIngredient           Int      @unique @map("id_Ingredient")
+  orderingCost           Float    @map("orderingCost")
+  annualMaintenanceCost  Float    @map("annualMaintenanceCost")
+  leadTimeDays           Float    @map("leadTimeDays")
+  dailyDemand            Float    @map("dailyDemand")
+  annualDemand           Float    @map("annualDemand")
+  reorderPoint           Float    @map("reorderPoint")
+  updatedAt              DateTime @updatedAt @map("updatedAt")
+
+  // Relación
+  ingredient Ingredient @relation(fields: [idIngredient], references: [id], onDelete: Cascade)
+
+  @@map("Ingredients_EOQ_model")
+}
+
 model InventoryMovement {
-  id               Int       @id @default(autoincrement())
-  ingredientId     Int       @map("ingredient_id")
-  userId           Int       @map("user_id")
-  movementType     String    @map("movement_type")
-  reason           String
-  quantity         Float
-  previousQuantity Float     @map("previous_quantity")
-  newQuantity      Float     @map("new_quantity")
-  createdAt        DateTime  @default(now()) @map("created_at")
-
-  // Relaciones
-  ingredient       Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
-  user             User       @relation("MovementUser", fields: [userId], references: [id])
-  
-  @@map("inventory_movements")
-}
-
-// ---------------------------
-// TABLA ORIGINAL: PRODUCT
-// ---------------------------
-model Product {
-  id              Int       @id @default(autoincrement())
-  name            String
-  description     String?
-  costPerUnit     Float     @map("cost_per_unit")
-  tipo            String
-  sabor           String?
-  currentQuantity Float     @default(0) @map("current_quantity")
-  imagePath       String?   @map("image_path")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-
-  // Relaciones
-  orders          OrderClient[]
-  saleProducts    SaleProduct[]
-
-  @@map("products")
-}
-
-// ---------------------------
-// TABLA ORIGINAL: ORDER CLIENT
-// ---------------------------
-model OrderClient {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  productId  Int      @map("product_id")
-  quantity   Int
-  status     String   // 'pendiente', 'pagado', 'cancelado', etc.
-  createdAt  DateTime @default(now()) @map("created_at")
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  ingredientId Int      @map("ingredient_id")
+  movementType String   @map("movementType")
+  reason       String
+  quantity     Float
+  createdAt    DateTime @default(now()) @map("createdAt")
 
   // Relaciones
   user       User       @relation(fields: [userId], references: [id])
-  product    Product    @relation(fields: [productId], references: [id])
-  saleOrders SaleOrder[]
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
 
-  @@map("order_clients")
+  @@map("Inventory_movements")
 }
 
-// ---------------------------
-// NUEVO MODELO: EOQ POR INGREDIENTE
-// ---------------------------
-model IngredientEOQ {
-  id                    Int        @id @default(autoincrement())
-  ingredientId          Int        @unique @map("ingredient_id")
-  orderingCost          Float
-  annualMaintenanceCost Float
-  leadTimeDays          Int
-  reorderPoint          Int
-  dailyDemand           Int
-  annualDemand          Int
-  updatedAt             DateTime   @updatedAt
+model Product {
+  id              Int      @id @default(autoincrement())
+  name            String
+  flavor          String
+  type            String
+  imageUrl        String   @map("imageUrl")
+  pricePerUnit    Float    @map("pricePerUnit")
+  currentQuantity Float    @map("currentQuantity")
+  createdAt       String   @map("createdAt")
+  updatedAt       String?   @map("updatedAt")
 
-  // Relación 1 a 1 con Ingredient
-  ingredient            Ingredient @relation(fields: [ingredientId], references: [id])
+  // Relaciones
+  orderClients  OrderClient[]
+  saleProducts  SaleProduct[]
 
-  @@map("ingredients_eoq_model")
+  @@map("Products")
 }
 
-// ---------------------------
-// NUEVAS TABLAS DE VENTAS
-// ---------------------------
+model OrderClient {
+  id        Int      @id @default(autoincrement())
+  clientId  Int      @map("client_id")
+  productId Int      @map("product_id")
+  quantity  Float
+  status    String
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  // Relaciones
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("Order_clients")
+}
+
 model SaleOrder {
-  id             Int          @id @default(autoincrement())
-  userId         Int          @map("user_id")
-  orderClientId  Int          @map("order_client_id")
-  totalCostOrder Float
-  createdAt      DateTime     @default(now())
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  orderClientId Int      @map("order_client_id")
+  totalCostOrder Float   @map("totalCostOrder")
+  createdAt     DateTime @default(now()) @map("createdAt")
 
-  user       User         @relation(fields: [userId], references: [id])
-  orderClient OrderClient @relation(fields: [orderClientId], references: [id])
+  // Relaciones
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("sale_orders")
+  @@map("Sale_orders")
 }
 
 model SaleProduct {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  productId  Int      @map("product_id")
-  quantity   Int
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  productId Int      @map("product_id")
+  quantity  Float
+  createdAt DateTime @default(now()) @map("createdAt")
 
-  user    User    @relation(fields: [userId], references: [id])
+  // Relaciones
   product Product @relation(fields: [productId], references: [id])
 
-  @@map("sale_products")
+  @@map("Sale_products")
 }

@@ -178,3 +178,60 @@ export async function PUT(
     );
   }
 }
+
+// DELETE - Eliminar un ingrediente y todos sus movimientos relacionados
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const resolvedParams = await params;
+    const ingredientId = parseInt(resolvedParams.id);
+
+    // Verificar que el ingrediente existe
+    const existingIngredient = await prisma.ingredient.findUnique({
+      where: { id: ingredientId },
+      include: {
+        movements: true
+      }
+    });
+
+    if (!existingIngredient) {
+      return NextResponse.json(
+        { error: "Ingrediente no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Eliminar el ingrediente en una transacción
+    // Los movimientos se eliminan automáticamente por la cascada (onDelete: Cascade)
+    const result = await prisma.$transaction(async (tx) => {
+      // Eliminar el ingrediente (los movimientos se eliminan automáticamente)
+      const deletedIngredient = await tx.ingredient.delete({
+        where: { id: ingredientId }
+      });
+
+      return {
+        deletedIngredient,
+        deletedMovements: existingIngredient.movements.length
+      };
+    });
+
+    return NextResponse.json({
+      message: `Ingrediente "${existingIngredient.name}" eliminado exitosamente`,
+      deletedMovements: result.deletedMovements,
+      ingredient: result.deletedIngredient
+    });
+  } catch (error) {
+    console.error("Error deleting ingredient:", error);
+    return NextResponse.json(
+      { error: "Error al eliminar ingrediente" },
+      { status: 500 }
+    );
+  }
+}
