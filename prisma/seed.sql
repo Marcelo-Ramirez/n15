@@ -1,54 +1,4 @@
--- Eliminar la tabla si ya existe
-/*DROP TABLE IF EXISTS products;
 
--- Crear tabla products
-CREATE TABLE products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    unitPrice REAL NOT NULL,        -- precio de venta o costo unitario
-    annualConsumption INTEGER NOT NULL, -- unidades vendidas
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Insertar productos de la tabla ABC
-INSERT INTO products (name, unitPrice, annualConsumption) VALUES
-('Artículo 11asdlkfjasdfkljsakdlfjask', 8200, 3568),
-('Artículo 13', 8450, 2830),
-('Artículo 25', 12370, 1930),
-('Artículo 22', 7990, 2975),
-('Artículo 24', 9950, 2295),
-('Artículo 16', 15450, 1456),
-('Artículo 9sadnk', 19650, 978),
-('Artículo 14asdkaslkjdlj', 9100, 960),
-('Artículo 30lasdjoaisjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj', 8450, 875),
-('Artículo 19', 4800, 952),
-('Artículo 29', 6100, 350),
-('Artículo 3', 2300, 690),
-('Artículo 35', 2400, 657),
-('Artículo 1', 3700, 385),
-('Artículo 31', 3200, 389),
-('Artículo 33', 1960, 621),
-('Artículo 15', 3850, 280),
-('Artículo 34', 2300, 459),
-('Artículo 8', 3500, 286),
-('Artículo 27', 1900, 526),
-('Artículo 20', 1110, 860),
-('Artículo 28', 1150, 700),
-('Artículo 10', 1750, 415),
-('Artículo 26', 1450, 489),
-('Artículo 5', 3700, 180),
-('Artículo 6', 195, 2790),
-('Artículo 17', 965, 559),
-('Artículo 23', 680, 742),
-('Artículo 7', 809, 622),
-('Artículo 18', 645, 612),
-('Artículo 12', 2100, 169),
-('Artículo 2', 1800, 150),
-('Artículo 32', 450, 426),
-('Artículo 21', 635, 221),
-('Artículo 4', 450, 255);
-*/
 
 -- ===============================
 -- Tabla Ingredients
@@ -194,3 +144,89 @@ INSERT INTO inventory_movements (ingredient_id, user_id, movement_type, reason, 
 (8, 1, 'salida', 'produccion', 10, 180, 170),
 (8, 1, 'salida', 'produccion', 10, 170, 160),
 (8, 1, 'salida', 'produccion', 10, 160, 150);
+DROP TABLE IF EXISTS products;
+
+CREATE TABLE products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    tipo TEXT,
+    sabor TEXT,
+    current_quantity REAL DEFAULT 0,
+    image_path TEXT,
+    cost_per_unit REAL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insertar productos de ejemplo con las nuevas columnas
+INSERT INTO products (name, description, tipo, sabor, current_quantity, cost_per_unit) VALUES
+('Gelatina de fresa', 'Gelatina de fresa deliciosa', 'gelatina', 'fresa', 100, 5.0),
+('Gelatina de limón', 'Gelatina de limón refrescante', 'gelatina', 'limón', 100, 5.0),
+('Gelatina de naranja', 'Gelatina de naranja natural', 'gelatina', 'naranja', 100, 5.0),
+('Gelatina mixta', 'Gelatina mixta surtida', 'gelatina', 'mixta', 100, 5.0),
+('Jugo natural fresa', 'Jugo natural fresa', 'jugo', 'fresa', 50, 3.0),
+('Jugo natural limón', 'Jugo natural limón', 'jugo', 'limón', 50, 3.0),
+('Jugo natural naranja', 'Jugo natural naranja', 'jugo', 'naranja', 50, 3.0);
+
+DROP TABLE IF EXISTS sale_orders;
+
+CREATE TABLE sale_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    order_client_id INTEGER NOT NULL,
+    total_cost_order REAL NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (order_client_id) REFERENCES order_clients(id)
+);
+
+-- Ejemplo de inserción (supongamos que order_client_id ya existe)
+INSERT INTO sale_orders (user_id, order_client_id, total_cost_order) VALUES
+(1, 1, 75.00),
+(1, 2, 45.00),
+(1, 3, 30.00);
+
+DROP TABLE IF EXISTS sale_products;
+
+CREATE TABLE sale_products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+-- Ejemplo de inserción
+INSERT INTO sale_products (user_id, product_id, quantity) VALUES
+(1, 1, 5),
+(1, 2, 3),
+(1, 3, 2);
+
+-- ===============================
+-- Tabla OrderClients (faltante)
+-- ===============================
+DROP TABLE IF EXISTS order_clients;
+
+CREATE TABLE order_clients (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pendiente', -- pendiente, pagado, cancelado
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+-- Insertar pedidos de ejemplo para user_id = 1
+INSERT INTO order_clients (user_id, product_id, quantity, status) VALUES
+(1, 1, 5, 'pendiente'),
+(1, 2, 3, 'pendiente'),
+(1, 3, 2, 'pagado'),
+(1, 4, 1, 'pendiente'),
+(1, 5, 6, 'pagado'),
+(1, 6, 2, 'pendiente'),
+(1, 7, 1, 'pendiente');
