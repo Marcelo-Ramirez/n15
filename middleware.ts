@@ -21,9 +21,9 @@ export function middleware(request: NextRequest) {
   // Si accede a /sys (exactamente)
   if (pathname === '/sys') {
     if (session && session.role) {
-      // Si está autenticado, redirigir a su dashboard según el rol
-      const dashboardUrl = new URL(`/sys/${session.role}/dashboard`, request.url)
-      return NextResponse.redirect(dashboardUrl)
+      // Si está autenticado, redirigir a su página de usuario según el rol
+      const userUrl = new URL(`/sys/${session.role}/user`, request.url)
+      return NextResponse.redirect(userUrl)
     } else {
       // Si no está autenticado, redirigir a login
       const loginUrl = new URL('/sys/login', request.url)
@@ -31,10 +31,10 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Si accede a /sys/login y ya está autenticado, redirigir a su dashboard
+  // Si accede a /sys/login y ya está autenticado, redirigir a su página de usuario
   if (pathname === '/sys/login' && session && session.role) {
-    const dashboardUrl = new URL(`/sys/${session.role}/dashboard`, request.url)
-    return NextResponse.redirect(dashboardUrl)
+    const userUrl = new URL(`/sys/${session.role}/user`, request.url)
+    return NextResponse.redirect(userUrl)
   }
 
   // Si la ruta comienza con /sys pero NO es /sys/login o /sys/register
@@ -54,10 +54,10 @@ export function middleware(request: NextRequest) {
     if (roleMatch) {
       const requiredRole = roleMatch[1]
       
-      // Si el rol no coincide, redirigir al dashboard correcto
+      // Si el rol no coincide, redirigir a la página de usuario correcta
       if (session.role !== requiredRole) {
-        const correctDashboardUrl = new URL(`/sys/${session.role}/dashboard`, request.url)
-        return NextResponse.redirect(correctDashboardUrl)
+        const correctUserUrl = new URL(`/sys/${session.role}/user`, request.url)
+        return NextResponse.redirect(correctUserUrl)
       }
     }
   }

@@ -54,14 +54,14 @@ export default function SystemLoginPage() {
         throw new Error(data.message || 'Login failed');
       }
 
-      // En caso de éxito, redirigir al dashboard según el rol o callback URL
+      // En caso de éxito, redirigir a la página de usuario según el rol o callback URL
       const userRole = data.user?.role || 'admin';
       const callbackUrl = searchParams.get('callbackUrl');
       
       if (callbackUrl && callbackUrl.startsWith('/sys/')) {
         router.push(callbackUrl);
       } else {
-        router.push(`/sys/${userRole}/dashboard`);
+        router.push(`/sys/${userRole}/user`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");

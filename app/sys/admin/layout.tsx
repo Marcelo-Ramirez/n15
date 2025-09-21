@@ -3,7 +3,6 @@
 import { Box, Flex } from '@chakra-ui/react'
 import { useState } from 'react'
 import SystemSidebar from '@/components/layout/SystemSidebar'
-import SystemHeader from '@/components/layout/SystemHeader'
 
 export default function SystemLayout({
   children,
@@ -32,9 +31,7 @@ export default function SystemLayout({
         flexDirection="column"
         ml={isSidebarCollapsed ? "60px" : "250px"}
         transition="margin 0.3s ease"
-      >
-        <SystemHeader />
-        
+      >        
         <Box flex="1" p={6}>
           {children}
         </Box>
