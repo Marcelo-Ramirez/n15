@@ -13,6 +13,8 @@ import {
   SimpleGrid,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+const InventoryEOQGraph = dynamic(() => import("@/components/InventoryEOQGraph"), { ssr: false });
 
 export default function EOQModelPage() {
   const searchParams = useSearchParams();
@@ -29,6 +31,7 @@ export default function EOQModelPage() {
   const [reorderPoint, setReorderPoint] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingModel, setLoadingModel] = useState(false);
+  const [showGraph, setShowGraph] = useState(false);
 
   // Al cargar, obtener modelo EOQ guardado y demanda anual
   useEffect(() => {
@@ -227,8 +230,17 @@ export default function EOQModelPage() {
       <Box h="2px" bg="#fff" my={2} />
       <Box>
         <Text mb={1}>Grafic</Text>
-        <Button size="sm" variant="outline">generate</Button>
+        <Button size="sm" variant="outline" onClick={() => setShowGraph(true)}>generate</Button>
       </Box>
+      {showGraph && eoq && reorderPoint && leadTimeDays && annualDemand && (
+        <InventoryEOQGraph
+          eoq={Number(eoq)}
+          reorderPoint={Number(reorderPoint)}
+          leadTime={Number(leadTimeDays)}
+          periods={Math.max(1, Math.round(Number(annualDemand) / Number(eoq)))}
+            annualDemand={Number(annualDemand)}
+          />
+      )}
       {error && <Text color="red.500">{error}</Text>}
     </Box>
   );
