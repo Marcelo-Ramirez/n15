@@ -1,9 +1,28 @@
 "use client";
 
-import { Box, Container, Text, Button, VStack, HStack, SimpleGrid } from "@chakra-ui/react";
+import { useState, useEffect } from "react";
+import { 
+  Box, 
+  Container, 
+  Text, 
+  Button, 
+  VStack, 
+  HStack, 
+  SimpleGrid, 
+  Spinner, 
+  Image 
+} from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
+
+interface Product {
+  id: number;
+  name: string;
+  flavor: string;
+  pricePerUnit: number;
+  imageUrl?: string | null;
+}
 
 export default function HomePage() {
   const router = useRouter();

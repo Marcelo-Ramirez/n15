@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // GET: Obtener todos los productos
 export async function GET() {
@@ -17,17 +15,9 @@ export async function GET() {
   }
 }
 
-// POST: Crear un nuevo producto
+// POST: Crear un nuevo producto (sin sesión)
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Usuario no autenticado" },
-        { status: 401 }
-      );
-    }
-
     const { name, flavor, type, pricePerUnit, imageUrl, currentQuantity } =
       await req.json();
 

@@ -60,3 +60,13 @@ button[data-nextjs-toast-close] {
 #__next-dev-client-pages-browser {
   display: none !important;
 }
+
+.print-visible {
+  display: none;
+}
+
+@media print {
+  .print-visible {
+    display: block !important;
+  }
+}

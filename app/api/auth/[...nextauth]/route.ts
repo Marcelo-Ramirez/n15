@@ -33,7 +33,7 @@ export const authOptions: AuthOptions = {
               return {
                 id: user.id.toString(),
                 name: user.name,
-                username: user.username,
+                username: user.userName,
                 twoFactorEnabled: user.twoFactorEnabled,
                 requires2FA: true,
               };
@@ -51,7 +51,7 @@ export const authOptions: AuthOptions = {
           return {
             id: user.id.toString(),
             name: user.name,
-            username: user.username,
+            username: user.userName,
             twoFactorEnabled: user.twoFactorEnabled,
             requires2FA: false,
           };
