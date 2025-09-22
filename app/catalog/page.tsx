@@ -57,7 +57,7 @@ export default function CatalogPage() {
     <Box minH="100vh" bg="gray.50">
       <PublicHeader />
       
-      <Container maxW="7xl" py={8}>
+  <Container maxW="7xl" py={8} mx="auto" textAlign="center">
         <Box mb={8}>
           <Text fontSize="3xl" fontWeight="bold" mb={4} textAlign="center">
             Our Gummies Catalog
@@ -82,7 +82,13 @@ export default function CatalogPage() {
             <Text>Loading products...</Text>
           </Box>
         ) : (
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6}>
+          <SimpleGrid 
+            columns={{ base: 1, md: 2, lg: 3 }} 
+            gap={8} 
+            justifyItems="center" 
+            maxW="1200px" 
+            mx="auto"
+          >
             {filteredProducts.map((product) => (
               <Box 
                 key={product.id}
@@ -94,6 +100,13 @@ export default function CatalogPage() {
                 borderColor="gray.200"
                 _hover={{ shadow: "md", transform: "translateY(-2px)" }}
                 transition="all 0.2s"
+                textAlign="center"
+                mx="auto"
+                w="360px"
+                minH="420px"
+                display="flex"
+                flexDirection="column"
+                justifyContent="space-between"
               >
                 <Box 
                   h="200px" 
@@ -106,11 +119,9 @@ export default function CatalogPage() {
                 >
                   <Text color="gray.500">Product Image</Text>
                 </Box>
-                
                 <Text fontWeight="semibold" fontSize="lg" mb={2}>
                   {product.name}
                 </Text>
-                
                 <Text color="gray.600" mb={4} style={{ 
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
@@ -119,8 +130,7 @@ export default function CatalogPage() {
                 }}>
                   {product.description}
                 </Text>
-                
-                <HStack justify="space-between" align="center">
+                <HStack justify="center" align="center" gap={4}>
                   <Text fontSize="xl" fontWeight="bold" color="blue.600">
                     ${product.price}
                   </Text>
@@ -128,7 +138,6 @@ export default function CatalogPage() {
                     Stock: {product.stock}
                   </Text>
                 </HStack>
-                
                 <Button 
                   colorScheme="blue" 
                   w="full" 

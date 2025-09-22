@@ -9,16 +9,15 @@ export function PublicHeader() {
   return (
     <Box bg="white" shadow="sm" position="sticky" top="0" zIndex="100">
       <Container maxW="7xl">
-        <HStack justify="space-between" py={4}>
+        <HStack justify="space-between" py={4} pl={20}>
           <HStack gap={4}>
-            <Image 
-              src="/images/logos/logo.png" 
-              alt="MuytunaSys" 
-              height="40px"
+            <Image
+              src="/images/logos/logo.png"
+              alt="MuytunaSys"
+              height="100px"
+              cursor="pointer"
+              onClick={() => router.push("/")}
             />
-            <Text fontSize="xl" fontWeight="bold" color="green.600">
-              MuytunaSys
-            </Text>
           </HStack>
 
           <HStack gap={6}>
@@ -50,13 +49,7 @@ export function PublicHeader() {
               Mi Cuenta
             </Button>
             
-            <Button 
-              colorScheme="green" 
-              size="sm"
-              onClick={() => router.push('/auth/login')}
-            >
-              Entrar
-            </Button>
+            
           </HStack>
         </HStack>
       </Container>
