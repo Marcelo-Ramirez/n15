@@ -25,21 +25,6 @@ DELETE FROM sqlite_sequence WHERE name = 'Ingredients_EOQ_model';
 -- Inserta datos iniciales para cada tabla.
 -- Se usa DATETIME('now') para los campos de fecha y hora.
 
--- Inserta un usuario de ejemplo
-INSERT INTO "Users" (
-  "userName",
-  "name",
-  "phone",
-  "password",
-  "statusAccount",
-  "role",
-  "twoFactorEnabled",
-  "createdAt",
-  "updatedAt"
-) VALUES
-('admin', 'Administrador', '1111111111', 'marcos123', 'active', 'admin', FALSE, DATETIME('now'), DATETIME('now')),
-('ventas', 'Vendedor', '2222222222', 'marcos123', 'active', 'ventas', FALSE, DATETIME('now'), DATETIME('now')),
-('almacen', 'Encargado de Almacén', '3333333333', 'marcos123', 'active', 'almacen', FALSE, DATETIME('now'), DATETIME('now'));
 
 ---
 -- Inserta un ingrediente de ejemploINSERT INTO "Ingredients" (
@@ -58,7 +43,21 @@ INSERT INTO "Ingredients" (
 ('Polvo de hornear', 'kg', 5.90, 'Repostería Superior', 10.0, DATETIME('now'), DATETIME('now')),
 ('Sal', 'kg', 0.80, 'Salinera La Costa', 200.0, DATETIME('now'), DATETIME('now')),
 ('Cacao en polvo', 'kg', 9.20, 'Chocolates Puros', 15.0, DATETIME('now'), DATETIME('now')),
-('Levadura fresca', 'kg', 4.00, 'Levaduras El Panadero', 5.0, DATETIME('now'), DATETIME('now'));
+('Levadura fresca', 'kg', 4.00, 'Levaduras El Panadero', 5.0, DATETIME('now'), DATETIME('now')),
+('Grenetina hidrolizada', 'kg', 12.50, 'Gelatinas Premium', 50.0, DATETIME('now'), DATETIME('now')),
+('Jarabe de agave orgánico', 'litro', 8.20, 'Agaves Del Sol', 30.0, DATETIME('now'), DATETIME('now')),
+('Ácido cítrico en polvo', 'kg', 6.75, 'Químicos Naturales', 15.0, DATETIME('now'), DATETIME('now')),
+('Saborizante de fresa', 'litro', 15.00, 'Extractos Frutales S.A.', 5.0, DATETIME('now'), DATETIME('now')),
+('Saborizante de limón', 'litro', 14.50, 'Extractos Frutales S.A.', 5.0, DATETIME('now'), DATETIME('now')),
+('Saborizante de mango', 'litro', 16.00, 'Extractos Frutales S.A.', 5.0, DATETIME('now'), DATETIME('now')),
+('Saborizante de mora', 'litro', 16.50, 'Extractos Frutales S.A.', 5.0, DATETIME('now'), DATETIME('now')),
+('Saborizante de zanahoria', 'litro', 13.00, 'Extractos Frutales S.A.', 5.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de betabel', 'kg', 4.50, 'Cosechas Frescas', 25.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de tuna', 'kg', 5.20, 'Cosechas Frescas', 25.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de durazno', 'kg', 5.80, 'Cosechas Frescas', 25.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de maracuyá', 'kg', 6.20, 'Cosechas Frescas', 25.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de coco', 'kg', 6.50, 'Cosechas Frescas', 25.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de tamarindo', 'kg', 5.40, 'Cosechas Frescas', 25.0, DATETIME('now'), DATETIME('now'));
 ---
 -- Inserta un producto de ejemplo
 INSERT INTO "Products" (
@@ -70,17 +69,22 @@ INSERT INTO "Products" (
   "currentQuantity",
   "createdAt",
   "updatedAt"
-) VALUES (
-  'Galleta de Avena',
-  'Avena',
-  'Galleta',
-  'http://ejemplo.com/galleta.jpg',
-  1.50,
-  100.0,
-  DATETIME('now'),
-  DATETIME('now')
-);
-
+) VALUES 
+('Gomita de Beterraga', 'Beterraga', 'Gomita', '/uploads/beterraga.jpeg', 2.00, 100.0, DATETIME('now'), DATETIME('now')),
+('Gomita de Frutilla', 'Frutilla', 'Gomita', '/uploads/frutilla.jpeg', 2.50, 100.0, DATETIME('now'), DATETIME('now')),
+('Gomita de Limón', 'Limon', 'Gomita', '/uploads/limon.jpeg', 1.80, 100.0, DATETIME('now'), DATETIME('now')),
+('Gomita de Mandarina', 'Mandarina', 'Gomita', '/uploads/mandarina.jpeg', 2.20, 100.0, DATETIME('now'), DATETIME('now')),
+('Gomita de Manzana', 'Manzana', 'Gomita', '/uploads/manzana.jpeg', 2.10, 100.0, DATETIME('now'), DATETIME('now')),
+('Gomita de Manzanilla', 'Manzanilla', 'Gomita', '/uploads/manzanilla.jpeg', 1.90, 100.0, DATETIME('now'), DATETIME('now')),
+('Gomita de Tuna', 'Tuna', 'Gomita', '/uploads/tuna.jpeg', 2.30, 100.0, DATETIME('now'), DATETIME('now')),
+('Gomita de Zanahoria', 'Zanahoria', 'Gomita', '/uploads/zanahoria.jpeg', 1.70, 100.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de Mango Tropical', 'Mango', 'Pulpa', '/uploads/pulpa1.jpeg', 5.50, 50.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de Mora Silvestre', 'Mora', 'Pulpa', '/uploads/pulpa2.jpeg', 6.00, 50.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de Durazno', 'Durazno', 'Pulpa', '/uploads/pulpa3.jpeg', 5.20, 50.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de Maracuyá', 'Maracuya', 'Pulpa', '/uploads/pulpa4.jpeg', 6.50, 50.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de Frambuesa', 'Frambuesa', 'Pulpa', '/uploads/pulpa5.jpeg', 7.00, 50.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de Coco Cremoso', 'Coco', 'Pulpa', '/uploads/pulpa6.jpeg', 5.80, 50.0, DATETIME('now'), DATETIME('now')),
+('Pulpa de Tamarindo', 'Tamarindo', 'Pulpa', '/uploads/pulpa7.jpeg', 5.40, 50.0, DATETIME('now'), DATETIME('now'));
 ---
 INSERT INTO "Inventory_movements" (
   "user_id",
@@ -90,89 +94,299 @@ INSERT INTO "Inventory_movements" (
   "quantity",
   "createdAt"
 ) VALUES
--- Harina de Trigo (id: 1)
-(1, 1, 'entrada', 'Compra inicial de proveedor A', 100.0, DATETIME('now', '-20 days')),
-(1, 1, 'salida', 'Uso para producción de pan', 25.0, DATETIME('now', '-19 days')),
-(1, 1, 'entrada', 'Compra de emergencia', 50.0, DATETIME('now', '-15 days')),
-(1, 1, 'salida', 'Uso para producción de pasteles', 15.0, DATETIME('now', '-14 days')),
-(1, 1, 'salida', 'Desperdicio por derrame', 2.0, DATETIME('now', '-13 days')),
-(1, 1, 'entrada', 'Reposición programada', 80.0, DATETIME('now', '-10 days')),
-(1, 1, 'salida', 'Uso para galletas', 10.0, DATETIME('now', '-9 days')),
-(1, 1, 'entrada', 'Devolución de lote', 5.0, DATETIME('now', '-8 days')),
-(1, 1, 'salida', 'Uso en taller de repostería', 3.0, DATETIME('now', '-7 days')),
-(1, 1, 'entrada', 'Compra habitual', 40.0, DATETIME('now', '-6 days')),
+-- Azúcar (id: 1)
+(1, 1, 'entrada', 'Compra inicial para el año', 300.0, DATETIME('now', '-360 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-350 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-320 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-290 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-260 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-230 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-200 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-170 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-140 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-110 days')),
+(1, 1, 'salida', 'Producción semanal', 25.0, DATETIME('now', '-80 days')),
+(1, 1, 'entrada', 'Reposición de stock', 150.0, DATETIME('now', '-70 days')),
 
--- Azúcar (id: 2)
-(1, 2, 'entrada', 'Compra a proveedor B', 75.0, DATETIME('now', '-19 days')),
-(1, 2, 'salida', 'Uso en pastelería', 10.0, DATETIME('now', '-18 days')),
-(1, 2, 'entrada', 'Reposición de stock', 30.0, DATETIME('now', '-16 days')),
-(1, 2, 'salida', 'Producción de jarabes', 5.0, DATETIME('now', '-15 days')),
-(1, 2, 'salida', 'Uso para decoración', 1.0, DATETIME('now', '-14 days')),
-(1, 2, 'entrada', 'Compra habitual', 50.0, DATETIME('now', '-11 days')),
-(1, 2, 'salida', 'Uso en bebidas', 8.0, DATETIME('now', '-10 days')),
-(1, 2, 'entrada', 'Lote de prueba', 2.0, DATETIME('now', '-9 days')),
-(1, 2, 'salida', 'Producción de glaseado', 4.0, DATETIME('now', '-8 days')),
-(1, 2, 'entrada', 'Entrega urgente', 20.0, DATETIME('now', '-7 days')),
+-- Mantequilla sin sal (id: 2)
+(1, 2, 'entrada', 'Compra inicial para el año', 50.0, DATETIME('now', '-360 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-350 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-320 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-290 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-260 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-230 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-200 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-170 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-140 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-110 days')),
+(1, 2, 'salida', 'Producción semanal', 5.0, DATETIME('now', '-80 days')),
+(1, 2, 'entrada', 'Reposición de stock', 25.0, DATETIME('now', '-70 days')),
 
--- Mantequilla sin sal (id: 3)
-(1, 3, 'entrada', 'Compra a distribuidor', 50.0, DATETIME('now', '-18 days')),
-(1, 3, 'salida', 'Uso para masa de hojaldre', 15.0, DATETIME('now', '-17 days')),
-(1, 3, 'entrada', 'Reposición semanal', 25.0, DATETIME('now', '-15 days')),
-(1, 3, 'salida', 'Uso en cremas', 7.0, DATETIME('now', '-14 days')),
-(1, 3, 'salida', 'Congelado para futuras preparaciones', 5.0, DATETIME('now', '-13 days')),
-(1, 3, 'entrada', 'Entrega regular', 30.0, DATETIME('now', '-11 days')),
-(1, 3, 'salida', 'Uso para pasteles de crema', 10.0, DATETIME('now', '-10 days')),
-(1, 3, 'entrada', 'Compra especial', 10.0, DATETIME('now', '-9 days')),
-(1, 3, 'salida', 'Uso en panadería', 6.0, DATETIME('now', '-8 days')),
-(1, 3, 'entrada', 'Devolución de envío', 1.0, DATETIME('now', '-7 days')),
+-- Huevos (id: 3)
+(1, 3, 'entrada', 'Compra inicial para el año', 120.0, DATETIME('now', '-360 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-350 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-320 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-290 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-260 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-230 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-200 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-170 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-140 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-110 days')),
+(1, 3, 'salida', 'Producción semanal', 10.0, DATETIME('now', '-80 days')),
+(1, 3, 'entrada', 'Reposición de stock', 60.0, DATETIME('now', '-70 days')),
 
--- Huevos (id: 4)
-(1, 4, 'entrada', 'Compra a Granja Avícola', 12.0, DATETIME('now', '-17 days')),
-(1, 4, 'salida', 'Uso en panes', 4.0, DATETIME('now', '-16 days')),
-(1, 4, 'entrada', 'Reposición de stock', 6.0, DATETIME('now', '-14 days')),
-(1, 4, 'salida', 'Producción de merengue', 3.0, DATETIME('now', '-13 days')),
-(1, 4, 'salida', 'Consumo interno', 1.0, DATETIME('now', '-12 days')),
-(1, 4, 'entrada', 'Entrega semanal', 10.0, DATETIME('now', '-10 days')),
-(1, 4, 'salida', 'Uso en bizcochos', 5.0, DATETIME('now', '-9 days')),
-(1, 4, 'entrada', 'Lote adicional', 4.0, DATETIME('now', '-8 days')),
-(1, 4, 'salida', 'Uso para frituras', 2.0, DATETIME('now', '-7 days')),
-(1, 4, 'entrada', 'Compra rápida', 3.0, DATETIME('now', '-6 days')),
+-- Polvo de hornear (id: 4)
+(1, 4, 'entrada', 'Compra inicial para el año', 20.0, DATETIME('now', '-360 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-350 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-320 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-290 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-260 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-230 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-200 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-170 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-140 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-110 days')),
+(1, 4, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-80 days')),
+(1, 4, 'entrada', 'Reposición de stock', 10.0, DATETIME('now', '-70 days')),
 
--- Polvo de hornear (id: 5)
-(1, 5, 'entrada', 'Compra a distribuidor', 5.0, DATETIME('now', '-16 days')),
-(1, 5, 'salida', 'Uso en muffins', 1.0, DATETIME('now', '-15 days')),
-(1, 5, 'entrada', 'Reposición de stock', 2.0, DATETIME('now', '-14 days')),
-(1, 5, 'salida', 'Uso en pasteles', 0.5, DATETIME('now', '-13 days')),
-(1, 5, 'salida', 'Venta a cliente', 0.1, DATETIME('now', '-12 days')),
-(1, 5, 'entrada', 'Entrega mensual', 3.0, DATETIME('now', '-10 days')),
-(1, 5, 'salida', 'Uso en bizcochos', 0.8, DATETIME('now', '-9 days')),
-(1, 5, 'entrada', 'Compra habitual', 1.0, DATETIME('now', '-8 days')),
-(1, 5, 'salida', 'Uso para galletas', 0.2, DATETIME('now', '-7 days')),
-(1, 5, 'entrada', 'Lote de prueba', 0.5, DATETIME('now', '-6 days')),
+-- Sal (id: 5)
+(1, 5, 'entrada', 'Compra inicial para el año', 400.0, DATETIME('now', '-360 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-350 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-320 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-290 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-260 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-230 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-200 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-170 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-140 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-110 days')),
+(1, 5, 'salida', 'Producción semanal', 20.0, DATETIME('now', '-80 days')),
+(1, 5, 'entrada', 'Reposición de stock', 200.0, DATETIME('now', '-70 days')),
 
--- Sal (id: 6)
-(1, 6, 'entrada', 'Compra a distribuidor', 50.0, DATETIME('now', '-15 days')),
-(1, 6, 'salida', 'Uso en panadería', 10.0, DATETIME('now', '-14 days')),
-(1, 6, 'entrada', 'Reposición programada', 30.0, DATETIME('now', '-13 days')),
-(1, 6, 'salida', 'Uso en cocina', 5.0, DATETIME('now', '-12 days')),
-(1, 6, 'salida', 'Uso para pasteles salados', 2.0, DATETIME('now', '-11 days')),
-(1, 6, 'entrada', 'Compra habitual', 20.0, DATETIME('now', '-9 days')),
-(1, 6, 'salida', 'Uso para condimentos', 3.0, DATETIME('now', '-8 days')),
-(1, 6, 'entrada', 'Lote de respaldo', 10.0, DATETIME('now', '-7 days')),
-(1, 6, 'salida', 'Uso en salsas', 1.0, DATETIME('now', '-6 days')),
-(1, 6, 'entrada', 'Compra a granel', 40.0, DATETIME('now', '-5 days')),
+-- Cacao en polvo (id: 6)
+(1, 6, 'entrada', 'Compra inicial para el año', 30.0, DATETIME('now', '-360 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-350 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-320 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-290 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-260 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-230 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-200 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-170 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-140 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-110 days')),
+(1, 6, 'salida', 'Producción semanal', 3.0, DATETIME('now', '-80 days')),
+(1, 6, 'entrada', 'Reposición de stock', 15.0, DATETIME('now', '-70 days')),
 
 -- Levadura fresca (id: 7)
-(1, 7, 'entrada', 'Compra a proveedor de levaduras', 10.0, DATETIME('now', '-14 days')),
-(1, 7, 'salida', 'Uso en masa para pizza', 2.0, DATETIME('now', '-13 days')),
-(1, 7, 'entrada', 'Reposición semanal', 5.0, DATETIME('now', '-12 days')),
-(1, 7, 'salida', 'Uso en pan dulce', 1.0, DATETIME('now', '-11 days')),
-(1, 7, 'salida', 'Desperdicio', 0.5, DATETIME('now', '-10 days')),
-(1, 7, 'entrada', 'Entrega regular', 3.0, DATETIME('now', '-8 days')),
-(1, 7, 'salida', 'Uso en pan integral', 0.8, DATETIME('now', '-7 days')),
-(1, 7, 'entrada', 'Compra habitual', 2.0, DATETIME('now', '-6 days')),
-(1, 7, 'salida', 'Uso en masa madre', 0.5, DATETIME('now', '-5 days')),
-(1, 7, 'entrada', 'Lote adicional', 1.0, DATETIME('now', '-4 days'));
+(1, 7, 'entrada', 'Compra inicial para el año', 10.0, DATETIME('now', '-360 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-350 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-320 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-290 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-260 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-230 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-200 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-170 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-140 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-110 days')),
+(1, 7, 'salida', 'Producción semanal', 1.0, DATETIME('now', '-80 days')),
+(1, 7, 'entrada', 'Reposición de stock', 5.0, DATETIME('now', '-70 days')),
+
+-- Grenetina hidrolizada (id: 8)
+(1, 8, 'entrada', 'Compra inicial para el año', 100.0, DATETIME('now', '-360 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-350 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-320 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-290 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-260 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-230 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-200 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-170 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-140 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-110 days')),
+(1, 8, 'salida', 'Producción de gomitas', 10.0, DATETIME('now', '-80 days')),
+(1, 8, 'entrada', 'Reposición de stock', 50.0, DATETIME('now', '-70 days')),
+
+-- Jarabe de agave orgánico (id: 9)
+(1, 9, 'entrada', 'Compra inicial para el año', 60.0, DATETIME('now', '-360 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-350 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-320 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-290 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-260 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-230 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-200 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-170 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-140 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-110 days')),
+(1, 9, 'salida', 'Producción de gomitas', 5.0, DATETIME('now', '-80 days')),
+(1, 9, 'entrada', 'Reposición de stock', 30.0, DATETIME('now', '-70 days')),
+
+-- Ácido cítrico en polvo (id: 10)
+(1, 10, 'entrada', 'Compra inicial para el año', 30.0, DATETIME('now', '-360 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-350 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-320 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-290 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-260 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-230 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-200 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-170 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-140 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-110 days')),
+(1, 10, 'salida', 'Producción de gomitas', 2.0, DATETIME('now', '-80 days')),
+(1, 10, 'entrada', 'Reposición de stock', 15.0, DATETIME('now', '-70 days')),
+
+-- Saborizante de fresa (id: 11)
+(1, 11, 'entrada', 'Compra inicial para el año', 10.0, DATETIME('now', '-360 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-350 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-320 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-290 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-260 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-230 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-200 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-170 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-140 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-110 days')),
+(1, 11, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-80 days')),
+(1, 11, 'entrada', 'Reposición de stock', 5.0, DATETIME('now', '-70 days')),
+
+-- Saborizante de limón (id: 12)
+(1, 12, 'entrada', 'Compra inicial para el año', 10.0, DATETIME('now', '-360 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-350 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-320 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-290 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-260 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-230 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-200 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-170 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-140 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-110 days')),
+(1, 12, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-80 days')),
+(1, 12, 'entrada', 'Reposición de stock', 5.0, DATETIME('now', '-70 days')),
+
+-- Saborizante de mango (id: 13)
+(1, 13, 'entrada', 'Compra inicial para el año', 10.0, DATETIME('now', '-360 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-350 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-320 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-290 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-260 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-230 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-200 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-170 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-140 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-110 days')),
+(1, 13, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-80 days')),
+(1, 13, 'entrada', 'Reposición de stock', 5.0, DATETIME('now', '-70 days')),
+
+-- Saborizante de mora (id: 14)
+(1, 14, 'entrada', 'Compra inicial para el año', 10.0, DATETIME('now', '-360 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-350 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-320 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-290 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-260 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-230 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-200 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-170 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-140 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-110 days')),
+(1, 14, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-80 days')),
+(1, 14, 'entrada', 'Reposición de stock', 5.0, DATETIME('now', '-70 days')),
+
+-- Saborizante de zanahoria (id: 15)
+(1, 15, 'entrada', 'Compra inicial para el año', 10.0, DATETIME('now', '-360 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-350 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-320 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-290 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-260 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-230 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-200 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-170 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-140 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-110 days')),
+(1, 15, 'salida', 'Producción de gomitas', 1.0, DATETIME('now', '-80 days')),
+(1, 15, 'entrada', 'Reposición de stock', 5.0, DATETIME('now', '-70 days')),
+
+-- Pulpa de betabel (id: 16)
+(1, 16, 'entrada', 'Compra inicial para el año', 50.0, DATETIME('now', '-360 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-350 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-320 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-290 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-260 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-230 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-200 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-170 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-140 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-110 days')),
+(1, 16, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-80 days')),
+(1, 16, 'entrada', 'Reposición de stock', 25.0, DATETIME('now', '-70 days')),
+
+-- Pulpa de tuna (id: 17)
+(1, 17, 'entrada', 'Compra inicial para el año', 50.0, DATETIME('now', '-360 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-350 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-320 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-290 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-260 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-230 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-200 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-170 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-140 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-110 days')),
+(1, 17, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-80 days')),
+(1, 17, 'entrada', 'Reposición de stock', 25.0, DATETIME('now', '-70 days')),
+
+-- Pulpa de durazno (id: 18)
+(1, 18, 'entrada', 'Compra inicial para el año', 50.0, DATETIME('now', '-360 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-350 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-320 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-290 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-260 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-230 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-200 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-170 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-140 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-110 days')),
+(1, 18, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-80 days')),
+(1, 18, 'entrada', 'Reposición de stock', 25.0, DATETIME('now', '-70 days')),
+
+-- Pulpa de maracuyá (id: 19)
+(1, 19, 'entrada', 'Compra inicial para el año', 50.0, DATETIME('now', '-360 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-350 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-320 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-290 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-260 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-230 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-200 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-170 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-140 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-110 days')),
+(1, 19, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-80 days')),
+(1, 19, 'entrada', 'Reposición de stock', 25.0, DATETIME('now', '-70 days')),
+
+-- Pulpa de coco (id: 20)
+(1, 20, 'entrada', 'Compra inicial para el año', 50.0, DATETIME('now', '-360 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-350 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-320 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-290 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-260 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-230 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-200 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-170 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-140 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-110 days')),
+(1, 20, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-80 days')),
+(1, 20, 'entrada', 'Reposición de stock', 25.0, DATETIME('now', '-70 days')),
+
+-- Pulpa de tamarindo (id: 21)
+(1, 21, 'entrada', 'Compra inicial para el año', 50.0, DATETIME('now', '-360 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-350 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-320 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-290 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-260 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-230 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-200 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-170 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-140 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-110 days')),
+(1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-80 days')),
+(1, 21, 'entrada', 'Reposición de stock', 25.0, DATETIME('now', '-70 days'));
 
 ---
 -- Inserta un pedido del cliente.
@@ -228,13 +442,18 @@ INSERT INTO "Product_movements" (
   "movement_type",
   "quantity",
   "createdAt"
-) VALUES (
-  1,
-  1,
-  'salida',
-  5.0,
-  DATETIME('now')
-);
+) VALUES 
+-- Movimientos de venta para diferentes productos
+(1, 1, 'salida', 5.0, DATETIME('now', '-25 days')),  -- Gomita de Beterraga
+(1, 2, 'salida', 8.0, DATETIME('now', '-22 days')),  -- Gomita de Frutilla
+(1, 3, 'salida', 12.0, DATETIME('now', '-20 days')), -- Gomita de Limón
+(1, 4, 'salida', 6.0, DATETIME('now', '-18 days')),  -- Gomita de Mandarina
+(1, 9, 'salida', 3.0, DATETIME('now', '-15 days')),  -- Pulpa de Mango Tropical
+(1, 10, 'salida', 2.0, DATETIME('now', '-12 days')), -- Pulpa de Mora Silvestre
+(1, 5, 'salida', 9.0, DATETIME('now', '-10 days')),  -- Gomita de Manzana
+(1, 12, 'salida', 4.0, DATETIME('now', '-7 days')),  -- Pulpa de Maracuyá
+(1, 7, 'salida', 7.0, DATETIME('now', '-5 days')),  -- Gomita de Tuna
+(1, 15, 'salida', 3.0, DATETIME('now', '-2 days'));  -- Pulpa de Tamarindo
 
 ---
 -- Inserta el modelo EOQ (Cantidad Económica de Pedido) para un ingrediente.
