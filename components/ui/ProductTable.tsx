@@ -69,7 +69,7 @@ export default function ProductTable({ role }: ProductTableProps) {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("/api/inventory/products");
+      const res = await fetch("/api/system/inventory/products");
       const data = await res.json();
       
       if (data.success && data.products) {
@@ -105,7 +105,7 @@ export default function ProductTable({ role }: ProductTableProps) {
 
     try {
       setLoading(true);
-      const res = await fetch('/api/inventory/products', {
+      const res = await fetch('/api/system/inventory/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSend)
@@ -185,11 +185,12 @@ export default function ProductTable({ role }: ProductTableProps) {
 
     try {
       setLoading(true);
-      const res = await fetch(`/api/inventory/products?id=${editingProduct.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToUpdate)
-      });
+      const res = await fetch(`/api/system/inventory/products/${editingProduct.id}`, {
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(dataToUpdate)
+});
+
 
       const data = await res.json();
       

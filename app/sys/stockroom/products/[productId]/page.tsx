@@ -1,5 +1,5 @@
-// app/sys/sale/products/[name]/history/page.tsx
-// app/sys/stockroom/products/[name]/history/page.tsx
+// app/sys/sale/products/[id]/history/page.tsx
+// app/sys/stockroom/products/[id]/history/page.tsx
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
@@ -42,8 +42,9 @@ interface Product {
 export default function ProductHistoryPage() {
   const router = useRouter();
   const params = useParams();
-  const name = decodeURIComponent(params.name as string);
-  
+  // ✅ Obtener el ID de la ruta
+  const productId = params.id;
+
   // Determinar el rol basado en la ruta actual
   const isStockroomRole = typeof window !== 'undefined' && 
     window.location.pathname.includes('/stockroom/');
@@ -64,13 +65,17 @@ export default function ProductHistoryPage() {
   const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchHistory();
-  }, [name]);
+    // ✅ Usar productId en el useEffect
+    if (productId) {
+      fetchHistory();
+    }
+  }, [productId]);
 
   const fetchHistory = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/inventory/products/history?name=${encodeURIComponent(name)}`);
+      // ✅ Usar el ID en la URL del API
+      const res = await fetch(`/api/system/inventory/products/history?id=${encodeURIComponent(productId as string)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al obtener historial");
       setMovements(data.movements || []);
@@ -106,11 +111,12 @@ export default function ProductHistoryPage() {
     setRegisterSuccess(null);
     
     try {
-      const res = await fetch('/api/inventory/products/history', {
+      const res = await fetch('/api/system/inventory/products/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
+          // ✅ Enviar el ID en el cuerpo de la petición
+          productId, 
           movementType: registerData.movementType,
           reason: registerData.reason,
           quantity: Number(registerData.quantity)
@@ -125,7 +131,6 @@ export default function ProductHistoryPage() {
       setRegisterData({ movementType: '', reason: '', quantity: '' });
       await fetchHistory();
       
-      // Auto-ocultar el mensaje de éxito después de 3 segundos
       setTimeout(() => setRegisterSuccess(null), 3000);
     } catch (err) {
       setRegisterError(err instanceof Error ? err.message : 'Error desconocido');
@@ -208,7 +213,7 @@ export default function ProductHistoryPage() {
             </VStack>
           ) : (
             <VStack align="stretch" gap={2}>
-              <Text fontWeight="bold" fontSize="lg" color="gray.900">{name}</Text>
+              <Text fontWeight="bold" fontSize="lg" color="gray.900">Cargando...</Text>
               <Text color="gray.500" fontSize="sm">Cargando información del producto...</Text>
             </VStack>
           )}
