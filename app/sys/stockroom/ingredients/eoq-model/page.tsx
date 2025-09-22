@@ -13,6 +13,8 @@ import {
   SimpleGrid,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+const InventoryEOQGraph = dynamic(() => import("@/components/InventoryEOQGraph"), { ssr: false });
 
 export default function EOQModelPage() {
   const searchParams = useSearchParams();
@@ -26,8 +28,10 @@ export default function EOQModelPage() {
   const [dailyDemand, setDailyDemand] = useState<number | null>(null);
   const [loadingDaily, setLoadingDaily] = useState(false);
   const [eoq, setEoq] = useState<number | null>(null);
+  const [reorderPoint, setReorderPoint] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingModel, setLoadingModel] = useState(false);
+  const [showGraph, setShowGraph] = useState(false);
 
   // Al cargar, obtener modelo EOQ guardado y demanda anual
   useEffect(() => {
@@ -59,6 +63,9 @@ export default function EOQModelPage() {
         setAnnualDemand(data.model.annualDemand ?? null);
         setOrderingCost(data.model.orderingCost?.toString() ?? "");
         setAnnualMaintenanceCost(data.model.annualMaintenanceCost?.toString() ?? "");
+        setLeadTimeDays(data.model.leadTimeDays !== undefined ? data.model.leadTimeDays.toString() : "");
+        setDailyDemand(data.model.dailyDemand !== undefined ? data.model.dailyDemand : null);
+        setReorderPoint(data.model.reorderPoint !== undefined ? data.model.reorderPoint : null);
         // Calcula EOQ si todos los datos existen
         if (
           data.model.annualDemand &&
@@ -123,13 +130,47 @@ export default function EOQModelPage() {
     } catch {}
   };
 
+  // Calcular y guardar reorder point
+  const handleReorderPoint = async () => {
+    setError(null);
+    const lead = Number(leadTimeDays);
+    const daily = Number(dailyDemand);
+    if (isNaN(lead) || isNaN(daily) || lead <= 0 || daily <= 0) {
+      setError("LeadTimeDays y DailyDemand deben ser números positivos");
+      return;
+    }
+    const rp = lead * daily;
+    setReorderPoint(rp);
+    // Guardar en backend
+    try {
+      await fetch(`/api/system/inventory/ingredients/eoq-model`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ingredientId,
+          reorderPoint: rp,
+          leadTimeDays: lead,
+          dailyDemand: daily
+        }),
+      });
+    } catch {}
+  };
+
+  // Accionar todos los generates
+  const handleGenerateAll = async () => {
+    await fetchAnnualDemand();
+    await handleCalculateEOQ();
+    await fetchDailyDemand();
+    await handleReorderPoint();
+  };
+
   return (
     <Box p={4} maxW="900px" mx="auto" border="2px solid #fff" borderRadius="2xl" bg="#181818">
       <HStack mb={2} justify="space-between">
         <Button variant="ghost" onClick={() => router.back()} fontSize="2xl">←</Button>
         <HStack gap={2}>
           <Button variant="outline">Print</Button>
-          <Button variant="outline">Generate Everyting</Button>
+          <Button variant="outline" onClick={handleGenerateAll}>Generate Everyting</Button>
         </HStack>
       </HStack>
       <Heading size="md" mb={2}>Ingredient model EOQ</Heading>
@@ -173,16 +214,33 @@ export default function EOQModelPage() {
         <Box>
           <Text mb={1}>ReorderPoint</Text>
           <HStack>
-            <Input value={''} readOnly />
-            <Button size="sm" disabled>generate</Button>
+            <Input value={reorderPoint !== null ? reorderPoint : ''} readOnly />
+            <Button size="sm"
+              onClick={handleReorderPoint}
+              disabled={
+                !leadTimeDays || isNaN(Number(leadTimeDays)) || Number(leadTimeDays) <= 0 ||
+                dailyDemand === null || isNaN(Number(dailyDemand)) || Number(dailyDemand) <= 0
+              }
+            >
+              generate
+            </Button>
           </HStack>
         </Box>
       </SimpleGrid>
       <Box h="2px" bg="#fff" my={2} />
       <Box>
         <Text mb={1}>Grafic</Text>
-        <Button size="sm" variant="outline">generate</Button>
+        <Button size="sm" variant="outline" onClick={() => setShowGraph(true)}>generate</Button>
       </Box>
+      {showGraph && eoq && reorderPoint && leadTimeDays && annualDemand && (
+        <InventoryEOQGraph
+          eoq={Number(eoq)}
+          reorderPoint={Number(reorderPoint)}
+          leadTime={Number(leadTimeDays)}
+          periods={Math.max(1, Math.round(Number(annualDemand) / Number(eoq)))}
+            annualDemand={Number(annualDemand)}
+          />
+      )}
       {error && <Text color="red.500">{error}</Text>}
     </Box>
   );

@@ -70,7 +70,10 @@ export default function IngredientsPage() {
       setIsLoading(false);
     }
   };
-
+const handleCalculateABC = () => {
+  window.location.href = `/sys/stockroom/ingredients/abc`;
+  
+};
   const handleAddIngredient = () => {
     setShowAddModal(true);
   };
@@ -226,6 +229,7 @@ export default function IngredientsPage() {
             </Button>
             <Button
               colorScheme="blue"
+               onClick={handleCalculateABC} 
             >
               <HStack gap={2}>
                 <FiBarChart />

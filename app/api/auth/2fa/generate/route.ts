@@ -5,7 +5,7 @@ import { generate2FA } from "@/lib/twofactor/generate";
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/twofactor/encrypt";
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -15,20 +15,17 @@ export async function GET(req: Request) {
     const userId = Number(session.user.id);
     const userIdentifier = session.user.username || session.user.email || `user_${userId}`;
 
-    console.log("Generating 2FA for user:", userIdentifier);
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-    // Generamos QR y secreto temporal
     const { secret, qrDataUrl } = await generate2FA(userIdentifier);
 
-    console.log("Generated secret and QR code successfully");
-
-    // Guardamos secret cifrado en DB, 2FA aún no activada
     await prisma.user.update({
       where: { id: userId },
-      data: { twoFactorSecret: encrypt(secret), twoFactorEnabled: false },
+      data: { twoFactorSecret: encrypt(secret) },
     });
-
-    console.log("Saved encrypted secret to database");
 
     return NextResponse.json({ qrDataUrl });
   } catch (error) {

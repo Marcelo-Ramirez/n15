@@ -33,7 +33,7 @@ type Product = {
 
 // Define las props que el componente ProductTable aceptará
 type ProductTableProps = {
-  role: 'stockroom' | 'sale';
+  readonly role: 'stockroom' | 'sales';
 };
 
 export default function ProductTable({ role }: ProductTableProps) {
@@ -171,7 +171,7 @@ export default function ProductTable({ role }: ProductTableProps) {
         type: editProduct.type,
         flavor: editProduct.flavor
       };
-    } else if (role === 'sale') {
+    } else if (role === 'sales') {
       if (!editProduct.name || editProduct.pricePerUnit <= 0) {
         alert("Por favor completa todos los campos correctamente");
         return;
@@ -246,7 +246,7 @@ export default function ProductTable({ role }: ProductTableProps) {
         pricePerUnit: 0,
         imageUrl: ''
       });
-    } else if (role === 'sale') {
+    } else if (role === 'sales') {
       setEditProduct({
         type: '',
         flavor: '',
@@ -259,7 +259,7 @@ export default function ProductTable({ role }: ProductTableProps) {
   };
 
   const handleHistory = (productId: number) => {
-    window.location.href = `/sys/stockroom/products/${productId}/history`;
+     window.location.href = `/sys/${role}/products/${productId}`;
   };
 
   if (loading) {
@@ -327,40 +327,43 @@ export default function ProductTable({ role }: ProductTableProps) {
           borderColor="gray.200"
         >
           <Grid 
-            templateColumns={role === 'stockroom' ? "1fr 1fr auto" : "2fr 1fr 1fr 1fr 1fr auto"} 
+            templateColumns={role === 'stockroom' ? "1fr 1fr 1fr auto" : "2fr 1fr 1fr 1fr 1fr auto"} 
             gap={4} 
             alignItems="center"
           >
             {role === 'stockroom' ? (
               <>
                 <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.700">Tipo</Text>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Tipo</Text>
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.700">Sabor</Text>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Sabor</Text>
+                </GridItem>
+                <GridItem>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Cantidad</Text>
                 </GridItem>
               </>
             ) : (
               <>
                 <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.700">Nombre</Text>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Nombre</Text>
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.700">Precio</Text>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Precio</Text>
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.700">Tipo</Text>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Tipo</Text>
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.700">Sabor</Text>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Sabor</Text>
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.700">Cantidad</Text>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Cantidad</Text>
                 </GridItem>
               </>
             )}
             <GridItem>
-              <Text fontWeight="bold" fontSize="sm" color="gray.700">Acciones</Text>
+              <Text fontWeight="bold" fontSize="sm" color="gray.800">Acciones</Text>
             </GridItem>
           </Grid>
         </Box>
@@ -380,32 +383,37 @@ export default function ProductTable({ role }: ProductTableProps) {
               transition="all 0.2s"
             >
               <Grid 
-                templateColumns={role === 'stockroom' ? "1fr 1fr auto" : "2fr 1fr 1fr 1fr 1fr auto"} 
+                templateColumns={role === 'stockroom' ? "1fr 1fr 1fr auto" : "2fr 1fr 1fr 1fr 1fr auto"} 
                 gap={4} 
                 alignItems="center"
               >
                 {role === 'stockroom' ? (
                   <>
                     <GridItem>
-                      <Text fontWeight="medium">{product.type}</Text>
+                      <Text fontWeight="medium" color="gray.800">{product.type}</Text>
                     </GridItem>
                     <GridItem>
-                      <Text color="gray.500">{product.flavor}</Text>
+                      <Text color="gray.700">{product.flavor}</Text>
+                    </GridItem>
+                    <GridItem>
+                      <Badge colorScheme={product.currentQuantity > 0 ? "green" : "red"}>
+                        {product.currentQuantity}
+                      </Badge>
                     </GridItem>
                   </>
                 ) : (
                   <>
                     <GridItem>
-                      <Text fontWeight="medium">{product.name}</Text>
+                      <Text fontWeight="medium" color="gray.800">{product.name}</Text>
                     </GridItem>
                     <GridItem>
-                      <Text fontWeight="medium">${product.pricePerUnit.toFixed(2)}</Text>
+                      <Text fontWeight="medium" color="gray.800">${product.pricePerUnit.toFixed(2)}</Text>
                     </GridItem>
                     <GridItem>
-                      <Text>{product.type}</Text>
+                      <Text color="gray.700">{product.type}</Text>
                     </GridItem>
                     <GridItem>
-                      <Text color="gray.500">{product.flavor}</Text>
+                      <Text color="gray.700">{product.flavor}</Text>
                     </GridItem>
                     <GridItem>
                       <Badge colorScheme={product.currentQuantity > 0 ? "green" : "red"}>
@@ -651,11 +659,10 @@ export default function ProductTable({ role }: ProductTableProps) {
                             </Box>
                           )}
                           <Button
-                            variant="outline"
-                            onClick={() => fileInputRef.current?.click()}
-                            isLoading={uploadLoading}
-                            loadingText="Subiendo..."
-                          >
+  // ...otras props
+  loading={uploadLoading}
+  loadingText="Subiendo..."
+>
                             <HStack gap={2}>
                               <FiUpload />
                               <Text>{editProduct.imageUrl ? 'Cambiar Imagen' : 'Subir Imagen'}</Text>
@@ -728,8 +735,8 @@ export default function ProductTable({ role }: ProductTableProps) {
                 
                 <VStack gap={3} align="stretch">
                   <Text>
-                    ¿Estás seguro que deseas eliminar el producto <strong>"{productToDelete.name}"</strong>?
-                  </Text>
+  ¿Estás seguro que deseas eliminar el producto <strong>{`"${productToDelete.name}"`}</strong>?
+</Text>
                   
                   <Box
                     bg="red.50"

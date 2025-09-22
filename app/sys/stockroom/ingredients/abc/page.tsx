@@ -1,13 +1,16 @@
 'use client'
 
-import { Box, Input, Button } from '@chakra-ui/react'
+import { Box, Input, Button, Text,
+  VStack,
+  HStack,} from '@chakra-ui/react'
 import { useState, useEffect, useRef } from 'react'
 import { enrichProducts } from '@/lib/abcUtils'
 import { InventoryMovement, Ingredient } from '@/types/inventory'
-import ABCSummary from './ABCsummary'
-import ParetoChart from './recharts'
-import { PrintButtons } from '@/app/components/PrintableSection'
-
+import ABCSummary from '@/components/ABCsummary'
+import ParetoChart from '@/components/recharts'
+import { PrintButtons } from '@/components/PrintableSection'
+import { useRouter } from 'next/navigation'; 
+import { FiArrowLeft } from "react-icons/fi";
 // Este tipo simula ProductInput usando movimientos de salida
 interface InventoryProduct {
   id: number
@@ -42,13 +45,14 @@ const InventoryABC = () => {
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [thresholds, setThresholds] = useState({ A: 85, B: 95, C: 100 })
   const [showInputs, setShowInputs] = useState(false)
+   const router = useRouter(); 
   const printRef = useRef<HTMLDivElement>(null) // Ref para el contenido imprimible
   const criterio: 'valor' | 'precio' | 'utilidad' = 'valor'
   
   useEffect(() => {
     // Traer ingredientes y movimientos
     Promise.all([
-      fetch('/api/inventory/ingredients').then(res => res.json()),
+      fetch('/api/inventory/abc').then(res => res.json()),
       fetch('/api/inventory/inventory-movements').then(res => res.json())
     ]).then(([ing, movs]) => {
       setIngredients(ing)
@@ -90,6 +94,12 @@ const InventoryABC = () => {
       
       {/* Barra de botones A LA MISMA ALTURA - NO SE IMPRIME */}
       <Box mb={4} display="flex" gap={4} alignItems="center" justifyContent="space-between" className="no-print">
+        <Button variant="ghost" onClick={() => router.back()}>
+  <HStack>
+    <FiArrowLeft />
+    <Text>Volver</Text>
+  </HStack>
+</Button>
         {/* Tu botón de configuración */}
         <Button
           colorScheme="blue"
@@ -162,7 +172,7 @@ const InventoryABC = () => {
         {/* Título del reporte */}
         <Box mb={6} textAlign="center">
           <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#000', marginBottom: '8px' }}>
-            Análisis ABC de Inventario
+            clasificación ABC de Ingredientes
           </h1>
           <p style={{ color: '#666', fontSize: '14px' }}>
             Fecha: {new Date().toLocaleDateString('es-BO')}
@@ -248,7 +258,7 @@ const InventoryABC = () => {
             </tbody>
           </table>
         </Box>
-                
+          
         {/* Resumen ABC - MANTENER JUNTO */}
         <Box className="keep-together">
           <ABCSummary summary={summaryABC} thresholds={thresholds} />
