@@ -67,39 +67,99 @@ export default function HomePage() {
               maxW="1100px"
               mx="auto"
             >
-              {[1, 2, 3].map((index) => (
-                <Box 
-                  key={index}
-                  bg="white" 
-                  p={6} 
-                  rounded="lg" 
-                  shadow="sm"
-                  textAlign="center"
-                  mx="auto"
-                  maxW="320px"
+              {/* Gomita Beterraga */}
+              <Box
+                bg="white"
+                p={6}
+                rounded="lg"
+                shadow="sm"
+                textAlign="center"
+                mx="auto"
+                maxW="320px"
+              >
+                <Box
+                  h="200px"
+                  bg="gray.200"
+                  rounded="md"
+                  mb={4}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
                 >
-                  <Box 
-                    h="200px" 
-                    bg="gray.200" 
-                    rounded="md" 
-                    mb={4}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Text color="gray.500">Imagen del Producto</Text>
-                  </Box>
-                  <Text fontWeight="semibold" mb={2}>
-                    Gomita de Muestra {index}
-                  </Text>
-                  <Text color="gray.600" mb={4}>
-                    Deliciosas gomitas con sabor a frutas
-                  </Text>
-                  <Text fontSize="lg" fontWeight="bold" color="blue.600">
-                    $9.99
-                  </Text>
+                  <img src="/images/products/gomitaBeterraga.png" alt="Gomita Beterraga" style={{ maxHeight: "100%", maxWidth: "100%" }} />
                 </Box>
-              ))}
+                <Text fontWeight="semibold" mb={2}>
+                  Gomita Beterraga
+                </Text>
+                <Text color="gray.600" mb={4}>
+                  Gomita natural sabor beterraga
+                </Text>
+                <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                  Bs 1.5
+                </Text>
+              </Box>
+              {/* Gomita Frutilla */}
+              <Box
+                bg="white"
+                p={6}
+                rounded="lg"
+                shadow="sm"
+                textAlign="center"
+                mx="auto"
+                maxW="320px"
+              >
+                <Box
+                  h="200px"
+                  bg="gray.200"
+                  rounded="md"
+                  mb={4}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <img src="/images/products/gomitaFrutilla.png" alt="Gomita Frutilla" style={{ maxHeight: "100%", maxWidth: "100%" }} />
+                </Box>
+                <Text fontWeight="semibold" mb={2}>
+                  Gomita Frutilla
+                </Text>
+                <Text color="gray.600" mb={4}>
+                  Gomita natural sabor frutilla
+                </Text>
+                <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                  Bs 1.5
+                </Text>
+              </Box>
+              {/* Pulpa Mandarina */}
+              <Box
+                bg="white"
+                p={6}
+                rounded="lg"
+                shadow="sm"
+                textAlign="center"
+                mx="auto"
+                maxW="320px"
+              >
+                <Box
+                  h="200px"
+                  bg="gray.200"
+                  rounded="md"
+                  mb={4}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <img src="/images/products/pulaMandarina.png" alt="Pulpa Mandarina" style={{ maxHeight: "100%", maxWidth: "100%" }} />
+                </Box>
+                <Text fontWeight="semibold" mb={2}>
+                  Pulpa Mandarina
+                </Text>
+                <Text color="gray.600" mb={4}>
+                  Pulpa natural sabor mandarina
+                </Text>
+                <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                  Bs 5
+                </Text>
+              </Box>
             </SimpleGrid>
           </Box>
         </VStack>
