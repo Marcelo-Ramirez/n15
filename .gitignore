@@ -51,6 +51,5 @@ next-env.d.ts
 /prisma/database.sqlite
 
 .codeviz/
-/public
 
 ./prisma/migrations/
