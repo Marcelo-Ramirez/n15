@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         phone,
         password, // En producción, hashear la contraseña
         role,
-        statusAccount: true
+  statusAccount: 'active'
       },
       select: {
         id: true,

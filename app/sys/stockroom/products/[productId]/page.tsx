@@ -429,7 +429,7 @@ export default function ProductHistoryPage() {
                   <Button 
                     colorScheme="blue" 
                     onClick={handleRegisterAccept} 
-                    isLoading={registerLoading}
+                    loading={registerLoading}
                     loadingText="Registrando..."
                   >
                     Registrar

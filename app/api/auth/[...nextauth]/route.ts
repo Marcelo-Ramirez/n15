@@ -70,6 +70,7 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.username = user.username;
+        token.role = user.role;
         token.requires2FA = user.requires2FA || false;
         token.twoFactorEnabled = user.twoFactorEnabled || false;
       }
@@ -79,6 +80,7 @@ export const authOptions: AuthOptions = {
       if (token && session.user) {
         (session.user as any).id = token.id;
         (session.user as any).username = token.username;
+        (session.user as any).role = token.role;
         (session.user as any).requires2FA = token.requires2FA || false;
         (session.user as any).twoFactorEnabled = token.twoFactorEnabled || false;
       }

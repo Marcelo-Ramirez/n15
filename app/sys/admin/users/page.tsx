@@ -305,18 +305,18 @@ export default function UsersManagementPage() {
                       <Button
                         size="sm"
                         colorScheme="green"
-                        leftIcon={<FiRotateCcw />}
                         onClick={() => openConfirmModal(user, 'restore')}
                       >
+                        <FiRotateCcw style={{ marginRight: 4 }} />
                         Restaurar
                       </Button>
                     ) : (
                       <Button
                         size="sm"
                         colorScheme="red"
-                        leftIcon={<FiTrash2 />}
                         onClick={() => openConfirmModal(user, 'delete')}
                       >
+                        <FiTrash2 style={{ marginRight: 4 }} />
                         Eliminar
                       </Button>
                     )}

@@ -20,11 +20,12 @@ export async function POST(request: NextRequest) {
     const { items } = data;
 
     // Crear pedidos para cada producto
+    const clientId = Number(session.user.id);
     const orders = await Promise.all(
       items.map(async (item: any) => {
         return await prisma.orderClient.create({
           data: {
-            clientId: session.user.id,
+            clientId,
             productId: item.productId,
             quantity: item.quantity,
             status: 'pendiente'
@@ -58,8 +59,9 @@ export async function GET() {
       );
     }
 
+    const clientId = Number(session.user.id);
     const orders = await prisma.orderClient.findMany({
-      where: { clientId: session.user.id },
+      where: { clientId },
       include: {
         product: {
           select: {

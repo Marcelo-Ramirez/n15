@@ -5,10 +5,11 @@ declare module "next-auth" {
     user: {
       id: string;
       username: string;
+      role: string;
       name?: string | null;
       email?: string | null;
       image?: string | null;
-      twoFactorEnabled?: boolean; 
+      twoFactorEnabled?: boolean;
     };
   }
 

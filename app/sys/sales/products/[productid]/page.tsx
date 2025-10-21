@@ -10,8 +10,8 @@ import {
   Button,
   Spinner,
   Input,
-  Select,
 } from "@chakra-ui/react";
+import { Select } from "@chakra-ui/select";
 import { useEffect, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 

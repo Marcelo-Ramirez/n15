@@ -29,6 +29,8 @@ export async function POST(req: Request) {
         pricePerUnit,
         imageUrl,
         currentQuantity,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
       },
     });
 

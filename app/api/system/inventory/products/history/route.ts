@@ -30,7 +30,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const movements = await prisma.productMovement.findMany({
+  const movements = await prisma.productMovement.findMany({
       where: { productId },
       orderBy: { createdAt: "desc" },
       include: { user: { select: { name: true } } },
@@ -84,9 +84,10 @@ export async function POST(req: Request) {
     const updatedQuantity = movementType === 'entrada' ? numericQuantity : -numericQuantity;
     
     // Aquí puedes loguear el inicio de la transacción si lo deseas
+    const userId = Number(session.user.id);
     const [newMovement, updatedProduct] = await prisma.$transaction([
       prisma.productMovement.create({
-        data: { userId: session.user.id, productId, movementType, quantity: numericQuantity, reason },
+        data: { userId, productId, movementType, quantity: numericQuantity },
       }),
       prisma.product.update({
         where: { id: productId },

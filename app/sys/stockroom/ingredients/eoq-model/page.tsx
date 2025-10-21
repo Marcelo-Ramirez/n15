@@ -16,7 +16,11 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 const InventoryEOQGraph = dynamic(() => import("@/components/InventoryEOQGraph"), { ssr: false });
 
-export default function EOQModelPage() {
+
+import { Suspense } from "react";
+
+
+function EOQModelPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const ingredientId = searchParams.get("ingredientId");
@@ -243,5 +247,13 @@ export default function EOQModelPage() {
       )}
       {error && <Text color="red.500">{error}</Text>}
     </Box>
+  );
+}
+
+export default function EOQModelPage() {
+  return (
+    <Suspense>
+      <EOQModelPageInner />
+    </Suspense>
   );
 }
