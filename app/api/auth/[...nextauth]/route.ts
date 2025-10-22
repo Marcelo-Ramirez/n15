@@ -34,6 +34,7 @@ export const authOptions: AuthOptions = {
                 id: user.id.toString(),
                 name: user.name,
                 username: user.userName,
+                role: user.role,
                 twoFactorEnabled: user.twoFactorEnabled,
                 requires2FA: true,
               };
@@ -52,6 +53,7 @@ export const authOptions: AuthOptions = {
             id: user.id.toString(),
             name: user.name,
             username: user.userName,
+            role: user.role,
             twoFactorEnabled: user.twoFactorEnabled,
             requires2FA: false,
           };
@@ -66,7 +68,19 @@ export const authOptions: AuthOptions = {
   session: { strategy: "jwt" as const },
 
   callbacks: {
-    async jwt({ token, user }: { token: any; user?: any }) {
+    async jwt({ token, user, trigger, session: newSessionData }: { token: any; user?: any; trigger?: string; session?: any }) {
+      // Si la sesión se actualiza (desde UserProfile.tsx), actualizamos el token
+      if (trigger === "update" && newSessionData) {
+        // esto es nuevo
+        if (newSessionData?.requires2FA !== undefined) {
+          token.requires2FA = newSessionData.requires2FA;
+        }
+        if (newSessionData?.twoFactorEnabled !== undefined) {
+          token.twoFactorEnabled = newSessionData.twoFactorEnabled;
+        }
+      }
+    
+      // En el inicio de sesión inicial, poblamos el token
       if (user) {
         token.id = user.id;
         token.username = user.username;

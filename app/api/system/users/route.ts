@@ -1,37 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { cookies } from 'next/headers';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 const prisma = new PrismaClient();
 
 // GET - Obtener todos los usuarios (solo admin)
 export async function GET() {
   try {
-    // Verificar sesión desde cookies
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session');
-    
-    if (!sessionCookie) {
+    const session = await getServerSession(authOptions);
+
+    if (!session || (session.user as any)?.role !== 'admin') {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
-      );
-    }
-
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch {
-      return NextResponse.json(
-        { error: 'Sesión inválida' },
-        { status: 401 }
-      );
-    }
-
-    if (sessionData.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'No tienes permisos para acceder a esta información' },
-        { status: 403 }
       );
     }
 
@@ -64,31 +46,12 @@ export async function GET() {
 // POST - Crear nuevo usuario (solo admin)
 export async function POST(request: NextRequest) {
   try {
-    // Verificar sesión desde cookies
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session');
-    
-    if (!sessionCookie) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
+    const session = await getServerSession(authOptions);
 
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch {
+    if (!session || (session.user as any)?.role !== 'admin') {
       return NextResponse.json(
-        { error: 'Sesión inválida' },
+        { error: 'No autorizado para crear usuarios' },
         { status: 401 }
-      );
-    }
-
-    if (sessionData.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'No tienes permisos para crear usuarios' },
-        { status: 403 }
       );
     }
 
@@ -115,7 +78,7 @@ export async function POST(request: NextRequest) {
         phone,
         password, // En producción, hashear la contraseña
         role,
-  statusAccount: 'active'
+        statusAccount: 'active'
       },
       select: {
         id: true,

@@ -10,6 +10,7 @@ import {
   Button,
   IconButton
 } from '@chakra-ui/react'
+import { signOut } from 'next-auth/react'
 import { FiHome, FiUsers, FiPackage, FiBarChart, FiSettings, FiLogOut, FiMenu, FiX, FiUser, FiShoppingCart } from 'react-icons/fi'
 
 interface SidebarItem {
@@ -153,15 +154,7 @@ export default function SystemSidebar({ role, isCollapsed = false, onToggle }: S
                   color="red.300"
                   justify={isCollapsed ? "center" : "flex-start"}
                   title={isCollapsed ? item.label : undefined}
-                  onClick={async () => {
-                    try {
-                      await fetch('/api/auth/logout', { method: 'POST' });
-                      window.location.href = '/sys/login';
-                    } catch (error) {
-                      console.error('Error al cerrar sesión:', error);
-                      window.location.href = '/sys/login';
-                    }
-                  }}
+                  onClick={() => signOut({ callbackUrl: '/sys/login' })}
                 >
                   <Icon as={item.icon} boxSize={5} />
                   {!isCollapsed && <Text>{item.label}</Text>}
