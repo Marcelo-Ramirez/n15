@@ -2,10 +2,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import authOptions from "@/app/api/auth/[...nextauth]/authOptions";
 
 // GET: Obtener producto por ID
-export async function GET(req: Request, context: { params: { id: string } } | { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   const paramsObj = 'then' in context.params
     ? await context.params
     : context.params;
@@ -44,14 +44,12 @@ export async function GET(req: Request, context: { params: { id: string } } | { 
 }
 
 // PATCH: Actualizar producto por ID
-export async function PATCH(req: Request, context: { params: { id: string } } | { params: Promise<{ id: string }> }) {
-  const paramsObj = 'then' in context.params
-    ? await context.params
-    : context.params;
+export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
+  const paramsObj = await context.params;
   const idParam = paramsObj.id;
   console.log(`LOG: Solicitud PATCH recibida para producto con ID: ${idParam}`);
   const session = await getServerSession(authOptions);
-  
+
   if (!session) {
     console.warn(`WARN: Intento de actualizar producto ${idParam} sin autenticación.`);
     return NextResponse.json(
@@ -59,7 +57,7 @@ export async function PATCH(req: Request, context: { params: { id: string } } | 
       { status: 401 }
     );
   }
-  
+
   try {
     const id = parseInt(idParam);
     const dataToUpdate = await req.json();
@@ -82,10 +80,8 @@ export async function PATCH(req: Request, context: { params: { id: string } } | 
 }
 
 // DELETE: Eliminar producto por ID
-export async function DELETE(req: Request, context: { params: { id: string } } | { params: Promise<{ id: string }> }) {
-  const paramsObj = 'then' in context.params
-    ? await context.params
-    : context.params;
+export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+  const paramsObj = await context.params;
   const idParam = paramsObj.id;
   console.log(`LOG: Solicitud DELETE recibida para producto con ID: ${idParam}`);
   const session = await getServerSession(authOptions);
@@ -97,7 +93,7 @@ export async function DELETE(req: Request, context: { params: { id: string } } |
       { status: 401 }
     );
   }
-  
+
   try {
     const id = parseInt(idParam);
     await prisma.product.delete({ where: { id } });

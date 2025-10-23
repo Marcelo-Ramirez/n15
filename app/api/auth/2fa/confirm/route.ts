@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import authOptions from "@/app/api/auth/[...nextauth]/authOptions";
 import {  encrypt } from "@/lib/twofactor/encrypt";
 import { verify2FA } from "@/lib/twofactor/verify";
 import { prisma } from "@/lib/db";

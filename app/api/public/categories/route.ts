@@ -14,7 +14,8 @@ export async function GET() {
       distinct: ['type']
     });
 
-    const categoryList = categories.map(cat => ({
+    // --- LÍNEA CORREGIDA ---
+    const categoryList = categories.map((cat: { type: string }) => ({
       name: cat.type,
       slug: cat.type.toLowerCase().replace(/\s+/g, '-')
     }));

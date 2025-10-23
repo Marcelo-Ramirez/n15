@@ -6,13 +6,10 @@ const prisma = new PrismaClient();
 // POST - Crear movimiento de inventario
 export async function POST(
   request: NextRequest,
-  context: { params: { id: string } } | { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Soporta params como promesa o valor directo
-    const paramsObj = 'then' in context.params
-      ? await context.params
-      : context.params;
+    const paramsObj = await context.params;
     const ingredientId = parseInt(paramsObj.id);
     const data = await request.json();
     const { userId, movementType, reason, quantity } = data;

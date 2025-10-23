@@ -1,0 +1,16 @@
+# Archivo .dockerignore
+
+# Dependencias locales
+node_modules
+
+# Compilación local
+.next
+
+# Archivos de entorno
+.env
+.env.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

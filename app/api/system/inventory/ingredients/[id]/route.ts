@@ -6,12 +6,10 @@ const prisma = new PrismaClient();
 // GET - Obtener ingrediente específico
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } } | { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const paramsObj = 'then' in context.params
-      ? await context.params
-      : context.params;
+    const paramsObj = await context.params;
     const ingredientId = parseInt(paramsObj.id);
 
     const ingredient = await prisma.ingredient.findUnique({
@@ -49,12 +47,10 @@ export async function GET(
 // PUT - Actualizar ingrediente
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } } | { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const paramsObj = 'then' in context.params
-      ? await context.params
-      : context.params;
+    const paramsObj = await context.params;
     const ingredientId = parseInt(paramsObj.id);
     const data = await request.json();
     const { name, unit, pricePerUnit, provider } = data;
@@ -77,12 +73,10 @@ export async function PUT(
 // DELETE - Eliminar ingrediente
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } } | { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const paramsObj = 'then' in context.params
-      ? await context.params
-      : context.params;
+    const paramsObj = await context.params;
     const ingredientId = parseInt(paramsObj.id);
 
     await prisma.ingredient.delete({

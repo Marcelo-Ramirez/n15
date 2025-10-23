@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+// Importa el tipo 'Ingredient' para usarlo
+import { PrismaClient, Ingredient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -9,12 +10,17 @@ export async function GET() {
     // Ingredientes con bajo stock (menos del 20% del promedio)
     const ingredients = await prisma.ingredient.findMany();
     
-    const totalValue = ingredients.reduce((sum, ing) => 
+    // --- LÍNEA CORREGIDA ---
+    // Añadimos tipos a 'sum' (number) e 'ing' (Ingredient)
+    const totalValue = ingredients.reduce((sum: number, ing: Ingredient) => 
       sum + (ing.currentQuantity * ing.pricePerUnit), 0
     );
 
     const lowStockThreshold = 10; // Definir umbral
-    const lowStockItems = ingredients.filter(ing => 
+
+    // --- LÍNEA CORREGIDA ---
+    // Añadimos el tipo a 'ing' (Ingredient)
+    const lowStockItems = ingredients.filter((ing: Ingredient) => 
       ing.currentQuantity < lowStockThreshold
     );
 

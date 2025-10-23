@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "node server.js"
-  },
+    "production": "node server.js"
+  },  
   "dependencies": {
     "@chakra-ui/form-control": "^2.2.0",
     "@chakra-ui/input": "^2.1.2",

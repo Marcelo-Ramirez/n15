@@ -6,13 +6,10 @@ const prisma = new PrismaClient();
 // GET - Obtener producto específico
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } } | { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Soporta params como promesa o valor directo
-    const paramsObj = 'then' in context.params
-      ? await context.params
-      : context.params;
+    const paramsObj = await context.params;
     const productId = parseInt(paramsObj.id);
 
     const product = await prisma.product.findUnique({
