@@ -35,12 +35,14 @@ function LoginForm() {
 
   useEffect(() => {
     const user = session?.user as unknown as UserSession | undefined;
-    if (status === 'authenticated' && user && !user.requires2FA) {
-      const redirectUrl = getRedirectUrl(user.role || '');
-      router.push(redirectUrl);
+    if (status === 'authenticated' && user) {
+      if (user.requires2FA) {
+        router.push('/sys/2fa');
+      } else {
+        const redirectUrl = getRedirectUrl(user.role || '');
+        router.push(redirectUrl);
+      }
     }
-    // if requires2FA is true, tu middleware (que ya tienes) 
-    // se encargará de redirigir a /sys/2fa
   }, [status, session, getRedirectUrl, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

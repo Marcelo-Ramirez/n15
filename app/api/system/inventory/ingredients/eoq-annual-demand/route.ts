@@ -1,25 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { cookies } from 'next/headers';
+import { getToken } from 'next-auth/jwt';
 
 const prisma = new PrismaClient();
 
 // GET /api/system/inventory/ingredients/eoq-annual-demand?ingredientId=ID
 export async function GET(request: NextRequest) {
   try {
-    // Verificar sesión desde cookies
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session');
-    if (!sessionCookie) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch {
-      return NextResponse.json({ error: 'Sesión inválida' }, { status: 401 });
-    }
-    if (!['stockroom', 'admin'].includes(sessionData.role)) {
+    const userRole = token.role as string;
+    if (!['stockroom', 'admin'].includes(userRole)) {
       return NextResponse.json({ error: 'No tienes permisos' }, { status: 403 });
     }
     const { searchParams } = new URL(request.url);

@@ -1,33 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { cookies } from 'next/headers';
+import { getToken } from 'next-auth/jwt';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar sesión desde cookies
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session');
-    
-    if (!sessionCookie) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch {
-      return NextResponse.json(
-        { error: 'Sesión inválida' },
-        { status: 401 }
-      );
-    }
-
-    if (sessionData.role !== 'admin') {
+    if (token.role !== 'admin') {
       return NextResponse.json(
         { error: 'No tienes permisos para eliminar usuarios' },
         { status: 403 }
