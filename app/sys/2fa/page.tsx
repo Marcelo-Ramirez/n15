@@ -1,64 +1,33 @@
-"use client"
+// Carpeta: /sys/2fa
+// Nombre del archivo: page.tsx (NO TIENE 'use client')
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { Box, Button, Input, Text, VStack } from '@chakra-ui/react'
+import { Suspense } from 'react';
+import { Spinner, Box, Text } from '@chakra-ui/react';
+import TwoFaContent from './TwoFaContent'; // Importamos el componente cliente
 
-export default function TwoFaPage() {
-  const router = useRouter()
-  const params = useSearchParams()
-  const callbackUrl = params.get('callbackUrl') || '/sys'
-  const { update } = useSession()
-  const [code, setCode] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+// Componente de carga para la suspensión
+const LoadingFallback = (
+  <Box 
+      minH="100vh" 
+      display="flex" 
+      flexDirection="column"
+      alignItems="center" 
+      justifyContent="center" 
+      bg="gray.900"
+  >
+      <Spinner size="xl" color="blue.500" mb={4} />
+      <Text color="white">Cargando formulario 2FA...</Text>
+  </Box>
+);
 
-  const submit = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/auth/2fa/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: code })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Invalid token')
-
-      // esto es nuevo - marcar que ya no requiere 2FA
-      await update({ requires2FA: false })
-
-      router.push(callbackUrl)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message || 'Error')
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const res = await fetch('/api/auth/session')
-        const data = await res.json()
-        if (!data?.user?.requires2FA) {
-          router.push('/sys/login?callbackUrl=/sys/2fa')
-        }
-      } catch {
-        router.push('/sys/login?callbackUrl=/sys/2fa')
-      }
-    })()
-  }, [router])
-
+export default function TwoFAPageWrapper() {
+  // 💡 ESTO SOLUCIONA EL ERROR:
+  // El Server Component renderiza el límite de Suspense.
+  // Luego, el componente TwoFaContent (que usa useSearchParams)
+  // solo se renderiza en el cliente, cumpliendo con la regla de Next.js.
   return (
-    <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="gray.900">
-      <VStack gap={6} w="full" maxW="400px" p={8}>
-        <Text fontSize="lg" color="white">Confirmar autenticacion en dos pasos</Text>
-        <Input placeholder="123456" value={code} onChange={e => setCode(e.target.value)} maxLength={6} />
-        {error && <Text color="red.400">{error}</Text>}
-  <Button colorScheme="blue" onClick={submit} loading={loading}>Confirmar</Button>
-      </VStack>
-    </Box>
-  )
+    <Suspense fallback={LoadingFallback}>
+      <TwoFaContent />
+    </Suspense>
+  );
 }

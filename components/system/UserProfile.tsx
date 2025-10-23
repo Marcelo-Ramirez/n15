@@ -4,12 +4,15 @@ import { useState } from "react";
 import {
   Box,
   Button,
+  ButtonProps,
   Text,
   VStack,
   Spinner,
   Input,
   Image,
   Badge,
+  Heading,
+  HStack,
 } from "@chakra-ui/react";
 import {
   Modal,
@@ -23,7 +26,8 @@ import {
 import { useDisclosure } from "@chakra-ui/hooks";
 import { useToast } from "@chakra-ui/toast";
 import { useSession } from "next-auth/react";
-
+import { FiUser, FiMail, FiShield } from 'react-icons/fi';
+const ConfirmButton: React.FC<ButtonProps> = (props) => <Button {...props} />;
 export default function UserProfile() {
   const { data: session, status, update } = useSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -76,12 +80,10 @@ export default function UserProfile() {
         duration: 5000,
         isClosable: true,
       });
-      // esto es nuevo
-      // En tu UserProfile.tsx (el frontend)
-await update({ 
-  twoFactorEnabled: true, 
-  requires2FA: false 
-});
+      await update({ 
+        twoFactorEnabled: true, 
+        requires2FA: false 
+      });
       onClose();
     } catch (error) {
       toast({
@@ -110,7 +112,7 @@ await update({
         duration: 5000,
         isClosable: true,
       });
-      await update({ twoFactorEnabled: false }); // Pass updated data
+      await update({ twoFactorEnabled: false });
     } catch (error) {
       toast({
         title: 'Error',
@@ -124,36 +126,148 @@ await update({
 
   if (status === "loading") {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+      <Box display="flex" justifyContent="center" alignItems="center" height="200px">
         <Spinner />
+        <Text ml={4}>Cargando datos del usuario...</Text>
       </Box>
     );
   }
 
-  if (status === "unauthenticated") {
-    return <Text>Access Denied</Text>;
+  if (status === "unauthenticated" || !session?.user) {
+    return (
+      <Box>
+        <Text color="red.500">Error al cargar los datos del usuario. Acceso denegado.</Text>
+      </Box>
+    );
   }
+
+  const userData = session.user;
 
   return (
     <>
-      <VStack spacing={4} align="flex-start">
-        <Text fontSize="lg">Bienvenido, {session?.user?.name || "User"}!</Text>
-        <Text color="gray.400">Email: {session?.user?.email}</Text>
-        <Text color="gray.400">Role: {session?.user?.role}</Text>
+      <Box
+        bg="white"
+        p={6}
+        borderRadius="lg"
+        boxShadow="md"
+        border="1px"
+        borderColor="gray.200"
+      >
+        <VStack gap={4} align="stretch">
+          <HStack gap={4}>
+            <Box
+              w={16}
+              h={16}
+              bg="blue.500"
+              color="white"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              borderRadius="full"
+              fontSize="2xl"
+              fontWeight="bold"
+            >
+              {userData.name?.charAt(0).toUpperCase()}
+            </Box>
+            <Box>
+              <Heading size="md">{userData.name}</Heading>
+              <Text color="gray.600">@{userData.username}</Text>
+            </Box>
+          </HStack>
 
-        {session?.user?.twoFactorEnabled ? (
-          <VStack align="flex-start">
-            <Badge colorScheme="green">2FA Activado</Badge>
-            <Button onClick={handleDisable2FA} colorScheme="red" mt={4}>
-              Desactivar Autenticación en Dos Pasos
-            </Button>
+          <Box h="1px" bg="gray.200" />
+
+          <VStack gap={4} align="stretch">
+            <HStack gap={3}>
+              <FiUser size={20} color="gray" />
+              <Box>
+                <Text fontWeight="medium">Nombre de Usuario</Text>
+                <Text color="gray.600">{userData.username}</Text>
+              </Box>
+            </HStack>
+
+            <HStack gap={3}>
+              <FiUser size={20} color="gray" />
+              <Box>
+                <Text fontWeight="medium">Nombre Completo</Text>
+                <Text color="gray.600">{userData.name}</Text>
+              </Box>
+            </HStack>
+
+            <HStack gap={3}>
+              <FiMail size={20} color="gray" />
+              <Box>
+                <Text fontWeight="medium">Email</Text>
+                <Text color="gray.600">{userData.email}</Text>
+              </Box>
+            </HStack>
+
+            <HStack gap={3}>
+              <FiShield size={20} color="gray" />
+              <Box>
+                <Text 
+                  color="white" 
+                  bg={
+                    userData.role === 'admin' ? 'red.500' :
+                    userData.role === 'almacen' ? 'blue.500' :
+                    userData.role === 'ventas' ? 'green.500' : 'gray.500'
+                  }
+                  px={2}
+                  py={1}
+                  borderRadius="md"
+                  fontSize="sm"
+                  fontWeight="medium"
+                  display="inline-block"
+                >
+                  {userData.role?.toUpperCase()}
+                </Text>
+              </Box>
+            </HStack>
+
+            <HStack gap={3}>
+              <FiUser size={20} color="gray" />
+              <Box>
+                <Text fontWeight="medium">Miembro desde</Text>
+                <Text color="gray.600">{new Date(userData.createdAt).toLocaleDateString()}</Text>
+              </Box>
+            </HStack>
           </VStack>
-        ) : (
-          <Button onClick={handleEnable2FA} colorScheme="blue" mt={4}>
-            Activar Autenticación en Dos Pasos
-          </Button>
-        )}
-      </VStack>
+
+          <Box h="1px" bg="gray.200" />
+
+          <VStack gap={3} align="stretch">
+            <Heading size="sm">Acciones</Heading>
+            <HStack gap={3}>
+              <Button colorScheme="gray" variant="outline" size="sm">
+                Editar Perfil
+              </Button>
+            </HStack>
+          </VStack>
+
+          <Box h="1px" bg="gray.200" />
+
+          <VStack gap={3} align="stretch">
+            <Heading size="sm">Seguridad</Heading>
+            <HStack gap={3}>
+              {userData.twoFactorEnabled ? (
+                <Button onClick={handleDisable2FA} colorScheme="red" size="sm" variant="outline">
+                  Desactivar 2FA
+                </Button>
+              ) : (
+                <Button onClick={handleEnable2FA} colorScheme="blue" size="sm">
+                  Activar 2FA
+                </Button>
+              )}
+              <Button colorScheme="gray" variant="outline" size="sm">
+                Cambiar Contraseña
+              </Button>
+            </HStack>
+             {userData.twoFactorEnabled && (
+                <Badge colorScheme="green" variant="subtle" w="fit-content">2FA Activado</Badge>
+             )}
+          </VStack>
+        </VStack>
+      </Box>
 
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
@@ -164,7 +278,7 @@ await update({
             {isLoading ? (
               <Spinner />
             ) : (
-              <VStack spacing={4}>
+              <VStack gap={4}>
                 <Text>Escanea este código QR con tu app de autenticación (ej. Google Authenticator).</Text>
                 {qrCode && <Image src={qrCode} alt="2FA QR Code" />}
                 <Text>Luego, ingresa el código de 6 dígitos de tu app.</Text>
@@ -173,7 +287,6 @@ await update({
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
                   maxLength={6}
-                  sx={{ color: "black" }}
                 />
               </VStack>
             )}
@@ -182,14 +295,14 @@ await update({
             <Button variant="ghost" mr={3} onClick={onClose}>
               Cancelar
             </Button>
-            <Button
+           <ConfirmButton // Usamos el componente tipado
               colorScheme="blue"
               onClick={handleConfirm2FA}
-              isLoading={isConfirming}
+            //  isLoading={isConfirming}
               disabled={!token || token.length < 6}
             >
               Confirmar y Activar
-            </Button>
+            </ConfirmButton>
           </ModalFooter>
         </ModalContent>
       </Modal>

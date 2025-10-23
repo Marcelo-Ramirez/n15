@@ -37,6 +37,7 @@ export const authOptions: AuthOptions = {
                 role: user.role,
                 twoFactorEnabled: user.twoFactorEnabled,
                 requires2FA: true,
+                createdAt: user.createdAt,
               };
             }
 
@@ -56,6 +57,7 @@ export const authOptions: AuthOptions = {
             role: user.role,
             twoFactorEnabled: user.twoFactorEnabled,
             requires2FA: false,
+            createdAt: user.createdAt,
           };
         } catch {
           return null;
@@ -83,20 +85,24 @@ export const authOptions: AuthOptions = {
       // En el inicio de sesión inicial, poblamos el token
       if (user) {
         token.id = user.id;
+        token.name = user.name;
         token.username = user.username;
         token.role = user.role;
         token.requires2FA = user.requires2FA || false;
         token.twoFactorEnabled = user.twoFactorEnabled || false;
+        token.createdAt = user.createdAt;
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
       if (token && session.user) {
         (session.user as any).id = token.id;
+        (session.user as any).name = token.name;
         (session.user as any).username = token.username;
         (session.user as any).role = token.role;
         (session.user as any).requires2FA = token.requires2FA || false;
         (session.user as any).twoFactorEnabled = token.twoFactorEnabled || false;
+        (session.user as any).createdAt = token.createdAt;
       }
       return session;
     },
