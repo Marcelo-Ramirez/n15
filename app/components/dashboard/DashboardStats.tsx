@@ -6,10 +6,14 @@ import {
   VStack,
   Grid,
 } from "@chakra-ui/react";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardStats() {
-  const { user } = useAuth();
+
+  const recentActivities = [
+    { id: "act1", action: "Nuevo producto agregado al inventario", time: "Hace 5 minutos", type: "success" },
+    { id: "act2", action: "Análisis ABC actualizado", time: "Hace 12 minutos", type: "info" },
+    { id: "act3", action: "Stock bajo detectado en 3 productos", time: "Hace 1 hora", type: "warning" },
+  ]; // Damos un ID a cada actividad para usar como key
 
   return (
     <VStack gap={6} align="stretch">
@@ -42,12 +46,8 @@ export default function DashboardStats() {
       <Box bg="white" p={6} borderRadius="lg" boxShadow="sm" border="1px" borderColor="gray.200">
         <Heading size="lg" mb={4}>Actividad Reciente</Heading>
         <VStack gap={4} align="stretch">
-          {[
-            { action: "Nuevo producto agregado al inventario", time: "Hace 5 minutos", type: "success" },
-            { action: "Análisis ABC actualizado", time: "Hace 12 minutos", type: "info" },
-            { action: "Stock bajo detectado en 3 productos", time: "Hace 1 hora", type: "warning" },
-          ].map((activity, index) => (
-            <Box key={index} p={3} bg="gray.50" borderRadius="md" display="flex" justifyContent="space-between" alignItems="center">
+          {recentActivities.map((activity) => ( 
+            <Box key={activity.id} p={3} bg="gray.50" borderRadius="md" display="flex" justifyContent="space-between" alignItems="center">
               <Text>{activity.action}</Text>
               <Text fontSize="sm" color="gray.500">{activity.time}</Text>
             </Box>

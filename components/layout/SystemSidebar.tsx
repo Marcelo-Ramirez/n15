@@ -7,11 +7,10 @@ import {
   Text, 
   Link, 
   Icon, 
-  Button,
-  IconButton
+  Button
 } from '@chakra-ui/react'
 import { signOut } from 'next-auth/react'
-import { FiHome, FiUsers, FiPackage, FiBarChart, FiSettings, FiLogOut, FiMenu, FiX, FiUser, FiShoppingCart } from 'react-icons/fi'
+import { FiHome, FiUsers, FiPackage, FiBarChart, FiLogOut, FiMenu, FiX, FiUser, FiShoppingCart } from 'react-icons/fi'
 
 interface SidebarItem {
   label: string
@@ -22,9 +21,9 @@ interface SidebarItem {
 }
 
 interface SystemSidebarProps {
-  role: string
-  isCollapsed?: boolean
-  onToggle?: () => void
+  readonly role: string
+  readonly isCollapsed?: boolean
+  readonly onToggle?: () => void
 }
 
 export default function SystemSidebar({ role, isCollapsed = false, onToggle }: SystemSidebarProps) {

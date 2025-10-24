@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { Session } from 'next-auth'; 
 
 const prisma = new PrismaClient();
 
 // GET - Obtener todos los usuarios (solo admin)
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as Session;
 
-    if (!session || (session.user as any)?.role !== 'admin') {
+    if (!session || session.user?.role !== 'admin') {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -43,20 +44,18 @@ export async function GET() {
   }
 }
 
-// POST - Crear nuevo usuario (solo admin)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || (session.user as any)?.role !== 'admin') {
+    const session = await getServerSession(authOptions) as Session;
+    if (!session || session.user?.role !== 'admin') {
       return NextResponse.json(
         { error: 'No autorizado para crear usuarios' },
         { status: 401 }
       );
     }
-
+    
     const data = await request.json();
-    const { userName, name, phone, password, role } = data;
+    const { userName, name, phone, password, role } = data; 
 
     // Verificar si el usuario ya existe
     const existingUser = await prisma.user.findUnique({
@@ -68,15 +67,14 @@ export async function POST(request: NextRequest) {
         { error: 'El nombre de usuario ya existe' },
         { status: 400 }
       );
-    }
-
-    // Crear usuario
+    } 
+    
     const user = await prisma.user.create({
       data: {
         userName,
         name,
         phone,
-        password, // En producción, hashear la contraseña
+        password,
         role,
         statusAccount: 'active'
       },

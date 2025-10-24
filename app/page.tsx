@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { 
   Box, 
   Container, 
@@ -9,20 +8,14 @@ import {
   VStack, 
   HStack, 
   SimpleGrid, 
-  Spinner, 
-  Image 
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
+// ✅ 1. Importar el componente Image de Next.js
+import Image from 'next/image'; 
 
-interface Product {
-  id: number;
-  name: string;
-  flavor: string;
-  pricePerUnit: number;
-  imageUrl?: string | null;
-}
+// ✅ 2. Interfaz 'Product' eliminada porque no se usaba
 
 export default function HomePage() {
   const router = useRouter();
@@ -77,16 +70,21 @@ export default function HomePage() {
                 mx="auto"
                 maxW="320px"
               >
+                {/* ✅ 1. Reemplazado <img> con <Image> */}
                 <Box
+                  position="relative" // Necesario para Image con fill={true}
                   h="200px"
-                  bg="gray.200"
+                  bg="gray.200" // Fondo mientras carga o si la imagen es transparente
                   rounded="md"
                   mb={4}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
+                  overflow="hidden" // Para contener la imagen si usa objectFit
                 >
-                  <img src="/images/products/gomitaBeterraga.png" alt="Gomita Beterraga" style={{ maxHeight: "100%", maxWidth: "100%" }} />
+                  <Image 
+                    src="/images/products/gomitaBeterraga.png" 
+                    alt="Gomita Beterraga" 
+                    fill={true} // Llena el contenedor padre
+                    style={{ objectFit: 'contain' }} // Asegura que se vea completa
+                  />
                 </Box>
                 <Text fontWeight="semibold" mb={2}>
                   Gomita Beterraga
@@ -108,16 +106,21 @@ export default function HomePage() {
                 mx="auto"
                 maxW="320px"
               >
+                {/* ✅ 1. Reemplazado <img> con <Image> */}
                 <Box
+                  position="relative" 
                   h="200px"
                   bg="gray.200"
                   rounded="md"
                   mb={4}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
+                  overflow="hidden"
                 >
-                  <img src="/images/products/gomitaFrutilla.png" alt="Gomita Frutilla" style={{ maxHeight: "100%", maxWidth: "100%" }} />
+                  <Image 
+                    src="/images/products/gomitaFrutilla.png" 
+                    alt="Gomita Frutilla" 
+                    fill={true} 
+                    style={{ objectFit: 'contain' }} 
+                  />
                 </Box>
                 <Text fontWeight="semibold" mb={2}>
                   Gomita Frutilla
@@ -139,16 +142,21 @@ export default function HomePage() {
                 mx="auto"
                 maxW="320px"
               >
+                 {/* ✅ 1. Reemplazado <img> con <Image> */}
                 <Box
+                  position="relative" 
                   h="200px"
                   bg="gray.200"
                   rounded="md"
                   mb={4}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
+                  overflow="hidden"
                 >
-                  <img src="/images/products/pulaMandarina.png" alt="Pulpa Mandarina" style={{ maxHeight: "100%", maxWidth: "100%" }} />
+                  <Image 
+                    src="/images/products/pulaMandarina.png" 
+                    alt="Pulpa Mandarina" 
+                    fill={true} 
+                    style={{ objectFit: 'contain' }} 
+                  />
                 </Box>
                 <Text fontWeight="semibold" mb={2}>
                   Pulpa Mandarina

@@ -9,7 +9,7 @@ interface InventoryEOQGraphProps {
 }
 
 // Genera los datos para la gráfica EOQ con fechas reales y pendiente proporcional
-function generateEOQDataWithDates(eoq: number, reorderPoint: number, leadTime: number, periods: number = 4, annualDemand?: number) {
+function generateEOQDataWithDates(eoq: number, _reorderPoint: number, _leadTime: number, periods: number = 4, _annualDemand?: number) {
   const data = [];
   const startDate = new Date();
   // Calcular número de pedidos y tiempo entre pedidos para cubrir 1 año
@@ -47,8 +47,15 @@ function formatDateShort(date: Date) {
 export default function InventoryEOQGraph({ eoq, reorderPoint, leadTime, periods = 4, annualDemand }: InventoryEOQGraphProps & { annualDemand?: number }) {
   if (!eoq || !reorderPoint || !leadTime) return null;
   const data = generateEOQDataWithDates(eoq, reorderPoint, leadTime, periods, annualDemand);
-  const start = data[0]?.fecha;
-  const end = data[data.length - 1]?.fecha;
+  const start = data.at(0)?.fecha;
+  const end = data.at(-1)?.fecha;
+  if (!start || !end) {
+    return (
+      <Box w="100%" h="300px" display="flex" alignItems="center" justifyContent="center">
+        <p>No hay datos suficientes para mostrar la gráfica.</p>
+      </Box>
+    );
+  }
   return (
     <Box w="100%" h="300px" bg="#222" borderRadius="lg" p={2}>
       <ResponsiveContainer width="100%" height="100%">

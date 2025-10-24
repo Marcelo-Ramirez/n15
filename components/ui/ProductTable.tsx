@@ -159,7 +159,7 @@ export default function ProductTable({ role }: ProductTableProps) {
   const handleEditProduct = async () => {
     if (!editingProduct) return;
 
-    let dataToUpdate: any = {};
+    let dataToUpdate: Partial<Product> = {};
 
     if (role === 'stockroom') {
       if (!editProduct.type || !editProduct.flavor) {

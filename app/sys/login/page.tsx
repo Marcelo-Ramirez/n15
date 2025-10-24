@@ -20,7 +20,7 @@ const roleToPath: { [key: string]: string } = {
 function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ userName: '', password: '' });
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -77,8 +77,8 @@ function LoginForm() {
             <VStack gap={4} align="stretch">
               <Input
                 placeholder="Usuario"
-                value={formData.username}
-                onChange={e => setFormData(d => ({ ...d, username: e.target.value }))}
+                value={formData.userName}
+                onChange={e => setFormData(d => ({ ...d, userName: e.target.value }))}
                 required
               />
               <Input

@@ -1,4 +1,5 @@
 export interface PaginationParams {
+  [key: string]: number | string | undefined
   page?: number
   limit?: number
   sortBy?: string

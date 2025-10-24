@@ -9,9 +9,11 @@ const nextConfig: NextConfig = {
   experimental: {
     // Deshabilitar el panel de desarrollo
     clientRouterFilter: false,
-  },eslint: {
-    ignoreDuringBuilds: true, // <--- esto deshabilita ESLint en build
+  },/*
+  eslint: {
+    // ignoreDuringBuilds: true, // <--- Esto deshabilita ESLint
   }
+  */
 };
 
 export default nextConfig;

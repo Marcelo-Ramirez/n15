@@ -10,7 +10,7 @@ export const useAuth = () => {
     
     // TODO: Ajustar según la estructura real de tu usuario
     // Asumiendo que el rol está en session.user.role
-    const userRole = (session.user as any)?.role;
+    const userRole = (session.user)?.role;
     
     if (!userRole) return false;
     
@@ -30,7 +30,7 @@ export const useAuth = () => {
     user: session?.user || null,
     session,
     hasSystemRole,
-    userRole: (session?.user as any)?.role || null,
+    userRole: (session?.user)?.role || null,
     isSystemUser: hasSystemRole(),
   };
 };

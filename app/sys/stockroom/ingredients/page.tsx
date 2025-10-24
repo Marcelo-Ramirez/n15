@@ -10,7 +10,6 @@ import {
   Input,
   Grid,
   GridItem,
-  Badge,
   Spinner,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
@@ -71,7 +70,7 @@ export default function IngredientsPage() {
     }
   };
 const handleCalculateABC = () => {
-  window.location.href = `/sys/stockroom/ingredients/abc`;
+  globalThis.location.href = `/sys/stockroom/ingredients/abc`;
   
 };
   const handleAddIngredient = () => {
@@ -312,7 +311,7 @@ const handleCalculateABC = () => {
                       onClick={() => {
                         // Navegar a la página de historial del ingrediente
                         const encodedName = encodeURIComponent(ingredient.name);
-                        window.location.href = `/sys/stockroom/ingredients/${encodedName}`;
+                        globalThis.location.href = `/sys/stockroom/ingredients/${encodedName}`;
                       }}
                     >
                       <HStack gap={1}>
@@ -344,7 +343,7 @@ const handleCalculateABC = () => {
                       size="sm"
                       colorScheme="orange"
                       onClick={() => {
-                        window.location.href = `/sys/stockroom/ingredients/eoq-model?ingredientId=${ingredient.id}`;
+                        globalThis.location.href = `/sys/stockroom/ingredients/eoq-model?ingredientId=${ingredient.id}`;
                       }}
                     >
                       <HStack gap={1}>
@@ -597,9 +596,7 @@ const handleCalculateABC = () => {
                 <Heading size="md" color="red.600">Eliminar Ingrediente</Heading>
                 
                 <VStack gap={3} align="stretch">
-                  <Text>
-                    ¿Estás seguro que deseas eliminar el ingrediente <strong>"{ingredientToDelete.name}"</strong>?
-                  </Text>
+                <Text>... <strong>&quot;{ingredientToDelete.name}&quot;</strong>?</Text>
                   
                   <Box
                     bg="red.50"

@@ -11,8 +11,17 @@ import {
   Spinner,
   Input,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { FiArrowLeft } from "react-icons/fi";
+
+// Definición de interfaces
+interface IngredientDetails {
+    name: string;
+    provider: string;
+    reorderPoint: number;
+    pricePerUnit: number;
+    // Agrega aquí cualquier otra propiedad que venga en data.ingredient
+}
 
 interface Movement {
   id: number;
@@ -30,7 +39,7 @@ export default function IngredientHistoryPage() {
   const params = useParams();
   const name = decodeURIComponent(params.name as string);
   const [movements, setMovements] = useState<Movement[]>([]);
-  const [ingredient, setIngredient] = useState<any>(null);
+  const [ingredient, setIngredient] = useState<IngredientDetails | null>(null); // Tipo seguro
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -43,11 +52,8 @@ export default function IngredientHistoryPage() {
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchHistory();
-  }, [name]);
-
-  const fetchHistory = async () => {
+  // Función estable para la obtención de datos
+  const fetchHistory = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/system/inventory/ingredients/history?name=${encodeURIComponent(name)}`);
@@ -60,8 +66,13 @@ export default function IngredientHistoryPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [name]); // Dependencia: 'name' es de 'useParams' y es estable.
 
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]); // Ahora depende de la función estable
+
+  // Lógica del Modal
   const handleOpenRegister = () => {
     setRegisterData({ movementType: '', reason: '', quantity: '' });
     setRegisterError(null);
@@ -99,12 +110,42 @@ export default function IngredientHistoryPage() {
       setShowRegisterModal(false);
       setRegisterSuccess('¡Movimiento registrado exitosamente!');
       setRegisterData({ movementType: '', reason: '', quantity: '' });
-      await fetchHistory();
+      await fetchHistory(); 
     } catch (err) {
       setRegisterError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setRegisterLoading(false);
     }
+  };
+
+  // 💡 FUNCIÓN AUXILIAR: Resuelve la operación ternaria anidada (SonarQube S3358)
+  const renderContent = () => {
+    if (isLoading) {
+      return <Spinner />;
+    }
+
+    if (error) {
+      return <Text color="red.500">{error}</Text>;
+    }
+
+    if (movements.length === 0) {
+      return <Text color="gray.500">No hay movimientos registrados</Text>;
+    }
+
+    return (
+      movements.map((m) => (
+        <Box key={m.id} borderWidth="1px" borderRadius="lg" p={4} mb={2}>
+          <HStack justify="space-between">
+            <Box>
+              <Text fontWeight="bold">{m.movementType} {m.quantity > 0 ? "+" : "-"}{Math.abs(m.quantity)}</Text>
+              <Text fontSize="sm">Motivo: {m.reason}</Text>
+              <Text fontSize="sm">nameUser: {m.user?.name || "-"}</Text>
+            </Box>
+            <Text fontSize="sm" color="gray.600">{new Date(m.createdAt).toLocaleString()}</Text>
+          </HStack>
+        </Box>
+      ))
+    );
   };
 
   return (
@@ -130,26 +171,9 @@ export default function IngredientHistoryPage() {
             Registrar Movimiento
           </Button>
         </HStack>
-        {isLoading ? (
-          <Spinner />
-        ) : error ? (
-          <Text color="red.500">{error}</Text>
-        ) : movements.length === 0 ? (
-          <Text color="gray.500">No hay movimientos registrados</Text>
-        ) : (
-          movements.map((m) => (
-            <Box key={m.id} borderWidth="1px" borderRadius="lg" p={4} mb={2}>
-              <HStack justify="space-between">
-                <Box>
-                  <Text fontWeight="bold">{m.movementType} {m.quantity > 0 ? "+" : "-"}{Math.abs(m.quantity)}</Text>
-                  <Text fontSize="sm">Motivo: {m.reason}</Text>
-                  <Text fontSize="sm">nameUser: {m.user?.name || "-"}</Text>
-                </Box>
-                <Text fontSize="sm" color="gray.600">{new Date(m.createdAt).toLocaleString()}</Text>
-              </HStack>
-            </Box>
-          ))
-        )}
+        
+        {/* 👇 USO DEL RENDERIZADO CONDICIONAL LIMPIO */}
+        {renderContent()}
 
         {/* Modal para registrar movimiento */}
         {showRegisterModal && (

@@ -1,7 +1,6 @@
 'use client'
 
 import { Box, Input, Button, Text,
-  VStack,
   HStack,} from '@chakra-ui/react'
 import { useState, useEffect, useRef } from 'react'
 import { enrichProducts } from '@/lib/abcUtils'

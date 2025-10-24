@@ -10,18 +10,18 @@ export const authOptions: AuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        username: { label: "Nombre de Usuario", type: "text" },
+        userName: { label: "Nombre de Usuario", type: "text" },
         password: { label: "Contraseña", type: "password" },
         token2FA: { label: "Token 2FA", type: "text" },
       },
       async authorize(credentials) {
 
-        if (!credentials?.username || !credentials?.password) {
+        if (!credentials?.userName || !credentials?.password) {
           return null;
         }
 
         try {
-          const user = await verifyUser(credentials.username, credentials.password);
+          const user = await verifyUser(credentials.userName, credentials.password);
 
           if (!user) {
             return null;
@@ -33,7 +33,7 @@ export const authOptions: AuthOptions = {
               return {
                 id: user.id.toString(),
                 name: user.name,
-                username: user.userName,
+                userName: user.userName, 
                 role: user.role,
                 twoFactorEnabled: user.twoFactorEnabled,
                 requires2FA: true,
@@ -53,7 +53,7 @@ export const authOptions: AuthOptions = {
           return {
             id: user.id.toString(),
             name: user.name,
-            username: user.userName,
+            userName: user.userName, 
             role: user.role,
             twoFactorEnabled: user.twoFactorEnabled,
             requires2FA: false,
@@ -67,13 +67,11 @@ export const authOptions: AuthOptions = {
   ],
 
   pages: { signIn: "/login" },
-  session: { strategy: "jwt" as const },
+  session: { strategy: "jwt" },
 
   callbacks: {
-    async jwt({ token, user, trigger, session: newSessionData }: { token: any; user?: any; trigger?: string; session?: any }) {
-      // Si la sesión se actualiza (desde UserProfile.tsx), actualizamos el token
+    async jwt({ token, user, trigger, session: newSessionData }) {
       if (trigger === "update" && newSessionData) {
-        // esto es nuevo
         if (newSessionData?.requires2FA !== undefined) {
           token.requires2FA = newSessionData.requires2FA;
         }
@@ -82,27 +80,29 @@ export const authOptions: AuthOptions = {
         }
       }
     
-      // En el inicio de sesión inicial, poblamos el token
       if (user) {
         token.id = user.id;
         token.name = user.name;
-        token.username = user.username;
+        token.userName = user.userName; 
         token.role = user.role;
         token.requires2FA = user.requires2FA || false;
         token.twoFactorEnabled = user.twoFactorEnabled || false;
-        token.createdAt = user.createdAt;
+       token.createdAt = user.createdAt instanceof Date 
+            ? user.createdAt.toISOString() 
+            : user.createdAt;
       }
-      return token;
+      return token; 
     },
-    async session({ session, token }: { session: any; token: any }) {
+    
+    async session({ session, token }) {
       if (token && session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).name = token.name;
-        (session.user as any).username = token.username;
-        (session.user as any).role = token.role;
-        (session.user as any).requires2FA = token.requires2FA || false;
-        (session.user as any).twoFactorEnabled = token.twoFactorEnabled || false;
-        (session.user as any).createdAt = token.createdAt;
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.userName = token.userName; 
+        session.user.role = token.role;
+        session.user.requires2FA = token.requires2FA || false;
+        session.user.twoFactorEnabled = token.twoFactorEnabled || false;
+        session.user.createdAt = token.createdAt;
       }
       return session;
     },

@@ -5,7 +5,7 @@ import { generate2FA } from "@/lib/twofactor/generate";
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/twofactor/encrypt";
 
-export async function POST(req: Request) {
+export async function POST(_req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     const userId = Number(session.user.id);
-    const userIdentifier = session.user.username || session.user.email || `user_${userId}`;
+    const userIdentifier = session.user.userName || session.user.email || `user_${userId}`;
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {

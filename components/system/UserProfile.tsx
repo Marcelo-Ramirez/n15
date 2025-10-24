@@ -28,6 +28,20 @@ import { useToast } from "@chakra-ui/toast";
 import { useSession } from "next-auth/react";
 import { FiUser, FiMail, FiShield } from 'react-icons/fi';
 const ConfirmButton: React.FC<ButtonProps> = (props) => <Button {...props} />;
+
+const getRoleColor = (role?: string) => {
+  switch (role) {
+    case 'admin':
+      return 'red.500';
+    case 'almacen':
+      return 'blue.500';
+    case 'ventas':
+      return 'green.500';
+    default:
+      return 'gray.500';
+  }
+};
+
 export default function UserProfile() {
   const { data: session, status, update } = useSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -171,7 +185,7 @@ export default function UserProfile() {
             </Box>
             <Box>
               <Heading size="md">{userData.name}</Heading>
-              <Text color="gray.600">@{userData.username}</Text>
+              <Text color="gray.600">@{userData.userName}</Text>
             </Box>
           </HStack>
 
@@ -182,7 +196,7 @@ export default function UserProfile() {
               <FiUser size={20} color="gray" />
               <Box>
                 <Text fontWeight="medium">Nombre de Usuario</Text>
-                <Text color="gray.600">{userData.username}</Text>
+                <Text color="gray.600">{userData.userName}</Text>
               </Box>
             </HStack>
 
@@ -207,11 +221,7 @@ export default function UserProfile() {
               <Box>
                 <Text 
                   color="white" 
-                  bg={
-                    userData.role === 'admin' ? 'red.500' :
-                    userData.role === 'almacen' ? 'blue.500' :
-                    userData.role === 'ventas' ? 'green.500' : 'gray.500'
-                  }
+                 bg={getRoleColor(userData.role)}
                   px={2}
                   py={1}
                   borderRadius="md"
@@ -298,7 +308,7 @@ export default function UserProfile() {
            <ConfirmButton // Usamos el componente tipado
               colorScheme="blue"
               onClick={handleConfirm2FA}
-            //  isLoading={isConfirming}
+              loading={isConfirming}
               disabled={!token || token.length < 6}
             >
               Confirmar y Activar

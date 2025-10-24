@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { OrderItem } from '@/types/inventory'; 
 
 const prisma = new PrismaClient();
 
@@ -34,8 +35,8 @@ export async function GET() {
 // POST - Crear nuevo pedido (desde catálogo público)
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    const { clientId, items } = data;
+    const data: { clientId: number, items: OrderItem[] } = await request.json(); 
+    const { clientId, items } = data; 
 
     // Validar que el cliente existe
     const client = await prisma.user.findUnique({
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     // Crear pedidos para cada producto
     const orders = await Promise.all(
-      items.map(async (item: any) => {
+      items.map(async (item) => { 
         return await prisma.orderClient.create({
           data: {
             clientId: clientId,

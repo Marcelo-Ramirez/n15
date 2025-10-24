@@ -12,7 +12,8 @@ import {
   Input,
 } from "@chakra-ui/react";
 import { Select } from "@chakra-ui/select";
-import { useEffect, useState } from "react";
+// ✅ 1. Importamos 'useCallback'
+import { useEffect, useState, useCallback } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 
 // Definimos las interfaces para productos y movimientos
@@ -39,7 +40,6 @@ export default function StockroomProductHistoryPage() {
   const router = useRouter();
   const params = useParams();
   const productId = params.productId as string;
-  const role = "stockroom"; // Rol codificado
 
   const [movements, setMovements] = useState<Movement[]>([]);
   const [product, setProduct] = useState<ProductDetails | null>(null);
@@ -56,29 +56,33 @@ export default function StockroomProductHistoryPage() {
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchHistory();
-  }, [productId]);
+  // ✅ 3. 'fetchHistory' envuelto en useCallback
+  const fetchHistory = useCallback(async () => {
+    // Añadimos un guardián por si productId aún no está listo
+    if (!productId) return; 
 
-  const fetchHistory = async () => {
     setIsLoading(true);
     try {
-      const productRes = await fetch(`/api/inventory/products/${productId}/history`);
-      const productData = await productRes.json();
-      if (!productRes.ok) throw new Error(productData.error || "Error al obtener detalles del producto");
-      setProduct(productData.product);
-
-      const historyRes = await fetch(`/api/inventory/products/${productId}/history`);
-      const historyData = await historyRes.json();
-      if (!historyRes.ok) throw new Error(historyData.error || "Error al obtener historial");
-      setMovements(historyData.movements);
+      // ✅ 4. CORREGIDO: Hacemos UNA SOLA llamada a la API
+      const res = await fetch(`/api/inventory/products/${productId}/history`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al obtener historial");
+      
+      // Seteamos ambos estados desde la misma respuesta
+      setProduct(data.product);
+      setMovements(data.movements);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [productId]); // 'fetchHistory' depende de 'productId'
+
+  // ✅ 5. 'useEffect' ahora depende de 'fetchHistory' (que es estable)
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   const handleOpenRegister = () => {
     setRegisterData({
@@ -122,7 +126,7 @@ export default function StockroomProductHistoryPage() {
       setShowRegisterModal(false);
       setRegisterSuccess('¡Movimiento registrado exitosamente!');
       setRegisterData({ movementType: '', reason: '', quantity: '' });
-      await fetchHistory();
+      await fetchHistory(); // Llamada segura a la función estable
     } catch (err) {
       setRegisterError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
@@ -131,7 +135,11 @@ export default function StockroomProductHistoryPage() {
   };
 
   if (isLoading) {
-    return <Spinner />;
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
+        <Spinner size="xl" color="blue.500" />
+      </Box>
+    );
   }
   if (error) {
     return <Text color="red.500">{error}</Text>;

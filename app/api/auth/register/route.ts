@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar userName (solo letras, números y guiones bajos)
-    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    const usernameRegex = /^\w+$/;
     if (!usernameRegex.test(userName)) {
       return NextResponse.json(
         { message: 'El nombre de usuario solo puede contener letras, números y guiones bajos' },
@@ -86,15 +86,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error en registro:', error);
     
-    // Si el error es por usuario duplicado
-    if (error.message === 'El usuario ya existe') {
-      return NextResponse.json(
-        { message: 'Este nombre de usuario ya está registrado' },
-        { status: 409 }
-      );
+    // Verificación de error seguro para acceder a 'message'
+    if (error instanceof Error) {
+        if (error.message === 'El usuario ya existe') {
+          return NextResponse.json(
+            { message: 'Este nombre de usuario ya está registrado' },
+            { status: 409 }
+          );
+        }
     }
 
     return NextResponse.json(

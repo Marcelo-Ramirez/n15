@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth';
+import { getServerSession, Session } from 'next-auth';
+import { OrderItem } from '@/types/inventory'; 
 
 const prisma = new PrismaClient();
+type ExtendedSession = Session & { 
+    user?: { id: string; role: string } & Session['user'];
+};
 
 // POST - Crear nuevo pedido
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession() as ExtendedSession;
     
     if (!session?.user || session.user.role !== 'cliente') {
       return NextResponse.json(
@@ -17,12 +21,11 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
-    const { items } = data;
+    const { items } = data as { items: OrderItem[] }; 
 
-    // Crear pedidos para cada producto
     const clientId = Number(session.user.id);
     const orders = await Promise.all(
-      items.map(async (item: any) => {
+      items.map(async (item) => { 
         return await prisma.orderClient.create({
           data: {
             clientId,
@@ -50,7 +53,8 @@ export async function POST(request: NextRequest) {
 // GET - Obtener pedidos del cliente
 export async function GET() {
   try {
-    const session = await getServerSession();
+    // 💡 Aserción de tipo para la sesión
+    const session = await getServerSession() as ExtendedSession;
     
     if (!session?.user || session.user.role !== 'cliente') {
       return NextResponse.json(

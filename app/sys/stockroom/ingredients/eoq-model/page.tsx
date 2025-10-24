@@ -5,20 +5,16 @@ import {
   Box,
   Heading,
   Text,
-  VStack,
   HStack,
   Input,
   Button,
-  Spinner,
   SimpleGrid,
+  Spinner // Importado Spinner para usarlo
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+// ✅ 1. Importar useCallback
+import { useEffect, useState, Suspense, useCallback } from "react";
 import dynamic from "next/dynamic";
 const InventoryEOQGraph = dynamic(() => import("@/components/InventoryEOQGraph"), { ssr: false });
-
-
-import { Suspense } from "react";
-
 
 function EOQModelPageInner() {
   const searchParams = useSearchParams();
@@ -34,43 +30,68 @@ function EOQModelPageInner() {
   const [eoq, setEoq] = useState<number | null>(null);
   const [reorderPoint, setReorderPoint] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loadingModel, setLoadingModel] = useState(false);
+  // ✅ 2. Eliminado useState para 'loadingModel' no utilizado
+  // const [loadingModel, setLoadingModel] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
+  // Estado de carga específico para guardar/calcular modelo
+  const [isCalculating, setIsCalculating] = useState(false); 
 
-  // Al cargar, obtener modelo EOQ guardado y demanda anual
-  useEffect(() => {
-    if (ingredientId) {
-      fetchEOQModel();
-      fetchAnnualDemand();
-      fetchDailyDemand();
-    }
-    // eslint-disable-next-line
-  }, [ingredientId]);
-  const fetchDailyDemand = async () => {
+
+  // --- Funciones de Fetch envueltas en useCallback ---
+
+  const fetchDailyDemand = useCallback(async () => {
+    if (!ingredientId) return; // Guardián
     setLoadingDaily(true);
     try {
       const res = await fetch(`/api/system/inventory/ingredients/daily-demand?ingredientId=${ingredientId}`);
       const data = await res.json();
+      // ✅ 3. Usar ?? para valor por defecto 0
       setDailyDemand(data.dailyDemand ?? 0);
-    } catch {
-      setDailyDemand(0);
+    } catch (err) {
+       console.error("Error fetching daily demand:", err);
+       setError("Error al obtener la demanda diaria.");
+       setDailyDemand(0); // O null, dependiendo de cómo quieras manejar el error
+    } finally {
+       setLoadingDaily(false);
     }
-    setLoadingDaily(false);
-  };
+  }, [ingredientId]);
 
-  const fetchEOQModel = async () => {
-    setLoadingModel(true);
+  const fetchAnnualDemand = useCallback(async () => {
+    if (!ingredientId) return; // Guardián
+    setLoadingDemand(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/system/inventory/ingredients/eoq-annual-demand?ingredientId=${ingredientId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al calcular demanda anual");
+      // ✅ 3. Usar ?? para valor por defecto null
+      setAnnualDemand(data.annualDemand ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido al obtener demanda anual");
+      setAnnualDemand(null); // Resetear en caso de error
+    } finally {
+      setLoadingDemand(false);
+    }
+  }, [ingredientId]);
+
+  const fetchEOQModel = useCallback(async () => {
+    if (!ingredientId) return; // Guardián
+    // Usamos el estado general o uno específico si se quiere diferenciar
+    setIsCalculating(true); 
     try {
       const res = await fetch(`/api/system/inventory/ingredients/eoq-model?ingredientId=${ingredientId}`);
       const data = await res.json();
       if (data.model) {
+        // ✅ 3. Usar ?? para valores por defecto
         setAnnualDemand(data.model.annualDemand ?? null);
         setOrderingCost(data.model.orderingCost?.toString() ?? "");
         setAnnualMaintenanceCost(data.model.annualMaintenanceCost?.toString() ?? "");
-        setLeadTimeDays(data.model.leadTimeDays !== undefined ? data.model.leadTimeDays.toString() : "");
-        setDailyDemand(data.model.dailyDemand !== undefined ? data.model.dailyDemand : null);
-        setReorderPoint(data.model.reorderPoint !== undefined ? data.model.reorderPoint : null);
-        // Calcula EOQ si todos los datos existen
+
+        setLeadTimeDays(data.model.leadTimeDays?.toString() ?? "");
+
+        setReorderPoint(data.model.reorderPoint ?? null);
+        
+        // Calcula EOQ si todos los datos existen al cargar
         if (
           data.model.annualDemand &&
           data.model.orderingCost &&
@@ -79,49 +100,62 @@ function EOQModelPageInner() {
           const D = Number(data.model.annualDemand);
           const S = Number(data.model.orderingCost);
           const H = Number(data.model.annualMaintenanceCost);
-          if (!isNaN(D) && !isNaN(S) && !isNaN(H) && D > 0 && S > 0 && H > 0) {
+
+          if (!Number.isNaN(D) && !Number.isNaN(S) && !Number.isNaN(H) && D > 0 && S > 0 && H > 0) {
             setEoq(Math.sqrt((2 * D * S) / H));
+          } else {
+             setEoq(null); // Resetear si los datos cargados no son válidos
           }
+        } else {
+            setEoq(null); // Resetear si faltan datos
         }
+      } else {
+          setOrderingCost("");
+          setAnnualMaintenanceCost("");
+          setLeadTimeDays("");
+          setReorderPoint(null);
+          setEoq(null);
       }
-    } catch {}
-    setLoadingModel(false);
-  };
-
-  const fetchAnnualDemand = async () => {
-    setLoadingDemand(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/system/inventory/ingredients/eoq-annual-demand?ingredientId=${ingredientId}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al calcular demanda anual");
-      setAnnualDemand(data.annualDemand);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+        console.error("Error fetching EOQ model:", err);
+        setError("Error al cargar el modelo EOQ guardado.");
     } finally {
-      setLoadingDemand(false);
+        setIsCalculating(false);
     }
-  };
+  }, [ingredientId]);
 
-  const handleCalculateEOQ = async () => {
-    if (!annualDemand || !orderingCost || !annualMaintenanceCost) {
-      setError("Completa todos los campos para calcular EOQ");
+  useEffect(() => {
+    if (ingredientId) {
+      fetchEOQModel();
+      fetchAnnualDemand();
+      fetchDailyDemand();
+    }
+  }, [ingredientId, fetchEOQModel, fetchAnnualDemand, fetchDailyDemand]); // Incluir funciones useCallback
+
+  const handleCalculateEOQ = useCallback(async () => {
+    setError(null); // Limpiar errores previos
+    if (annualDemand === null || !orderingCost || !annualMaintenanceCost) {
+      setError("Completa Demanda Anual, Costo de Orden y Costo de Mantenimiento para calcular EOQ");
       return;
     }
     const D = Number(annualDemand);
     const S = Number(orderingCost);
     const H = Number(annualMaintenanceCost);
-    if (isNaN(D) || isNaN(S) || isNaN(H) || D <= 0 || S <= 0 || H <= 0) {
-      setError("Todos los valores deben ser números positivos");
+    
+    // ✅ 5. Usar Number.isNaN
+    if (Number.isNaN(D) || Number.isNaN(S) || Number.isNaN(H) || D <= 0 || S <= 0 || H <= 0) {
+      setError("Demanda Anual, Costo de Orden y Costo de Mantenimiento deben ser números positivos");
+      setEoq(null); // Resetear EOQ si el cálculo falla
       return;
     }
-    // EOQ = sqrt(2DS/H)
+    
     const eoqValue = Math.sqrt((2 * D * S) / H);
     setEoq(eoqValue);
-    setError(null);
+    
     // Guardar modelo EOQ en backend
+    setIsCalculating(true);
     try {
-      await fetch(`/api/system/inventory/ingredients/eoq-model`, {
+      const res = await fetch(`/api/system/inventory/ingredients/eoq-model`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -129,130 +163,246 @@ function EOQModelPageInner() {
           annualDemand: D,
           orderingCost: S,
           annualMaintenanceCost: H,
+          leadTimeDays: Number(leadTimeDays) || null,
+          dailyDemand: dailyDemand ?? null,
+          reorderPoint: reorderPoint ?? null
         }),
       });
-    } catch {}
-  };
+       if (!res.ok) {
+           const errorData = await res.json().catch(() => ({}));
+           throw new Error(errorData.error || "Error al guardar el modelo EOQ");
+       }
+    } catch (err) {
+        setError(err instanceof Error ? err.message : "Error desconocido al guardar EOQ");
+    } finally {
+        setIsCalculating(false);
+    }
+  }, [annualDemand, orderingCost, annualMaintenanceCost, ingredientId, leadTimeDays, dailyDemand, reorderPoint]); // Dependencias de useCallback
 
-  // Calcular y guardar reorder point
-  const handleReorderPoint = async () => {
-    setError(null);
+  const handleReorderPoint = useCallback(async () => {
+    setError(null); // Limpiar errores previos
+    if (!leadTimeDays || dailyDemand === null) {
+        setError("Completa Lead Time y Demanda Diaria para calcular ROP.");
+        return;
+    }
     const lead = Number(leadTimeDays);
     const daily = Number(dailyDemand);
-    if (isNaN(lead) || isNaN(daily) || lead <= 0 || daily <= 0) {
-      setError("LeadTimeDays y DailyDemand deben ser números positivos");
+
+    if (Number.isNaN(lead) || Number.isNaN(daily) || lead <= 0 || daily < 0) { // daily puede ser 0
+      setError("Lead Time debe ser positivo. Demanda Diaria debe ser 0 o positiva.");
+      setReorderPoint(null); // Resetear ROP
       return;
     }
+    
     const rp = lead * daily;
     setReorderPoint(rp);
-    // Guardar en backend
+    
+    setIsCalculating(true);
     try {
-      await fetch(`/api/system/inventory/ingredients/eoq-model`, {
+      const res = await fetch(`/api/system/inventory/ingredients/eoq-model`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ingredientId,
           reorderPoint: rp,
           leadTimeDays: lead,
-          dailyDemand: daily
+          dailyDemand: daily,
+          annualDemand: annualDemand ?? null,
+          orderingCost: Number(orderingCost) || null,
+          annualMaintenanceCost: Number(annualMaintenanceCost) || null,
         }),
       });
-    } catch {}
-  };
+       if (!res.ok) {
+           const errorData = await res.json().catch(() => ({}));
+           throw new Error(errorData.error || "Error al guardar el Punto de Reorden");
+       }
+    } catch (err) {
+        setError(err instanceof Error ? err.message : "Error desconocido al guardar ROP");
+    } finally {
+        setIsCalculating(false);
+    }
+  }, [leadTimeDays, dailyDemand, ingredientId, annualDemand, orderingCost, annualMaintenanceCost]); // Dependencias de useCallback
 
-  // Accionar todos los generates
-  const handleGenerateAll = async () => {
+  const handleGenerateAll = useCallback(async () => {
     await fetchAnnualDemand();
-    await handleCalculateEOQ();
     await fetchDailyDemand();
+    
+    await new Promise(resolve => setTimeout(resolve, 100)); 
+    
+    await handleCalculateEOQ(); 
     await handleReorderPoint();
-  };
+
+  }, [fetchAnnualDemand, fetchDailyDemand, handleCalculateEOQ, handleReorderPoint]);
 
   return (
-    <Box p={4} maxW="900px" mx="auto" border="2px solid #fff" borderRadius="2xl" bg="#181818">
-      <HStack mb={2} justify="space-between">
-        <Button variant="ghost" onClick={() => router.back()} fontSize="2xl">←</Button>
+    <Box p={4} maxW="900px" mx="auto" /* bg="#181818" color="white" */ > {/* Estilos base de Chakra */}
+      <HStack mb={4} justify="space-between">
+        <Button variant="ghost" onClick={() => router.back()} aria-label="Volver">←</Button>
+        <Heading size="lg" textAlign="center">Modelo EOQ del Ingrediente</Heading>
         <HStack gap={2}>
-          <Button variant="outline">Print</Button>
-          <Button variant="outline" onClick={handleGenerateAll}>Generate Everyting</Button>
+          <Button variant="outline" size="sm" /* onClick={handlePrint} */>Imprimir</Button>
+          <Button 
+             variant="solid" 
+             colorScheme="blue" 
+             size="sm" 
+             onClick={handleGenerateAll}
+             loading={loadingDemand || loadingDaily || isCalculating} // Mostrar carga si alguna acción está en curso
+          >
+             Calcular Todo
+          </Button>
         </HStack>
       </HStack>
-      <Heading size="md" mb={2}>Ingredient model EOQ</Heading>
-  <SimpleGrid columns={5} gap={4} mb={2}>
+      
+      {/* Sección EOQ */}
+      <Heading size="md" mb={3} mt={6}>Cálculo EOQ (Cantidad Económica de Pedido)</Heading>
+      <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} mb={6} alignItems="flex-end">
         <Box>
-          <Text mb={1}>OrderingCost</Text>
-          <Input value={orderingCost} onChange={e => setOrderingCost(e.target.value)} />
+          <Text mb={1} fontSize="sm">Costo por Orden (S)</Text>
+          <Input 
+             type="number" 
+             placeholder="Ej: 50"
+             value={orderingCost} 
+             onChange={e => setOrderingCost(e.target.value)} 
+             disabled={isCalculating}
+          />
         </Box>
         <Box>
-          <Text mb={1}>AnnualMaintenanceCost</Text>
-          <Input value={annualMaintenanceCost} onChange={e => setAnnualMaintenanceCost(e.target.value)} />
+          <Text mb={1} fontSize="sm">Costo Mant. Anual por Unidad (H)</Text>
+          <Input 
+             type="number" 
+             step="0.01" 
+             placeholder="Ej: 2.50"
+             value={annualMaintenanceCost} 
+             onChange={e => setAnnualMaintenanceCost(e.target.value)} 
+             disabled={isCalculating}
+          />
         </Box>
         <Box>
-          <Text mb={1}>AnnualDemand</Text>
+          <Text mb={1} fontSize="sm">Demanda Anual (D)</Text>
           <HStack>
-            <Input value={annualDemand ?? ''} readOnly />
-            <Button size="sm" onClick={fetchAnnualDemand} loading={loadingDemand}>generate</Button>
+            <Input value={annualDemand ?? ''} readOnly placeholder="Calculado..." />
+            <Button 
+               size="sm" 
+               onClick={fetchAnnualDemand} 
+               loading={loadingDemand} 
+               disabled={isCalculating}
+               minW="80px" // Ancho mínimo
+             >
+               Calcular
+             </Button>
           </HStack>
         </Box>
-        <Box>
-          <Text mb={1}>EOQ</Text>
-          <HStack>
-            <Input value={eoq !== null ? eoq.toFixed(2) : ''} readOnly />
-            <Button size="sm" onClick={handleCalculateEOQ}>generate</Button>
-          </HStack>
+        <Box gridColumn={{ base: "span 1", md: "span 3" }}> 
+            <Button 
+              w="full" // Ancho completo
+              colorScheme="green" 
+              onClick={handleCalculateEOQ} 
+              loading={isCalculating && !loadingDemand} // Carga si está calculando EOQ específicamente
+              disabled={annualDemand === null || !orderingCost || !annualMaintenanceCost || isCalculating}
+              mt={2}
+             >
+              Calcular EOQ (Q*)
+            </Button>
         </Box>
+         <Box gridColumn={{ base: "span 1", md: "span 3" }} mt={-2}> {/* Resultado EOQ */}
+            <Text mb={1} fontSize="sm" fontWeight="bold">Resultado EOQ (Q*):</Text>
+             {/* ✅ 6. Usar ?? para EOQ Input */}
+            <Input value={eoq?.toFixed(2) ?? ''} readOnly bg="gray.100" />
+         </Box>
       </SimpleGrid>
-      <Box h="2px" bg="#fff" my={2} />
-  <SimpleGrid columns={3} gap={4} mb={2}>
+
+      <Box h="1px" bg="gray.300" my={6} />
+
+      {/* Sección ROP */}
+      <Heading size="md" mb={3}>Cálculo ROP (Punto de Reorden)</Heading>
+      <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} mb={6} alignItems="flex-end">
         <Box>
-          <Text mb={1}>LeadTimeDays</Text>
-          <Input value={leadTimeDays} onChange={e => setLeadTimeDays(e.target.value)} />
+          <Text mb={1} fontSize="sm">Lead Time (Días)</Text>
+          <Input 
+             type="number" 
+             placeholder="Ej: 7"
+             value={leadTimeDays} 
+             onChange={e => setLeadTimeDays(e.target.value)} 
+             disabled={isCalculating}
+          />
         </Box>
         <Box>
-          <Text mb={1}>DailyDemand</Text>
+          <Text mb={1} fontSize="sm">Demanda Diaria Promedio</Text>
           <HStack>
-            <Input value={dailyDemand ?? ''} readOnly />
-            <Button size="sm" onClick={fetchDailyDemand} loading={loadingDaily}>generate</Button>
-          </HStack>
-        </Box>
-        <Box>
-          <Text mb={1}>ReorderPoint</Text>
-          <HStack>
-            <Input value={reorderPoint !== null ? reorderPoint : ''} readOnly />
-            <Button size="sm"
-              onClick={handleReorderPoint}
-              disabled={
-                !leadTimeDays || isNaN(Number(leadTimeDays)) || Number(leadTimeDays) <= 0 ||
-                dailyDemand === null || isNaN(Number(dailyDemand)) || Number(dailyDemand) <= 0
-              }
+            <Input value={dailyDemand?.toFixed(2) ?? ''} readOnly placeholder="Calculado..." />
+            <Button 
+               size="sm" 
+               onClick={fetchDailyDemand} 
+               loading={loadingDaily} 
+               disabled={isCalculating}
+               minW="80px"
             >
-              generate
+              Calcular
             </Button>
           </HStack>
         </Box>
+         <Box gridColumn={{ base: "span 1", md: "span 3" }}>
+            <Button 
+              w="full"
+              colorScheme="orange" 
+              onClick={handleReorderPoint}
+              loading={isCalculating && !loadingDaily} // Carga si calcula ROP específicamente
+              disabled={
+                !leadTimeDays || Number.isNaN(Number(leadTimeDays)) || Number(leadTimeDays) <= 0 ||
+                dailyDemand === null || Number.isNaN(Number(dailyDemand)) || Number(dailyDemand) < 0 || // Puede ser 0
+                isCalculating
+              }
+              mt={2}
+            >
+              Calcular Punto de Reorden (ROP)
+            </Button>
+        </Box>
+         <Box gridColumn={{ base: "span 1", md: "span 3" }} mt={-2}>
+            <Text mb={1} fontSize="sm" fontWeight="bold">Resultado ROP:</Text>
+            {/* ✅ 7. Usar ?? para Reorder Point Input */}
+            <Input value={reorderPoint?.toFixed(2) ?? ''} readOnly bg="gray.100" />
+         </Box>
       </SimpleGrid>
-      <Box h="2px" bg="#fff" my={2} />
-      <Box>
-        <Text mb={1}>Grafic</Text>
-        <Button size="sm" variant="outline" onClick={() => setShowGraph(true)}>generate</Button>
+
+      <Box h="1px" bg="gray.300" my={6} />
+
+      {/* Sección Gráfica */}
+      <Box textAlign="center">
+          <Button 
+            size="md" 
+            variant="outline" 
+            onClick={() => setShowGraph(prev => !prev)} // Toggle para mostrar/ocultar
+            disabled={eoq === null || reorderPoint === null || !leadTimeDays || annualDemand === null} // Deshabilitar si faltan datos
+           >
+            {showGraph ? "Ocultar Gráfica" : "Generar Gráfica EOQ"}
+         </Button>
       </Box>
-      {showGraph && eoq && reorderPoint && leadTimeDays && annualDemand && (
-        <InventoryEOQGraph
-          eoq={Number(eoq)}
-          reorderPoint={Number(reorderPoint)}
-          leadTime={Number(leadTimeDays)}
-          periods={Math.max(1, Math.round(Number(annualDemand) / Number(eoq)))}
-            annualDemand={Number(annualDemand)}
-          />
+
+      {/* Mensaje de error general */}
+      {error && <Text color="red.500" mt={4} textAlign="center">{error}</Text>}
+
+      {/* Contenedor de la gráfica */}
+      {showGraph && eoq !== null && reorderPoint !== null && leadTimeDays && annualDemand !== null && (
+        <Box mt={6}>
+           <InventoryEOQGraph
+             eoq={eoq} // Ya es número
+             reorderPoint={reorderPoint} // Ya es número
+             leadTime={Number(leadTimeDays)}
+             // Calcular períodos basado en demanda anual y EOQ, asegurando al menos 1
+             periods={Math.max(1, Math.ceil(annualDemand / eoq))} 
+             annualDemand={annualDemand} // Ya es número
+            />
+        </Box>
       )}
-      {error && <Text color="red.500">{error}</Text>}
+     
     </Box>
   );
 }
 
+// Componente Wrapper para Suspense (no cambia)
 export default function EOQModelPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<Spinner />}> {/* Añadir un fallback para Suspense */}
       <EOQModelPageInner />
     </Suspense>
   );

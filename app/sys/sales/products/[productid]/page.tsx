@@ -12,7 +12,7 @@ import {
   Input,
 } from "@chakra-ui/react";
 import { Select } from "@chakra-ui/select";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 
 // interfaces
@@ -39,7 +39,7 @@ interface Movement {
 export default function StockroomProductHistoryPage() {
   const router = useRouter();
   const params = useParams();
-  const productid = (params?.productid || "") as string; // <-- Corrección aquí
+  const productid = (params?.productid || "") as string;
 
   const [movements, setMovements] = useState<Movement[]>([]);
   const [product, setProduct] = useState<ProductDetails | null>(null);
@@ -55,17 +55,10 @@ export default function StockroomProductHistoryPage() {
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (productid) {
-      fetchData();
-    }
-  }, [productid]); // <-- Corrección aquí
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // UNA SOLA LLAMADA A LA API
       const res = await fetch(`/api/inventory/products/${productid}`);
       const data = await res.json();
       
@@ -73,7 +66,6 @@ export default function StockroomProductHistoryPage() {
         throw new Error(data.error || "Error al obtener datos");
       }
 
-      // Asume que la API devuelve un objeto con 'product' y 'movements'
       setProduct(data.product);
       setMovements(data.movements);
 
@@ -82,7 +74,14 @@ export default function StockroomProductHistoryPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [productid]);
+
+  useEffect(() => {
+    if (productid) {
+      fetchData();
+    }
+  }, [productid, fetchData]);
+
 
   const handleOpenRegister = () => {
     setRegisterData({ movementType: '', quantity: '' });
@@ -97,7 +96,7 @@ export default function StockroomProductHistoryPage() {
     setRegisterSuccess(null);
   };
 
-  const handleRegisterAccept = async () => {
+  const handleRegisterAccept = useCallback(async () => {
     if (!registerData.movementType || !registerData.quantity) {
       setRegisterError('Completa todos los campos');
       return;
@@ -129,7 +128,8 @@ export default function StockroomProductHistoryPage() {
     } finally {
       setRegisterLoading(false);
     }
-  };
+  }, [registerData.movementType, registerData.quantity, productid, fetchData]); // 💡 Dependencias: fetchData, productid, y registerData
+
 
   if (isLoading) {
     return (
@@ -186,8 +186,8 @@ export default function StockroomProductHistoryPage() {
             </Box>
           ))
         )}
-      </VStack>
       
+      {/* Modal JSX */}
       {showRegisterModal && (
         <Box
           position="fixed"
@@ -247,6 +247,7 @@ export default function StockroomProductHistoryPage() {
           </Box>
         </Box>
       )}
+        </VStack>
     </Box>
   );
 }

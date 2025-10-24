@@ -32,11 +32,11 @@ export interface UpdateProductData extends Partial<CreateProductData> {
 }
 
 export class ProductService {
-  private basePath = '/public/products'
+  private readonly basePath = '/public/products'
 
   // Get all products (public)
   async getProducts(params?: PaginationParams): Promise<PaginatedResponse<Product>> {
-    return apiClient.get<PaginatedResponse<Product>>(this.basePath, params)
+    return apiClient.get<PaginatedResponse<Product>>(this.basePath, { ...params })
   }
 
   // Get product by ID (public)
@@ -46,22 +46,22 @@ export class ProductService {
 
   // Get products by category (public)
   async getProductsByCategory(
-    categoryId: number, 
+    categoryId: number,
     params?: PaginationParams
   ): Promise<PaginatedResponse<Product>> {
     return apiClient.get<PaginatedResponse<Product>>(
-      `${this.basePath}/category/${categoryId}`, 
+      `${this.basePath}/category/${categoryId}`,
       params
     )
   }
 
   // Search products (public)
   async searchProducts(
-    query: string, 
+    query: string,
     params?: PaginationParams
   ): Promise<PaginatedResponse<Product>> {
     return apiClient.get<PaginatedResponse<Product>>(
-      `${this.basePath}/search`, 
+      `${this.basePath}/search`,
       { ...params, q: query }
     )
   }
@@ -69,11 +69,11 @@ export class ProductService {
 
 // System product service (admin/internal)
 export class SystemProductService {
-  private basePath = '/system/products'
+  private readonly basePath = '/system/products'
 
   // Get all products (system)
   async getProducts(params?: PaginationParams): Promise<PaginatedResponse<Product>> {
-    return apiClient.get<PaginatedResponse<Product>>(this.basePath, params)
+    return apiClient.get<PaginatedResponse<Product>>(this.basePath, { ...params })
   }
 
   // Get product by ID (system)

@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, HStack, Text, Button, Container, Image } from "@chakra-ui/react";
+import { Box, HStack, Button, Container, Image } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 
 export function PublicHeader() {

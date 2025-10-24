@@ -49,3 +49,8 @@ export interface CreateIngredientData {
   pricePerUnit: number;
   // reorderPoint se establece automáticamente como null al crear
 }
+
+export interface OrderItem {
+    productId: number;
+    quantity: number;
+}

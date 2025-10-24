@@ -1,5 +1,4 @@
-// app/sys/sale/products/[id]/history/page.tsx
-// app/sys/stockroom/products/[id]/history/page.tsx
+// app/sys/.../history/page.tsx (CORREGIDO)
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
@@ -15,7 +14,8 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { NativeSelectRoot, NativeSelectField } from "@chakra-ui/react/native-select";
-import { useEffect, useState, ChangeEvent } from "react";
+// ✅ PASO 1: Importar useEffect
+import { useState, ChangeEvent, useCallback, useEffect } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 
 interface Movement {
@@ -42,12 +42,11 @@ interface Product {
 export default function ProductHistoryPage() {
   const router = useRouter();
   const params = useParams();
-  // ✅ Obtener el ID de la ruta
   const productId = params.id;
 
-  // Determinar el rol basado en la ruta actual
+  // ✅ CORRECCIÓN 1: Esta línea ya está bien (usa globalThis)
   const isStockroomRole = typeof window !== 'undefined' && 
-    window.location.pathname.includes('/stockroom/');
+  globalThis.location.pathname.includes('/stockroom/');
   const role = isStockroomRole ? 'stockroom' : 'sale';
 
   const [movements, setMovements] = useState<Movement[]>([]);
@@ -64,17 +63,12 @@ export default function ProductHistoryPage() {
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    // ✅ Usar productId en el useEffect
-    if (productId) {
-      fetchHistory();
-    }
-  }, [productId]);
+  // ✅ PASO 2: Tu useCallback está perfecto
+  const fetchHistory = useCallback(async () => {
+    if (!productId) return; 
 
-  const fetchHistory = async () => {
     setIsLoading(true);
     try {
-      // ✅ Usar el ID en la URL del API
       const res = await fetch(`/api/system/inventory/products/history?id=${encodeURIComponent(productId as string)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al obtener historial");
@@ -85,8 +79,12 @@ export default function ProductHistoryPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [productId]);
 
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+  
   const handleOpenRegister = () => {
     setRegisterData({ movementType: '', reason: '', quantity: '' });
     setRegisterError(null);
@@ -115,7 +113,6 @@ export default function ProductHistoryPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // ✅ Enviar el ID en el cuerpo de la petición
           productId, 
           movementType: registerData.movementType,
           reason: registerData.reason,
@@ -129,7 +126,7 @@ export default function ProductHistoryPage() {
       setShowRegisterModal(false);
       setRegisterSuccess('¡Movimiento registrado exitosamente!');
       setRegisterData({ movementType: '', reason: '', quantity: '' });
-      await fetchHistory();
+      await fetchHistory(); // Esto ahora es seguro de llamar
       
       setTimeout(() => setRegisterSuccess(null), 3000);
     } catch (err) {
@@ -160,6 +157,112 @@ export default function ProductHistoryPage() {
         { value: 'transferencia_venta', label: 'Transferencia a Venta' }
       ];
     }
+  };
+
+  const renderMovementList = () => {
+    // 1. Estado de Carga
+    if (isLoading) {
+      return (
+        <Box display="flex" justifyContent="center" py={8}>
+          <VStack gap={3}>
+            <Spinner size="lg" color="blue.500" />
+            <Text color="gray.600">Cargando historial...</Text>
+          </VStack>
+        </Box>
+      );
+    }
+
+    // 2. Estado de Error
+    if (error) {
+      return (
+        <Box
+          bg="red.50"
+          border="1px"
+          borderColor="red.200"
+          borderRadius="md"
+          p={4}
+          color="red.700"
+        >
+          <Text fontWeight="medium">Error:</Text>
+          <Text>{error}</Text>
+        </Box>
+      );
+    }
+
+    // 3. Estado Vacío
+    if (movements.length === 0) {
+      return (
+        <Box 
+          bg="white"
+          p={8} 
+          textAlign="center"
+          borderRadius="lg"
+          boxShadow="sm"
+          border="1px"
+          borderColor="gray.200"
+        >
+          <Text color="gray.500" fontSize="lg">No hay movimientos registrados</Text>
+          <Text color="gray.400" fontSize="sm" mt={2}>
+            Los movimientos aparecerán aquí cuando se registren
+          </Text>
+        </Box>
+      );
+    }
+  
+    // 4. Estado con Datos (Default)
+    return (
+      <VStack gap={3} align="stretch">
+        {movements.map((movement) => (
+          <Box 
+            key={movement.id} 
+            bg="white"
+            borderWidth="1px" 
+            borderColor="gray.200"
+            borderRadius="lg" 
+            p={4} 
+            boxShadow="sm"
+            _hover={{ boxShadow: "md" }}
+            transition="all 0.2s"
+          >
+            <HStack justify="space-between" align="start">
+              <VStack align="start" gap={1} flex={1}>
+                <HStack gap={3}>
+                  <Badge 
+                    colorScheme={movement.movementType === 'entrada' ? 'green' : 'red'}
+                    fontSize="sm"
+                    px={2}
+                    py={1}
+                  >
+                    {movement.movementType.toUpperCase()}
+                  </Badge>
+                  <Text fontWeight="bold" color="gray.900">
+                    {movement.quantity > 0 ? "+" : ""}{movement.quantity}
+                  </Text>
+                </HStack>
+                
+                <Text fontSize="sm" color="gray.700">
+                  <Text as="span" fontWeight="medium">Motivo:</Text> {movement.reason}
+                </Text>
+                
+                <Text fontSize="sm" color="gray.600">
+                  <Text as="span" fontWeight="medium">Usuario:</Text> {movement.user?.name || "Sistema"}
+                </Text>
+              </VStack>
+              
+              <Text fontSize="sm" color="gray.500" textAlign="right" minW="140px">
+                {new Date(movement.createdAt).toLocaleString('es-ES', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </Text>
+            </HStack>
+          </Box>
+        ))}
+      </VStack>
+    );
   };
 
   return (
@@ -245,93 +348,7 @@ export default function ProductHistoryPage() {
         )}
 
         {/* Lista de Movimientos */}
-        {isLoading ? (
-          <Box display="flex" justifyContent="center" py={8}>
-            <VStack gap={3}>
-              <Spinner size="lg" color="blue.500" />
-              <Text color="gray.600">Cargando historial...</Text>
-            </VStack>
-          </Box>
-        ) : error ? (
-          <Box
-            bg="red.50"
-            border="1px"
-            borderColor="red.200"
-            borderRadius="md"
-            p={4}
-            color="red.700"
-          >
-            <Text fontWeight="medium">Error:</Text>
-            <Text>{error}</Text>
-          </Box>
-        ) : movements.length === 0 ? (
-          <Box 
-            bg="white"
-            p={8} 
-            textAlign="center"
-            borderRadius="lg"
-            boxShadow="sm"
-            border="1px"
-            borderColor="gray.200"
-          >
-            <Text color="gray.500" fontSize="lg">No hay movimientos registrados</Text>
-            <Text color="gray.400" fontSize="sm" mt={2}>
-              Los movimientos aparecerán aquí cuando se registren
-            </Text>
-          </Box>
-        ) : (
-          <VStack gap={3} align="stretch">
-            {movements.map((movement) => (
-              <Box 
-                key={movement.id} 
-                bg="white"
-                borderWidth="1px" 
-                borderColor="gray.200"
-                borderRadius="lg" 
-                p={4} 
-                boxShadow="sm"
-                _hover={{ boxShadow: "md" }}
-                transition="all 0.2s"
-              >
-                <HStack justify="space-between" align="start">
-                  <VStack align="start" gap={1} flex={1}>
-                    <HStack gap={3}>
-                      <Badge 
-                        colorScheme={movement.movementType === 'entrada' ? 'green' : 'red'}
-                        fontSize="sm"
-                        px={2}
-                        py={1}
-                      >
-                        {movement.movementType.toUpperCase()}
-                      </Badge>
-                      <Text fontWeight="bold" color="gray.900">
-                        {movement.quantity > 0 ? "+" : ""}{movement.quantity}
-                      </Text>
-                    </HStack>
-                    
-                    <Text fontSize="sm" color="gray.700">
-                      <Text as="span" fontWeight="medium">Motivo:</Text> {movement.reason}
-                    </Text>
-                    
-                    <Text fontSize="sm" color="gray.600">
-                      <Text as="span" fontWeight="medium">Usuario:</Text> {movement.user?.name || "Sistema"}
-                    </Text>
-                  </VStack>
-                  
-                  <Text fontSize="sm" color="gray.500" textAlign="right" minW="140px">
-                    {new Date(movement.createdAt).toLocaleString('es-ES', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </Text>
-                </HStack>
-              </Box>
-            ))}
-          </VStack>
-        )}
+        {renderMovementList()} 
 
         {/* Modal para registrar movimiento */}
         {showRegisterModal && (

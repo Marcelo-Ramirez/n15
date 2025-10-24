@@ -13,8 +13,8 @@ import {
   Grid,
   GridItem,
 } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
-import { FiSearch, FiTrash2, FiRotateCcw, FiUser } from 'react-icons/fi';
+import { useEffect, useState, useCallback } from 'react';
+import { FiSearch, FiTrash2, FiRotateCcw} from 'react-icons/fi';
 
 interface User {
   id: number;
@@ -38,14 +38,6 @@ export default function UsersManagementPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionType, setActionType] = useState<'restore' | 'delete'>('delete');
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    filterUsers();
-  }, [users, searchTerm, roleFilter, statusFilter]);
-
   const fetchUsers = async () => {
     try {
       const response = await fetch('/api/system/users');
@@ -61,15 +53,18 @@ export default function UsersManagementPage() {
     }
   };
 
-  const filterUsers = () => {
+  useEffect(() => {
+    fetchUsers();
+  }, []); 
+
+  const filterUsers = useCallback(() => {
     let filtered = users;
 
-    // Filtrar por búsqueda
     if (searchTerm) {
       filtered = filtered.filter(user =>
         user.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.phone && user.phone.includes(searchTerm))
+        user.phone?.includes(searchTerm) 
       );
     }
 
@@ -86,7 +81,11 @@ export default function UsersManagementPage() {
     }
 
     setFilteredUsers(filtered);
-  };
+  }, [users, searchTerm, roleFilter, statusFilter]);
+
+  useEffect(() => {
+    filterUsers();
+  }, [filterUsers]);
 
   const handleAction = async () => {
     if (!selectedUser) return;

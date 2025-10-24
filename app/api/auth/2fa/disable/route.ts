@@ -11,7 +11,9 @@ export async function POST() {
   }
 
   try {
-    const userId = parseInt(session.user.id, 10);
+    // 1. CORRECCIÓN: Usando Number.parseInt() en lugar de parseInt() global
+    const userId = Number.parseInt(session.user.id, 10);
+    
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -21,7 +23,9 @@ export async function POST() {
     });
 
     return NextResponse.json({ message: "2FA disabled successfully" });
-  } catch (error) {
+  } catch (error: unknown) { 
+    console.error("Error disabling 2FA:", error); 
+    
     return NextResponse.json({ error: "Failed to disable 2FA" }, { status: 500 });
   }
 }
