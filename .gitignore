@@ -40,8 +40,6 @@ next-env.d.ts
 
 /lib/generated/prisma
 
-./prisma/migrations
-
 # Database files
 *.sqlite
 *.sqlite3
@@ -50,4 +48,6 @@ next-env.d.ts
 
 .codeviz/
 
-./prisma/migrations/
+prisma/dbml/
+
+.vscode/
