@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // --- AÑADE ESTA LÍNEA ---
+  output: "standalone",
+  // -----------------------
+
   // Deshabilitar completamente los overlays de desarrollo
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
@@ -9,7 +13,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // Deshabilitar el panel de desarrollo
     clientRouterFilter: false,
-  },/*
+  },
+  /*
   eslint: {
     // ignoreDuringBuilds: true, // <--- Esto deshabilita ESLint
   }
