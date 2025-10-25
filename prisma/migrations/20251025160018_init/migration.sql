@@ -1,56 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the `ingredients` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `ingredients_eoq_model` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `inventory_movements` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `order_clients` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `products` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `sale_orders` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `sale_products` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `users` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "ingredients";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "ingredients_eoq_model";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "inventory_movements";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "order_clients";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "products";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "sale_orders";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "sale_products";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "users";
-PRAGMA foreign_keys=on;
-
 -- CreateTable
 CREATE TABLE "Users" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -114,8 +61,8 @@ CREATE TABLE "Products" (
     "imageUrl" TEXT NOT NULL,
     "pricePerUnit" REAL NOT NULL,
     "currentQuantity" REAL NOT NULL,
-    "createdAt" TEXT NOT NULL,
-    "updatedAt" TEXT NOT NULL
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
 );
 
 -- CreateTable
@@ -136,7 +83,8 @@ CREATE TABLE "Sale_orders" (
     "order_client_id" INTEGER NOT NULL,
     "totalCostOrder" REAL NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Sale_orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "Users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Sale_orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "Users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Sale_orders_order_client_id_fkey" FOREIGN KEY ("order_client_id") REFERENCES "Order_clients" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -146,7 +94,22 @@ CREATE TABLE "Sale_products" (
     "product_id" INTEGER NOT NULL,
     "quantity" REAL NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Sale_products_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "Products" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "sale_order_id" INTEGER NOT NULL,
+    CONSTRAINT "Sale_products_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "Users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Sale_products_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "Products" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Sale_products_sale_order_id_fkey" FOREIGN KEY ("sale_order_id") REFERENCES "Sale_orders" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "Product_movements" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "user_id" INTEGER NOT NULL,
+    "product_id" INTEGER NOT NULL,
+    "movement_type" TEXT NOT NULL,
+    "quantity" REAL NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Product_movements_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "Users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Product_movements_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "Products" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateIndex
@@ -154,3 +117,6 @@ CREATE UNIQUE INDEX "Users_userName_key" ON "Users"("userName");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Ingredients_EOQ_model_id_Ingredient_key" ON "Ingredients_EOQ_model"("id_Ingredient");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Sale_orders_order_client_id_key" ON "Sale_orders"("order_client_id");
