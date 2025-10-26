@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, Printer as PrinterIcon, FileText } from 'lucide-react';
 
-// --- Tipos (Revertidos y Simplificados para compatibilidad) ---
+// --- Tipos ---
 type UsePrintOptions = Record<string, unknown>; // Tipo flexible para react-to-print
 
 type PrintButtonProps = {
@@ -31,7 +31,6 @@ type PrintButtonProps = {
   onPrintError?: (error: Error) => void;
 };
 
-// --- Componente Printer (Migrado y Corregido) ---
 const Printer = ({ 
   targetRef, 
   printLabel = 'Imprimir',
@@ -64,19 +63,20 @@ const Printer = ({
   };
 
 
-  // Configuración de react-to-print (Restaurado contentRef y firma de error)
+  // ==========================================================
+  // ===== BLOQUE CORREGIDO =====
+  // ==========================================================
   const handlePrint = useReactToPrint({
-    // ✅ RESTAURADO: Usamos contentRef, que es lo que tus tipos locales aceptaban
-    content: () => targetRef.current, // La función content debe existir
+ 
+    // CORRECCIÓN 1: Usar contentRef, que es lo que tu librería espera
+    contentRef: targetRef,
 
-    // Usamos el hook de Next.js para indicar que el contenido es el targetRef
-    // contentRef: targetRef, <-- Ya no se usa, pero era la prop funcional
-
-    // Corregimos la firma de error para la nueva versión
+    // CORRECCIÓN 2: Arreglar la sintaxis del CSS
+ 
     onBeforeGetContent: async () => {
         setIsPrinting(true);
         if (onBeforePrint) await Promise.resolve(onBeforePrint());
-        return targetRef.current; // Devolvemos el nodo para la impresión
+        // 'return' ya no es necesario aquí si usamos contentRef
     },
     onAfterPrint: () => {
         setIsPrinting(false);
@@ -86,7 +86,8 @@ const Printer = ({
         setIsPrinting(false);
         onPrintError?.(error); 
     },
-    // Estilos de página (Escapado HTML mantenido)
+    
+    // ✅ Estilos de página CORREGIDOS (sin &quot; ni &apos;)
     pageStyle: `
       @page {
         margin: 15mm;
@@ -96,7 +97,10 @@ const Printer = ({
         body { 
           -webkit-print-color-adjust: exact !important;
           color-adjust: exact !important;
-          font-family: &apos;Arial&apos;, sans-serif;
+          font-family: 'Arial', sans-serif;
+        }
+          .recharts-wrapper text {
+          fill: #000000 !important;
         }
         table {
           page-break-inside: auto !important;
@@ -108,17 +112,18 @@ const Printer = ({
           break-inside: avoid !important;
         }
         th, td {
-          border: 1px solid &quot;#ddd&quot; !important;
+          border: 1px solid #ddd !important;
           padding: 8px !important;
           font-size: 12px !important;
           page-break-inside: avoid !important;
         }
+          
         .recharts-tooltip-wrapper { display: none !important; }
         button, .no-print, nav, aside, .print-hide { display: none !important; }
         .keep-together { page-break-inside: avoid !important; break-inside: avoid !important; }
       }
     `
-  } as UsePrintOptions); // Forzamos el tipo flexible
+  } as UsePrintOptions);
 
 
   // Función para impresión directa
@@ -178,9 +183,9 @@ const Printer = ({
               </p>
               
               <ol className="list-decimal list-inside space-y-1 text-sm text-blue-600 dark:text-blue-400">
-                <li>En &quot;Destino&quot; selecciona **&quot;Guardar como PDF&quot;**.</li>
+                <li>En "Destino" selecciona **"Guardar como PDF"**.</li>
                 <li>Revisa la configuración (orientación, márgenes, etc.).</li>
-                <li>Haz clic en **&quot;Guardar&quot;**.</li>
+                <li>Haz clic en **"Guardar"**.</li>
                 <li>Elige dónde guardar tu archivo PDF.</li>
               </ol>
             </div>

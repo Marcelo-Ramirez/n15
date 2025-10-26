@@ -252,7 +252,7 @@ const InventoryABC = () => {
   <ABCSummary summary={summaryABC} thresholds={thresholds} />
 </div>
 
-<div className="w-full">
+<div className="w-full keep-together">
   <h2 className="text-lg font-bold text-foreground mb-4">
       Diagrama de Pareto
   </h2>
