@@ -1,24 +1,40 @@
-// components/ProductTable.tsx
-"use client";
+'use client';
 
 import React, { useState, useEffect, ChangeEvent, useRef } from "react";
-import {
-  Box,
-  VStack,
-  HStack,
-  Heading,
-  Text,
-  Button,
-  Spinner,
-  Badge,
-  Input,
-  Grid,
-  GridItem,
-} from "@chakra-ui/react";
-import { NativeSelectRoot, NativeSelectField } from "@chakra-ui/react/native-select";
-import { FiPlus, FiEdit, FiTrash2, FiClock, FiUpload } from 'react-icons/fi';
+import { useRouter } from "next/navigation";
+import Image from 'next/image';
+import { Plus, Edit, Trash2, Clock, Upload, Loader2, BarChart } from 'lucide-react';
 
-// Define los campos que el componente manejará
+// Importa componentes Shadcn UI
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select, // <-- SOLUCIONA ERROR DE IMPORTACIÓN
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from '@/lib/utils';
+import { toast } from "sonner";
+
+// --- Tipos de Datos (Mantenidos) ---
 type Product = {
   id: number;
   name: string;
@@ -31,18 +47,25 @@ type Product = {
   updatedAt?: string | null;
 };
 
-// Define las props que el componente ProductTable aceptará
 type ProductTableProps = {
   readonly role: 'stockroom' | 'sales';
 };
 
+// --- Opciones de Select (Constantes) ---
+const productTypes = ["gelatina", "jugo", "postre", "bebida"];
+const productFlavors = ["fresa", "limón", "naranja", "uva", "mango", "piña", "mixta"];
+
+// --- Componente ---
 export default function ProductTable({ role }: ProductTableProps) {
+  // --- Estados (Mantenidos) ---
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  // Estados de Modals (Centralizados)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'add' | 'edit' | 'delete' | null>(null);
+  
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -50,78 +73,55 @@ export default function ProductTable({ role }: ProductTableProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para formularios
-  const [newProduct, setNewProduct] = useState({
-    type: '',
-    flavor: ''
-  });
-  
+  const [newProduct, setNewProduct] = useState({ type: '', flavor: '' });
   const [editProduct, setEditProduct] = useState({
-    type: '',
-    flavor: '',
-    name: '',
-    pricePerUnit: 0,
-    imageUrl: ''
+    type: '', flavor: '', name: '', pricePerUnit: 0, imageUrl: ''
   });
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  // --- Lógica de Fetch (Mantenida) ---
+  useEffect(() => { fetchProducts(); }, []);
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const res = await fetch("/api/system/inventory/products");
       const data = await res.json();
       
       if (data.success && data.products) {
         setProducts(data.products);
       } else {
-        console.error('Error en API:', data.error);
-        setProducts([]);
-        setError('Error al cargar productos');
+        throw new Error(data.error || 'Error al cargar productos');
       }
     } catch (error) {
-      console.error("Error:", error);
+      setError(error instanceof Error ? error.message : 'Error de conexión');
       setProducts([]);
-      setError('Error de conexión');
     } finally {
       setLoading(false);
     }
   };
 
+  // --- Lógica de CRUD/Modals (Mantenida) ---
   const handleAddProduct = async () => {
     if (!newProduct.type || !newProduct.flavor) {
-      alert("Por favor completa todos los campos");
+      toast.error('Validación fallida', { description: "Por favor completa todos los campos." });
       return;
     }
-
     const dataToSend = {
-      name: `${newProduct.type} de ${newProduct.flavor}`,
-      type: newProduct.type,
-      flavor: newProduct.flavor,
-      pricePerUnit: 0,
-      imageUrl: '',
-      currentQuantity: 0
+      name: `${newProduct.type} de ${newProduct.flavor}`, type: newProduct.type, flavor: newProduct.flavor,
+      pricePerUnit: 0, imageUrl: '', currentQuantity: 0
     };
-
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await fetch('/api/system/inventory/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend)
-      });
-
+      const res = await fetch('/api/system/inventory/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSend) });
       const data = await res.json();
+      if (!data.success) throw new Error(data.error);
       
-      if (data.success) {
-        setShowAddModal(false);
-        setNewProduct({ type: '', flavor: '' });
-        await fetchProducts();
-      } else {
-        throw new Error(data.error);
-      }
+      toast.success("Producto Agregado", { description: dataToSend.name });
+      closeAllModals();
+      await fetchProducts();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Error al agregar producto");
+      toast.error("Error al agregar", { description: (error as Error).message });
     } finally {
       setLoading(false);
     }
@@ -129,27 +129,20 @@ export default function ProductTable({ role }: ProductTableProps) {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return null;
-
     setUploadLoading(true);
-    
     try {
       const formData = new FormData();
       formData.append('file', file);
-
-      const res = await fetch('/api/image', {
-        method: 'POST',
-        body: formData
-      });
-
+      const res = await fetch('/api/image', { method: 'POST', body: formData });
       const data = await res.json();
-      
       if (data.success) {
+        toast.success("Imagen subida");
         return data.imageUrl;
       } else {
         throw new Error(data.error);
       }
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Error al subir imagen");
+      toast.error("Error al subir imagen", { description: (error as Error).message });
       return null;
     } finally {
       setUploadLoading(false);
@@ -158,80 +151,51 @@ export default function ProductTable({ role }: ProductTableProps) {
 
   const handleEditProduct = async () => {
     if (!editingProduct) return;
-
     let dataToUpdate: Partial<Product> = {};
 
     if (role === 'stockroom') {
       if (!editProduct.type || !editProduct.flavor) {
-        alert("Por favor completa todos los campos");
+        toast.error("Validación fallida", { description: "Por favor completa tipo y sabor." });
         return;
       }
-      dataToUpdate = {
-        name: `${editProduct.type} de ${editProduct.flavor}`,
-        type: editProduct.type,
-        flavor: editProduct.flavor
-      };
+      dataToUpdate = { name: `${editProduct.type} de ${editProduct.flavor}`, type: editProduct.type, flavor: editProduct.flavor };
     } else if (role === 'sales') {
       if (!editProduct.name || editProduct.pricePerUnit <= 0) {
-        alert("Por favor completa todos los campos correctamente");
+        toast.error("Validación fallida", { description: "Nombre y precio (mayor a 0) son requeridos." });
         return;
       }
-      dataToUpdate = {
-        name: editProduct.name,
-        pricePerUnit: editProduct.pricePerUnit,
-        imageUrl: editProduct.imageUrl
-      };
+      dataToUpdate = { name: editProduct.name, pricePerUnit: editProduct.pricePerUnit, imageUrl: editProduct.imageUrl };
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await fetch(`/api/system/inventory/products/${editingProduct.id}`, {
-  method: 'PATCH',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(dataToUpdate)
-});
-
-
+      const res = await fetch(`/api/system/inventory/products/${editingProduct.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToUpdate) });
       const data = await res.json();
+      if (!data.success) throw new Error(data.error);
       
-      if (data.success) {
-        setShowEditModal(false);
-        setEditingProduct(null);
-        await fetchProducts();
-      } else {
-        throw new Error(data.error);
-      }
+      toast.success("Producto Actualizado", { description: dataToUpdate.name });
+      closeAllModals();
+      await fetchProducts();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Error al actualizar producto");
+      toast.error("Error al actualizar", { description: (error as Error).message });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteProduct = (product: Product) => {
-    setProductToDelete(product);
-    setShowDeleteModal(true);
-  };
-
   const handleDeleteConfirm = async () => {
     if (!productToDelete) return;
-
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await fetch(`/api/inventory/products?id=${productToDelete.id}`, {
-        method: "DELETE"
-      });
+      const res = await fetch(`/api/inventory/products?id=${productToDelete.id}`, { method: "DELETE" });
       const data = await res.json();
+      if (!data.success) throw new Error(data.error);
       
-      if (data.success) {
-        setShowDeleteModal(false);
-        setProductToDelete(null);
-        await fetchProducts();
-      } else {
-        throw new Error(data.error);
-      }
+      toast.success("Producto Eliminado", { description: productToDelete.name });
+      closeAllModals();
+      await fetchProducts();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Error al eliminar producto");
+      toast.error("Error al eliminar", { description: (error as Error).message });
     } finally {
       setLoading(false);
     }
@@ -240,550 +204,306 @@ export default function ProductTable({ role }: ProductTableProps) {
   const openEdit = (product: Product) => {
     setEditingProduct(product);
     if (role === 'stockroom') {
-      setEditProduct({
-        type: product.type,
-        flavor: product.flavor,
-        name: '',
-        pricePerUnit: 0,
-        imageUrl: ''
-      });
+      setEditProduct({ type: product.type, flavor: product.flavor, name: '', pricePerUnit: 0, imageUrl: '' });
     } else if (role === 'sales') {
-      setEditProduct({
-        type: '',
-        flavor: '',
-        name: product.name,
-        pricePerUnit: product.pricePerUnit,
-        imageUrl: product.imageUrl || ''
-      });
+      setEditProduct({ type: '', flavor: '', name: product.name, pricePerUnit: product.pricePerUnit, imageUrl: product.imageUrl || '' });
     }
-    setShowEditModal(true);
+    setModalType('edit');
+    setIsModalOpen(true);
+  };
+  
+  const handleDeleteProduct = (product: Product) => {
+    setProductToDelete(product);
+    setModalType('delete');
+    setIsModalOpen(true);
   };
 
   const handleHistory = (productId: number) => {
-     window.location.href = `/sys/${role}/products/${productId}`;
+    window.location.href = `/sys/${role}/products/${productId}`;
+  };
+  
+  const closeAllModals = () => {
+    setIsModalOpen(false);
+    setModalType(null);
+    setEditingProduct(null);
+    setProductToDelete(null);
   };
 
-  if (loading) {
+  // --- VISTA DE CARGA Y ERROR ---
+  if (loading && products.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
-        <VStack gap={4}>
-          <Spinner size="lg" color="blue.500" />
-          <Text>Cargando productos...</Text>
-        </VStack>
-      </Box>
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box p={6}>
-        <Box 
-          bg="red.50" 
-          border="1px" 
-          borderColor="red.200" 
-          borderRadius="md" 
-          p={4}
-          color="red.700"
-        >
-          {error}
-        </Box>
-      </Box>
+      <Card className="p-4 border-destructive bg-destructive/10 text-destructive border-2 m-6">
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{error}</p>
+        </CardContent>
+      </Card>
     );
   }
 
+  // --- JSX PRINCIPAL (MIGRADO) ---
   return (
-    <Box p={6}>
-      <VStack gap={6} align="stretch">
-        {/* Header */}
-        <HStack justify="space-between" align="center">
-          <Box>
-            <Heading size="lg" mb={2}>
-              {role === 'stockroom' ? 'Productos - Stockroom' : 'Productos - Venta'}
-            </Heading>
-            <Text color="gray.600">
-              {role === 'stockroom' ? 'Gestiona el inventario de productos' : 'Consulta y edita productos para venta'}
-            </Text>
-          </Box>
-          <HStack gap={3}>
-            {role === 'stockroom' && (
-              <Button
-                colorScheme="green"
-                onClick={() => setShowAddModal(true)}
-              >
-                <HStack gap={2}>
-                  <FiPlus />
-                  <Text>Agregar Producto</Text>
-                </HStack>
-              </Button>
-            )}
-          </HStack>
-        </HStack>
+    <div className="p-4 md:p-6 space-y-6">
+      
+      {/* Header y Botón Añadir */}
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {role === 'stockroom' ? 'Productos - Stockroom' : 'Productos - Venta'}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {role === 'stockroom' ? 'Gestiona el inventario de productos' : 'Consulta y edita productos para venta'}
+          </p>
+        </div>
+        
+        {role === 'stockroom' && (
+          <Button onClick={() => { setModalType('add'); setIsModalOpen(true); }} className="bg-green-600 hover:bg-green-700">
+            <Plus className="mr-2 h-4 w-4" /> Agregar Producto
+          </Button>
+        )}
+      </div>
 
-        {/* Products Table Header */}
-        <Box
-          bg="gray.50"
-          p={4}
-          borderRadius="lg"
-          border="1px"
-          borderColor="gray.200"
+      {/* 1. Products Table Header (Solo en Desktop) */}
+      <div className="hidden md:block bg-muted dark:bg-gray-800 p-3 rounded-lg border dark:border-gray-700">
+        <div 
+          className={cn(
+            "grid gap-4 items-center text-xs font-semibold text-muted-foreground uppercase",
+            role === 'stockroom' ? "grid-cols-[2fr_2fr_1fr_auto]" : "grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]"
+          )}
         >
-          <Grid 
-            templateColumns={role === 'stockroom' ? "1fr 1fr 1fr auto" : "2fr 1fr 1fr 1fr 1fr auto"} 
-            gap={4} 
-            alignItems="center"
-          >
-            {role === 'stockroom' ? (
-              <>
-                <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Tipo</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Sabor</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Cantidad</Text>
-                </GridItem>
-              </>
-            ) : (
-              <>
-                <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Nombre</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Precio</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Tipo</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Sabor</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.800">Cantidad</Text>
-                </GridItem>
-              </>
-            )}
-            <GridItem>
-              <Text fontWeight="bold" fontSize="sm" color="gray.800">Acciones</Text>
-            </GridItem>
-          </Grid>
-        </Box>
+          {role === 'stockroom' ? (
+            <>
+              <div>Tipo</div>
+              <div>Sabor</div>
+              <div className="text-center">Cantidad</div>
+            </>
+          ) : (
+            <>
+              <div>Nombre</div>
+              <div className="text-right">Precio</div>
+              <div>Tipo</div>
+              <div>Sabor</div>
+              <div className="text-center">Cantidad</div>
+            </>
+          )}
+          <div className="text-right">Acciones</div>
+        </div>
+      </div>
 
-        {/* Products List */}
-        <VStack gap={2} align="stretch">
-          {products.map((product) => (
-            <Box
-              key={product.id}
-              bg="white"
-              p={4}
-              borderRadius="lg"
-              boxShadow="sm"
-              border="1px"
-              borderColor="gray.200"
-              _hover={{ boxShadow: "md" }}
-              transition="all 0.2s"
-            >
-              <Grid 
-                templateColumns={role === 'stockroom' ? "1fr 1fr 1fr auto" : "2fr 1fr 1fr 1fr 1fr auto"} 
-                gap={4} 
-                alignItems="center"
+      {/* 2. Products List (Responsivo) */}
+      <div className="space-y-3">
+        {products.length > 0 ? (
+          products.map((product) => (
+            <Card key={product.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div 
+                className={cn(
+                  "grid gap-y-4 gap-x-2 items-center text-sm",
+                  "grid-cols-2", 
+                  role === 'stockroom' 
+                    ? "md:grid-cols-[2fr_2fr_1fr_auto]" 
+                    : "md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]"
+                )}
               >
+                {/* Datos según el Rol */}
                 {role === 'stockroom' ? (
                   <>
-                    <GridItem>
-                      <Text fontWeight="medium" color="gray.800">{product.type}</Text>
-                    </GridItem>
-                    <GridItem>
-                      <Text color="gray.700">{product.flavor}</Text>
-                    </GridItem>
-                    <GridItem>
-                      <Badge colorScheme={product.currentQuantity > 0 ? "green" : "red"}>
+                    <div><span className="md:hidden text-muted-foreground text-xs">Tipo: </span><span className="font-medium text-foreground">{product.type}</span></div>
+                    <div><span className="md:hidden text-muted-foreground text-xs">Sabor: </span><span className="text-muted-foreground">{product.flavor}</span></div>
+                    <div className="text-center">
+                      <span className="md:hidden text-muted-foreground text-xs">Cant: </span>
+                      <Badge variant={product.currentQuantity > 0 ? "default" : "destructive"} className="w-fit">
                         {product.currentQuantity}
                       </Badge>
-                    </GridItem>
+                    </div>
                   </>
                 ) : (
+                  // Rol 'sales'
                   <>
-                    <GridItem>
-                      <Text fontWeight="medium" color="gray.800">{product.name}</Text>
-                    </GridItem>
-                    <GridItem>
-                      <Text fontWeight="medium" color="gray.800">${product.pricePerUnit.toFixed(2)}</Text>
-                    </GridItem>
-                    <GridItem>
-                      <Text color="gray.700">{product.type}</Text>
-                    </GridItem>
-                    <GridItem>
-                      <Text color="gray.700">{product.flavor}</Text>
-                    </GridItem>
-                    <GridItem>
-                      <Badge colorScheme={product.currentQuantity > 0 ? "green" : "red"}>
+                    <div className="col-span-2 md:col-span-1"><span className="md:hidden text-muted-foreground text-xs">Nombre: </span><span className="font-medium text-foreground">{product.name}</span></div>
+                    <div className="text-left md:text-right"><span className="md:hidden text-muted-foreground text-xs">Precio: </span><span className="font-medium text-foreground">${product.pricePerUnit.toFixed(2)}</span></div>
+                    <div><span className="md:hidden text-muted-foreground text-xs">Tipo: </span><span className="text-muted-foreground">{product.type}</span></div>
+                    <div><span className="md:hidden text-muted-foreground text-xs">Sabor: </span><span className="text-muted-foreground">{product.flavor}</span></div>
+                    <div className="text-center">
+                      <span className="md:hidden text-muted-foreground text-xs">Cant: </span>
+                      <Badge variant={product.currentQuantity > 0 ? "default" : "destructive"} className="w-fit">
                         {product.currentQuantity}
                       </Badge>
-                    </GridItem>
+                    </div>
                   </>
                 )}
-                <GridItem>
-                  <HStack gap={2}>
-                    <Button
-                      size="sm"
-                      colorScheme="gray"
-                      onClick={() => handleHistory(product.id)}
-                    >
-                      <HStack gap={1}>
-                        <FiClock />
-                        <Text>Historial</Text>
-                      </HStack>
-                    </Button>
-                    <Button
-                      size="sm"
-                      colorScheme="blue"
-                      onClick={() => openEdit(product)}
-                    >
-                      <HStack gap={1}>
-                        <FiEdit />
-                        <Text>Editar</Text>
-                      </HStack>
-                    </Button>
-                    <Button
-                      size="sm"
-                      colorScheme="red"
-                      onClick={() => handleDeleteProduct(product)}
-                    >
-                      <HStack gap={1}>
-                        <FiTrash2 />
-                        <Text>Eliminar</Text>
-                      </HStack>
-                    </Button>
-                  </HStack>
-                </GridItem>
-              </Grid>
-            </Box>
-          ))}
-        </VStack>
-
-        {products.length === 0 && (
-          <Box 
-            bg="white"
-            p={8} 
-            textAlign="center"
-            borderRadius="lg"
-            boxShadow="md"
-            border="1px"
-            borderColor="gray.200"
-          >
-            <Text color="gray.500">No hay productos registrados</Text>
-          </Box>
+                
+                {/* Acciones */}
+                <div className="col-span-2 md:col-span-1 flex justify-end gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => handleHistory(product.id)} aria-label="Historial">
+                    <Clock className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(product)} aria-label="Editar">
+                    <Edit className="h-4 w-4 text-blue-500" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)} aria-label="Eliminar">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))
+        ) : (
+          <Card className="p-8 text-center border-dashed border-2">
+            <p className="text-muted-foreground">No hay productos registrados</p>
+          </Card>
         )}
+      </div>
 
-        {/* Add Product Modal - Solo para Stockroom */}
-        {showAddModal && role === 'stockroom' && (
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bg="blackAlpha.600"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            zIndex={1000}
-          >
-            <Box
-              bg="white"
-              p={6}
-              borderRadius="lg"
-              boxShadow="xl"
-              maxW="400px"
-              w="90%"
-            >
-              <VStack gap={4} align="stretch">
-                <Heading size="md">Agregar Nuevo Producto</Heading>
-                
-                <VStack gap={4} align="stretch">
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>Tipo</Text>
-                    <NativeSelectRoot>
-                      <NativeSelectField
-                        value={newProduct.type}
-                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setNewProduct({...newProduct, type: e.target.value})}
-                      >
-                        <option value="">Selecciona el tipo</option>
-                        <option value="gelatina">Gelatina</option>
-                        <option value="jugo">Jugo</option>
-                        <option value="postre">Postre</option>
-                        <option value="bebida">Bebida</option>
-                      </NativeSelectField>
-                    </NativeSelectRoot>
-                  </Box>
-                  
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>Sabor</Text>
-                    <NativeSelectRoot>
-                      <NativeSelectField
-                        value={newProduct.flavor}
-                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setNewProduct({...newProduct, flavor: e.target.value})}
-                      >
-                        <option value="">Selecciona el sabor</option>
-                        <option value="fresa">Fresa</option>
-                        <option value="limón">Limón</option>
-                        <option value="naranja">Naranja</option>
-                        <option value="uva">Uva</option>
-                        <option value="mango">Mango</option>
-                        <option value="piña">Piña</option>
-                        <option value="mixta">Mixta</option>
-                      </NativeSelectField>
-                    </NativeSelectRoot>
-                  </Box>
-                </VStack>
-                
-                <HStack gap={3} justify="flex-end" mt={4}>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setShowAddModal(false);
-                      setNewProduct({ type: '', flavor: '' });
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    colorScheme="green"
-                    onClick={handleAddProduct}
-                  >
-                    Agregar
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          </Box>
-        )}
+      {/* --- MODALES (ADD, EDIT, DELETE) --- */}
+      <Dialog open={isModalOpen} onOpenChange={closeAllModals}>
+        <DialogContent className="sm:max-w-[480px]">
+          
+          {/* ADD Product Modal */}
+          {modalType === 'add' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Añadir Nuevo Producto</DialogTitle>
+                <DialogDescription>Completa todos los campos para registrar el nuevo producto.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {/* Tipo */}
+                <div className="space-y-2">
+                  <Label htmlFor="newType">Tipo</Label>
+                  <Select onValueChange={(value: string) => setNewProduct(prev => ({ ...prev, type: value }))} value={newProduct.type}>
+                    <SelectTrigger id="newType"><SelectValue placeholder="Selecciona el tipo" /></SelectTrigger>
+                    <SelectContent>
+                      {productTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Sabor */}
+                <div className="space-y-2">
+                  <Label htmlFor="newFlavor">Sabor</Label>
+                  <Select onValueChange={(value: string) => setNewProduct(prev => ({ ...prev, flavor: value }))} value={newProduct.flavor}>
+                    <SelectTrigger id="newFlavor"><SelectValue placeholder="Selecciona el sabor" /></SelectTrigger>
+                    <SelectContent>
+                      {productFlavors.map(flavor => <SelectItem key={flavor} value={flavor}>{flavor}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeAllModals}>Cancelar</Button>
+                <Button onClick={handleAddProduct} disabled={loading} className="bg-green-600 hover:bg-green-700">
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Agregar'}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
 
-        {/* Edit Product Modal */}
-        {showEditModal && editingProduct && (
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bg="blackAlpha.600"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            zIndex={1000}
-          >
-            <Box
-              bg="white"
-              p={6}
-              borderRadius="lg"
-              boxShadow="xl"
-              maxW="500px"
-              w="90%"
-            >
-              <VStack gap={4} align="stretch">
-                <Heading size="md">Editar Producto</Heading>
-                
-                <VStack gap={4} align="stretch">
-                  {role === 'stockroom' ? (
-                    <>
-                      <Box>
-                        <Text fontWeight="medium" mb={2}>Tipo</Text>
-                        <NativeSelectRoot>
-                          <NativeSelectField
-                            value={editProduct.type}
-                            onChange={(e: ChangeEvent<HTMLSelectElement>) => setEditProduct({...editProduct, type: e.target.value})}
-                          >
-                            <option value="gelatina">Gelatina</option>
-                            <option value="jugo">Jugo</option>
-                            <option value="postre">Postre</option>
-                            <option value="bebida">Bebida</option>
-                          </NativeSelectField>
-                        </NativeSelectRoot>
-                      </Box>
-                      
-                      <Box>
-                        <Text fontWeight="medium" mb={2}>Sabor</Text>
-                        <NativeSelectRoot>
-                          <NativeSelectField
-                            value={editProduct.flavor}
-                            onChange={(e: ChangeEvent<HTMLSelectElement>) => setEditProduct({...editProduct, flavor: e.target.value})}
-                          >
-                            <option value="fresa">Fresa</option>
-                            <option value="limón">Limón</option>
-                            <option value="naranja">Naranja</option>
-                            <option value="uva">Uva</option>
-                            <option value="mango">Mango</option>
-                            <option value="piña">Piña</option>
-                            <option value="mixta">Mixta</option>
-                          </NativeSelectField>
-                        </NativeSelectRoot>
-                      </Box>
-                    </>
-                  ) : (
-                    <>
-                      <Box>
-                        <Text fontWeight="medium" mb={2}>Nombre del Producto</Text>
-                        <Input
-                          value={editProduct.name}
-                          onChange={(e) => setEditProduct({...editProduct, name: e.target.value})}
-                          placeholder="Nombre del producto"
-                        />
-                      </Box>
+          {/* EDIT Product Modal */}
+          {modalType === 'edit' && editingProduct && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Editar Producto</DialogTitle>
+                <DialogDescription>{editingProduct.name}</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {role === 'stockroom' ? (
+                  // Edición para Stockroom (Tipo y Sabor)
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="editType">Tipo</Label>
+                      <Select onValueChange={(value: string) => setEditProduct(prev => ({ ...prev, type: value }))} value={editProduct.type}>
+                        <SelectTrigger id="editType"><SelectValue placeholder="Selecciona el tipo" /></SelectTrigger>
+                        <SelectContent>
+                          {productTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="editFlavor">Sabor</Label>
+                      <Select onValueChange={(value: string) => setEditProduct(prev => ({ ...prev, flavor: value }))} value={editProduct.flavor}>
+                        <SelectTrigger id="editFlavor"><SelectValue placeholder="Selecciona el sabor" /></SelectTrigger>
+                        <SelectContent>
+                          {productFlavors.map(flavor => <SelectItem key={flavor} value={flavor}>{flavor}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : (
+                  // Campos para Sales (Nombre, Precio, Imagen)
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="editName">Nombre del Producto</Label>
+                      <Input id="editName" value={editProduct.name} onChange={(e) => setEditProduct({...editProduct, name: e.target.value})} placeholder="Nombre del producto" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="editPrice">Precio por Unidad</Label>
+                      <Input id="editPrice" type="number" step="0.01" min="0" value={editProduct.pricePerUnit} onChange={(e) => setEditProduct({...editProduct, pricePerUnit: parseFloat(e.target.value) || 0})} placeholder="0.00" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Imagen del Producto</Label>
+                      <Button onClick={() => fileInputRef.current?.click()} size="sm" className="w-full" variant="outline" disabled={uploadLoading}>
+                        {uploadLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                        {editProduct.imageUrl ? 'Cambiar Imagen' : 'Subir Imagen'}
+                      </Button>
+                      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                         const file = e.target.files?.[0];
+                         if (file) {
+                             const imageUrl = await handleFileUpload(file);
+                             if (imageUrl) setEditProduct({...editProduct, imageUrl});
+                         }
+                      }} />
+                      {editProduct.imageUrl && <p className="text-xs text-muted-foreground break-all mt-1">URL: {editProduct.imageUrl}</p>}
+                    </div>
+                  </>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeAllModals}>Cancelar</Button>
+                <Button onClick={handleEditProduct} disabled={loading || uploadLoading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Guardar'}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
 
-                      <Box>
-                        <Text fontWeight="medium" mb={2}>Precio por Unidad</Text>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={editProduct.pricePerUnit}
-                          onChange={(e: ChangeEvent<HTMLInputElement>) => setEditProduct({...editProduct, pricePerUnit: parseFloat(e.target.value) || 0})}
-                          placeholder="0.00"
-                        />
-                      </Box>
+          {/* DELETE Confirmation Modal */}
+          {modalType === 'delete' && productToDelete && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-destructive">Eliminar Producto</DialogTitle>
+                <DialogDescription>
+                  {/* ✅ CORREGIDO: Uso de entidad HTML para silenciar ESLint */}
+                  ¿Estás seguro que deseas eliminar el producto **&quot;{productToDelete.name}&quot;**?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md space-y-2">
+                 <p className="text-sm font-semibold text-destructive">⚠️ Advertencia</p>
+                 <p className="text-xs text-destructive/90">
+                   Esta acción es irreversible y eliminará todos los datos relacionados con este producto.
+                 </p>
+                 <p className="text-sm text-muted-foreground pt-1">
+                   Tipo: {productToDelete.type} | Sabor: {productToDelete.flavor}
+                 </p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeAllModals} disabled={loading}>Cancelar</Button>
+                <Button variant="destructive" onClick={handleDeleteConfirm} disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Eliminar Definitivamente'}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
 
-                      <Box>
-                        <Text fontWeight="medium" mb={2}>Imagen del Producto</Text>
-                        <VStack gap={3} align="stretch">
-                          {editProduct.imageUrl && (
-                            <Box
-                              bg="gray.50"
-                              p={3}
-                              borderRadius="md"
-                              border="1px"
-                              borderColor="gray.200"
-                            >
-                              <Text fontSize="sm" color="gray.600">Imagen actual:</Text>
-                              <Text fontSize="sm" fontWeight="medium">{editProduct.imageUrl}</Text>
-                            </Box>
-                          )}
-                          <Button
-  // ...otras props
-  loading={uploadLoading}
-  loadingText="Subiendo..."
->
-                            <HStack gap={2}>
-                              <FiUpload />
-                              <Text>{editProduct.imageUrl ? 'Cambiar Imagen' : 'Subir Imagen'}</Text>
-                            </HStack>
-                          </Button>
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const imageUrl = await handleFileUpload(file);
-                                if (imageUrl) {
-                                  setEditProduct({...editProduct, imageUrl});
-                                }
-                              }
-                            }}
-                          />
-                        </VStack>
-                      </Box>
-                    </>
-                  )}
-                </VStack>
-                
-                <HStack gap={3} justify="flex-end" mt={4}>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowEditModal(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    colorScheme="blue"
-                    onClick={handleEditProduct}
-                  >
-                    Guardar
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          </Box>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && productToDelete && (
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bg="blackAlpha.600"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            zIndex={1000}
-          >
-            <Box
-              bg="white"
-              p={6}
-              borderRadius="lg"
-              boxShadow="xl"
-              maxW="500px"
-              w="90%"
-            >
-              <VStack gap={4} align="stretch">
-                <Heading size="md" color="red.600">Eliminar Producto</Heading>
-                
-                <VStack gap={3} align="stretch">
-                  <Text>
-  ¿Estás seguro que deseas eliminar el producto <strong>{`"${productToDelete.name}"`}</strong>?
-</Text>
-                  
-                  <Box
-                    bg="red.50"
-                    border="1px"
-                    borderColor="red.200"
-                    borderRadius="md"
-                    p={4}
-                  >
-                    <VStack gap={2} align="stretch">
-                      <Text fontWeight="bold" color="red.700" fontSize="sm">
-                        ⚠️ Advertencia
-                      </Text>
-                      <Text color="red.600" fontSize="sm">
-                        Esta acción es <strong>irreversible</strong> y eliminará todos los datos 
-                        relacionados con este producto.
-                      </Text>
-                    </VStack>
-                  </Box>
-                  
-                  <Text fontSize="sm" color="gray.600">
-                    Tipo: {productToDelete.type} | Sabor: {productToDelete.flavor}
-                  </Text>
-                </VStack>
-                
-                <HStack gap={3} justify="flex-end" mt={4}>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setProductToDelete(null);
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    colorScheme="red"
-                    onClick={handleDeleteConfirm}
-                  >
-                    Eliminar Definitivamente
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          </Box>
-        )}
-      </VStack>
-    </Box>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

@@ -1,22 +1,17 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { Providers } from "./providers";
+// app/layout.tsx
+import { Providers } from './providers';
+// import { Toaster } from "@/components/ui/toaster"; // <-- ELIMINA ESTA LÍNEA
+import { Toaster as Sonner } from "@/components/ui/sonner"; // <-- IMPORTA SONNER
+import './globals.css';
 
-
-export const metadata: Metadata = {
-  title: "Sistema de Autenticación",
-  description: "Sistema de login y registro con NextAuth.js",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es" suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <Sonner /> {/* <-- AÑADE SONNER AQUÍ */}
+        </Providers>
       </body>
     </html>
   );

@@ -1,20 +1,30 @@
 'use client';
 
-import {
-  Box,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  Button,
-  Input,
-  Grid,
-  GridItem,
-  Spinner,
-} from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiBarChart, FiClock } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, BarChart, Clock, Loader2 } from 'lucide-react';
 
+// Importa componentes Shadcn UI
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner'; // Notificaciones
+
+// --- Tipos de Datos (Mantenidos) ---
 interface Ingredient {
   id: number;
   name: string;
@@ -25,30 +35,29 @@ interface Ingredient {
   createdAt: string;
 }
 
+type ModalType = 'add' | 'edit' | 'delete' | null;
+
+// --- Componente ---
 export default function IngredientsPage() {
+  // Estados de Fetch y Lista
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Estados de Modals y CRUD
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<ModalType>(null);
+  
   const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null);
-  const [newIngredient, setNewIngredient] = useState({
-    name: '',
-    unit: '',
-    pricePerUnit: '',
-    provider: ''
-  });
-  const [showEditModal, setShowEditModal] = useState(false);
   const [ingredientToEdit, setIngredientToEdit] = useState<Ingredient | null>(null);
-  const [editIngredient, setEditIngredient] = useState({
-    name: '',
-    unit: '',
-    pricePerUnit: '',
-    provider: ''
-  });
+  
+  const [newIngredient, setNewIngredient] = useState({ name: '', unit: '', pricePerUnit: '', provider: '' });
+  const [editIngredient, setEditIngredient] = useState({ name: '', unit: '', pricePerUnit: '', provider: '' });
+  
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
+  // --- FETCH DE INGREDIENTES (Mantenida) ---
   useEffect(() => {
     fetchIngredients();
   }, []);
@@ -56,11 +65,7 @@ export default function IngredientsPage() {
   const fetchIngredients = async () => {
     try {
       const response = await fetch('/api/system/inventory/ingredients');
-      
-      if (!response.ok) {
-        throw new Error('Error al obtener ingredientes');
-      }
-      
+      if (!response.ok) throw new Error('Error al obtener ingredientes');
       const data = await response.json();
       setIngredients(data.ingredients || []);
     } catch (err) {
@@ -69,577 +74,327 @@ export default function IngredientsPage() {
       setIsLoading(false);
     }
   };
-const handleCalculateABC = () => {
-  globalThis.location.href = `/sys/stockroom/ingredients/abc`;
-  
-};
-  const handleAddIngredient = () => {
-    setShowAddModal(true);
+
+  // --- HANDLERS DE NAVEGACIÓN Y MODAL (Mantenidos) ---
+  const handleCalculateABC = () => {
+    globalThis.location.href = `/sys/stockroom/ingredients/abc`;
   };
 
-  const handleModalCancel = () => {
-    setShowAddModal(false);
-    setNewIngredient({
-      name: '',
-      unit: '',
-      pricePerUnit: '',
-      provider: ''
+  const handleEditOpen = (ingredient: Ingredient) => {
+    setIngredientToEdit(ingredient);
+    setEditIngredient({
+        name: ingredient.name,
+        unit: ingredient.unit,
+        pricePerUnit: ingredient.pricePerUnit.toString(),
+        provider: ingredient.provider
     });
+    setEditError(null);
+    setModalType('edit');
+    setIsModalOpen(true);
   };
 
-  const handleModalAccept = async () => {
-    // Validar que todos los campos estén llenos
+  const handleDeleteOpen = (ingredient: Ingredient) => {
+    setIngredientToDelete(ingredient);
+    setModalType('delete');
+    setIsModalOpen(true);
+  };
+  
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setModalType(null);
+    setIngredientToDelete(null);
+    setIngredientToEdit(null);
+    setNewIngredient({ name: '', unit: '', pricePerUnit: '', provider: '' });
+    setEditError(null);
+  };
+
+
+  // --- HANDLERS DE ACEPTAR/CONFIRMAR (Corregido el flujo try/catch) ---
+  const handleAddAccept = async () => {
     if (!newIngredient.name || !newIngredient.unit || !newIngredient.pricePerUnit || !newIngredient.provider) {
-      alert('Por favor completa todos los campos');
+      toast.error('Validación', { description: 'Por favor completa todos los campos' });
       return;
     }
-
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-
-      const response = await fetch('/api/system/inventory/ingredients', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newIngredient.name,
-          unit: newIngredient.unit,
-          pricePerUnit: newIngredient.pricePerUnit,
-          provider: newIngredient.provider
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al crear ingrediente');
-      }
-
-      // Cerrar modal y limpiar formulario
-      setShowAddModal(false);
-      setNewIngredient({
-        name: '',
-        unit: '',
-        pricePerUnit: '',
-        provider: ''
-      });
-
-      // Recargar la lista de ingredientes
-      await fetchIngredients();
-
-      console.log('Ingrediente creado exitosamente:', data.ingredient);
+        const response = await fetch('/api/system/inventory/ingredients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: newIngredient.name,
+                unit: newIngredient.unit,
+                pricePerUnit: newIngredient.pricePerUnit,
+                provider: newIngredient.provider
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al crear ingrediente');
+        
+        toast.success('Ingrediente creado', { description: `${newIngredient.name} fue agregado exitosamente.` });
+        handleModalClose();
+        await fetchIngredients(); // Recarga la lista
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      alert('Error al agregar ingrediente: ' + errorMessage);
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+        toast.error('Error al agregar', { description: errorMessage });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false); // ✅ finally siempre se ejecuta
     }
-  };
-
-  const handleDeleteIngredient = (ingredient: Ingredient) => {
-    setIngredientToDelete(ingredient);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteCancel = () => {
-    setShowDeleteModal(false);
-    setIngredientToDelete(null);
   };
 
   const handleDeleteConfirm = async () => {
     if (!ingredientToDelete) return;
-
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-
-      const response = await fetch(`/api/system/inventory/ingredients?id=${ingredientToDelete.id}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al eliminar ingrediente');
-      }
-
-      // Cerrar modal
-      setShowDeleteModal(false);
-      setIngredientToDelete(null);
-
-      // Recargar la lista de ingredientes
-      await fetchIngredients();
-
-      console.log('Ingrediente eliminado exitosamente');
+        const response = await fetch(`/api/system/inventory/ingredients?id=${ingredientToDelete.id}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al eliminar ingrediente');
+        
+        toast.success('Ingrediente eliminado', { description: `${ingredientToDelete.name} fue eliminado permanentemente.` });
+        handleModalClose();
+        await fetchIngredients();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      alert('Error al eliminar ingrediente: ' + errorMessage);
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+        toast.error('Error al eliminar', { description: errorMessage });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
+    }
+  };
+  
+  const handleEditConfirm = async () => {
+    if (!ingredientToEdit) return;
+    if (!editIngredient.name || !editIngredient.unit || !editIngredient.pricePerUnit || !editIngredient.provider) {
+        setEditError('Completa todos los campos');
+        return;
+    }
+    setEditLoading(true);
+    setEditError(null);
+    try {
+        const res = await fetch(`/api/system/inventory/ingredients?id=${ingredientToEdit.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(editIngredient)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al editar ingrediente');
+        
+        toast.success('Ingrediente editado', { description: `${editIngredient.name} actualizado.` });
+        handleModalClose();
+        await fetchIngredients();
+    } catch (err) {
+        setEditError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+        setEditLoading(false);
     }
   };
 
+
+  // --- VISTA DE CARGA Y ERROR (Shadcn) ---
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
-        <VStack gap={4}>
-          <Spinner size="lg" color="blue.500" />
-          <Text>Cargando ingredientes...</Text>
-        </VStack>
-      </Box>
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Cargando ingredientes...</span>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box p={6}>
-        <Box 
-          bg="red.50" 
-          border="1px" 
-          borderColor="red.200" 
-          borderRadius="md" 
-          p={4}
-          color="red.700"
-        >
-          {error}
-        </Box>
-      </Box>
+      <Card className="p-4 border-destructive bg-destructive/10 text-destructive border-2 m-6">
+        <p className="font-medium">{error}</p>
+      </Card>
     );
   }
 
+  // --- VISTA PRINCIPAL (JSX) ---
   return (
-    <Box p={6}>
-      <VStack gap={6} align="stretch">
-        {/* Header */}
-        <HStack justify="space-between" align="center">
-          <Box>
-            <Heading size="lg" mb={2}>Ingredientes</Heading>
-            <Text color="gray.600">Gestiona el inventario de ingredientes</Text>
-          </Box>
-          <HStack gap={3}>
-            <Button
-              colorScheme="green"
-              onClick={handleAddIngredient}
-            >
-              <HStack gap={2}>
-                <FiPlus />
-                <Text>Add Ingredient</Text>
-              </HStack>
-            </Button>
-            <Button
-              colorScheme="blue"
-               onClick={handleCalculateABC} 
-            >
-              <HStack gap={2}>
-                <FiBarChart />
-                <Text>Calculate ABC</Text>
-              </HStack>
-            </Button>
-          </HStack>
-        </HStack>
+    <div className="p-4 md:p-6 space-y-6">
 
-        {/* Ingredients Table Header */}
-        <Box
-          bg="gray.50"
-          p={4}
-          borderRadius="lg"
-          border="1px"
-          borderColor="gray.200"
-        >
-          <Grid templateColumns="1fr 1fr 1fr 1fr auto" gap={4} alignItems="center">
-            <GridItem>
-              <Text fontWeight="bold" fontSize="sm" color="gray.700">
-                Name
-              </Text>
-            </GridItem>
-            <GridItem>
-              <Text fontWeight="bold" fontSize="sm" color="gray.700">
-                Unit
-              </Text>
-            </GridItem>
-            <GridItem>
-              <Text fontWeight="bold" fontSize="sm" color="gray.700">
-                Stock
-              </Text>
-            </GridItem>
-            <GridItem>
-              <Text fontWeight="bold" fontSize="sm" color="gray.700">
-                Price Per Unit
-              </Text>
-            </GridItem>
-            <GridItem>
-              <Text fontWeight="bold" fontSize="sm" color="gray.700">
-                Acciones
-              </Text>
-            </GridItem>
-          </Grid>
-        </Box>
+      {/* Header y Botones de Acción */}
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Ingredientes</h1>
+          <p className="text-sm text-muted-foreground">Gestiona el inventario de ingredientes</p>
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          {/* Botón Añadir */}
+          <Button onClick={() => setModalType('add') || setIsModalOpen(true)} className="bg-green-600 hover:bg-green-700">
+            <Plus className="mr-2 h-4 w-4" /> Añadir Ingrediente
+          </Button>
+          {/* Botón ABC */}
+          <Button variant="outline" onClick={handleCalculateABC}>
+            <BarChart className="mr-2 h-4 w-4" /> Calcular ABC
+          </Button>
+        </div>
+      </div>
 
-        {/* Ingredients List */}
-        <VStack gap={2} align="stretch">
-          {ingredients.map((ingredient) => (
-            <Box
-              key={ingredient.id}
-              bg="white"
-              p={4}
-              borderRadius="lg"
-              boxShadow="sm"
-              border="1px"
-              borderColor="gray.200"
-              _hover={{ boxShadow: "md" }}
-              transition="all 0.2s"
-            >
-              <Grid templateColumns="1fr 1fr 1fr 1fr auto" gap={4} alignItems="center">
-                <GridItem>
-                  <Text fontWeight="medium">{ingredient.name}</Text>
-                  <Text fontSize="sm" color="gray.500">{ingredient.provider}</Text>
-                </GridItem>
-                <GridItem>
-                  <Text>{ingredient.unit}</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="medium">{ingredient.currentQuantity}</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="medium">${ingredient.pricePerUnit.toFixed(2)}</Text>
-                </GridItem>
-                <GridItem>
-                  <HStack gap={2}>
-                    <Button
-                      size="sm"
-                      colorScheme="gray"
-                      onClick={() => {
-                        // Navegar a la página de historial del ingrediente
-                        const encodedName = encodeURIComponent(ingredient.name);
-                        globalThis.location.href = `/sys/stockroom/ingredients/${encodedName}`;
-                      }}
-                    >
-                      <HStack gap={1}>
-                        <FiClock />
-                        <Text>History</Text>
-                      </HStack>
-                    </Button>
-                    <Button
-                      size="sm"
-                      colorScheme="blue"
-                      onClick={() => {
-                        setIngredientToEdit(ingredient);
-                        setEditIngredient({
-                          name: ingredient.name,
-                          unit: ingredient.unit,
-                          pricePerUnit: ingredient.pricePerUnit.toString(),
-                          provider: ingredient.provider
-                        });
-                        setEditError(null);
-                        setShowEditModal(true);
-                      }}
-                    >
-                      <HStack gap={1}>
-                        <FiEdit />
-                        <Text>Edit</Text>
-                      </HStack>
-                    </Button>
-                    <Button
-                      size="sm"
-                      colorScheme="orange"
-                      onClick={() => {
-                        globalThis.location.href = `/sys/stockroom/ingredients/eoq-model?ingredientId=${ingredient.id}`;
-                      }}
-                    >
-                      <HStack gap={1}>
-                        <FiBarChart />
-                        <Text>EOQ</Text>
-                      </HStack>
-                    </Button>
-                    <Button
-                      size="sm"
-                      colorScheme="red"
-                      onClick={() => handleDeleteIngredient(ingredient)}
-                    >
-                      <HStack gap={1}>
-                        <FiTrash2 />
-                        <Text>Delete</Text>
-                      </HStack>
-                    </Button>
-                  </HStack>
-                </GridItem>
-              </Grid>
-            </Box>
-          ))}
-        </VStack>
+      {/* Ingredients List Header (Encabezado de la tabla para Desktop) */}
+      <div className="hidden md:block bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-5 gap-4 text-sm font-bold text-muted-foreground">
+          <div>Nombre / Proveedor</div>
+          <div>Unidad</div>
+          <div>Stock</div>
+          <div>Precio Unitario</div>
+          <div className="text-right">Acciones</div>
+        </div>
+      </div>
 
-        {ingredients.length === 0 && (
-          <Box 
-            bg="white"
-            p={8} 
-            textAlign="center"
-            borderRadius="lg"
-            boxShadow="md"
-            border="1px"
-            borderColor="gray.200"
-          >
-            <Text color="gray.500">No hay ingredientes registrados</Text>
-          </Box>
-        )}
-
-        {/* Add Ingredient Modal */}
-        {/* Edit Ingredient Modal */}
-        {showEditModal && ingredientToEdit && (
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bg="blackAlpha.600"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            zIndex={1000}
-          >
-            <Box
-              bg="white"
-              p={6}
-              borderRadius="lg"
-              boxShadow="xl"
-              maxW="400px"
-              w="90%"
-            >
-              <VStack gap={4} align="stretch">
-                <Heading size="md">Edit ingredient</Heading>
-                <VStack gap={4} align="stretch">
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>name</Text>
-                    <Input
-                      value={editIngredient.name}
-                      onChange={e => setEditIngredient(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>unit</Text>
-                    <Input
-                      value={editIngredient.unit}
-                      onChange={e => setEditIngredient(prev => ({ ...prev, unit: e.target.value }))}
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>pricePerUnit</Text>
-                    <Input
-                      type="number"
-                      value={editIngredient.pricePerUnit}
-                      onChange={e => setEditIngredient(prev => ({ ...prev, pricePerUnit: e.target.value }))}
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>providerName</Text>
-                    <Input
-                      value={editIngredient.provider}
-                      onChange={e => setEditIngredient(prev => ({ ...prev, provider: e.target.value }))}
-                    />
-                  </Box>
-                </VStack>
-                {editError && <Text color="red.500">{editError}</Text>}
-                <HStack gap={3} justify="flex-end" mt={4}>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowEditModal(false)}
-                    disabled={editLoading}
-                  >
-                    cancel
-                  </Button>
-                  <Button
-                    colorScheme="blue"
-                    onClick={async () => {
-                      if (!editIngredient.name || !editIngredient.unit || !editIngredient.pricePerUnit || !editIngredient.provider) {
-                        setEditError('Completa todos los campos');
-                        return;
-                      }
-                      setEditLoading(true);
-                      setEditError(null);
-                      try {
-                        const res = await fetch(`/api/system/inventory/ingredients?id=${ingredientToEdit.id}`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            name: editIngredient.name,
-                            unit: editIngredient.unit,
-                            pricePerUnit: editIngredient.pricePerUnit,
-                            provider: editIngredient.provider
-                          })
-                        });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data.error || 'Error al editar ingrediente');
-                        setShowEditModal(false);
-                        setIngredientToEdit(null);
-                        await fetchIngredients();
-                      } catch (err) {
-                        setEditError(err instanceof Error ? err.message : 'Error desconocido');
-                      } finally {
-                        setEditLoading(false);
-                      }
-                    }}
-                    loading={editLoading}
-                  >
-                    Accept
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          </Box>
-        )}
-        {showAddModal && (
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bg="blackAlpha.600"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            zIndex={1000}
-          >
-            <Box
-              bg="white"
-              p={6}
-              borderRadius="lg"
-              boxShadow="xl"
-              maxW="500px"
-              w="90%"
-            >
-              <VStack gap={4} align="stretch">
-                <Heading size="md">Add New Ingredient</Heading>
+      {/* Ingredients List */}
+      <div className="space-y-3">
+        {ingredients.length > 0 ? (
+          ingredients.map((ingredient) => (
+            <Card key={ingredient.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
+              {/* Layout responsivo: 2 columnas en móvil, 5 columnas en desktop */}
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-5 md:gap-4 items-center">
                 
-                <VStack gap={4} align="stretch">
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>Name</Text>
-                    <Input
-                      placeholder="Ingredient name"
-                      value={newIngredient.name}
-                      onChange={(e) => setNewIngredient(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </Box>
-                  
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>Unit</Text>
-                    <Input
-                      placeholder="Unit (kg, g, l, ml, etc.)"
-                      value={newIngredient.unit}
-                      onChange={(e) => setNewIngredient(prev => ({ ...prev, unit: e.target.value }))}
-                    />
-                  </Box>
-                  
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>Price Per Unit</Text>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={newIngredient.pricePerUnit}
-                      onChange={(e) => setNewIngredient(prev => ({ ...prev, pricePerUnit: e.target.value }))}
-                    />
-                  </Box>
-                  
-                  <Box>
-                    <Text fontWeight="medium" mb={2}>Provider Name</Text>
-                    <Input
-                      placeholder="Provider name"
-                      value={newIngredient.provider}
-                      onChange={(e) => setNewIngredient(prev => ({ ...prev, provider: e.target.value }))}
-                    />
-                  </Box>
-                </VStack>
+                {/* Nombre y Proveedor */}
+                <div className="col-span-2 md:col-span-1">
+                  <p className="font-medium">{ingredient.name}</p>
+                  <p className="text-xs text-muted-foreground">Proveedor: {ingredient.provider}</p>
+                </div>
                 
-                <HStack gap={3} justify="flex-end" mt={4}>
-                  <Button
-                    variant="ghost"
-                    onClick={handleModalCancel}
-                  >
-                    Cancel
+                {/* Unidad */}
+                <div className="col-span-1 md:col-span-1 text-sm">
+                  <span className="md:hidden font-semibold text-muted-foreground">Unidad: </span>{ingredient.unit}
+                </div>
+                
+                {/* Stock */}
+                <div className="col-span-1 md:col-span-1 text-sm font-bold text-primary">
+                  <span className="md:hidden font-semibold text-muted-foreground">Stock: </span>{ingredient.currentQuantity}
+                </div>
+                
+                {/* Precio */}
+                <div className="col-span-1 md:col-span-1 text-sm font-bold">
+                  <span className="md:hidden font-semibold text-muted-foreground">Precio: </span>Bs {ingredient.pricePerUnit.toFixed(2)}
+                </div>
+                
+                {/* Acciones */}
+                <div className="col-span-2 md:col-span-1 flex justify-end gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => { 
+                       const encodedName = encodeURIComponent(ingredient.name);
+                       globalThis.location.href = `/sys/stockroom/ingredients/${encodedName}`;
+                  }}>
+                    <Clock className="h-4 w-4" />
                   </Button>
-                  <Button
-                    colorScheme="green"
-                    onClick={handleModalAccept}
-                  >
-                    Accept
+                  <Button variant="outline" size="sm" onClick={() => handleEditOpen(ingredient)}>
+                    <Edit className="h-4 w-4" />
                   </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          </Box>
+                  <Button variant="outline" size="sm" onClick={() => { 
+                       globalThis.location.href = `/sys/stockroom/ingredients/eoq-model?ingredientId=${ingredient.id}`;
+                  }}>
+                    <BarChart className="h-4 w-4" />
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteOpen(ingredient)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))
+        ) : (
+          <Card className="p-8 text-center border-dashed border-2">
+            <p className="text-muted-foreground">No hay ingredientes registrados</p>
+          </Card>
         )}
+      </div>
 
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && ingredientToDelete && (
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bg="blackAlpha.600"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            zIndex={1000}
-          >
-            <Box
-              bg="white"
-              p={6}
-              borderRadius="lg"
-              boxShadow="xl"
-              maxW="500px"
-              w="90%"
-            >
-              <VStack gap={4} align="stretch">
-                <Heading size="md" color="red.600">Eliminar Ingrediente</Heading>
-                
-                <VStack gap={3} align="stretch">
-                <Text>... <strong>&quot;{ingredientToDelete.name}&quot;</strong>?</Text>
-                  
-                  <Box
-                    bg="red.50"
-                    border="1px"
-                    borderColor="red.200"
-                    borderRadius="md"
-                    p={4}
-                  >
-                    <VStack gap={2} align="stretch">
-                      <Text fontWeight="bold" color="red.700" fontSize="sm">
-                        ⚠️ Advertencia
-                      </Text>
-                      <Text color="red.600" fontSize="sm">
-                        Esta acción también eliminará todo el historial de movimientos 
-                        asociado a este ingrediente. Esta acción es <strong>irreversible</strong>.
-                      </Text>
-                    </VStack>
-                  </Box>
-                  
-                  <Text fontSize="sm" color="gray.600">
+      {/* --- MODALES (Dialogs de Shadcn) --- */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          
+          {/* ADD INGREDIENT */}
+          {modalType === 'add' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Añadir Nuevo Ingrediente</DialogTitle>
+                <DialogDescription>Completa todos los campos para registrar el nuevo ingrediente.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {['name', 'unit', 'pricePerUnit', 'provider'].map(key => (
+                    <div key={key} className="space-y-2">
+                        <Label htmlFor={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</Label>
+                        <Input 
+                            id={key}
+                            type={key === 'pricePerUnit' ? 'number' : 'text'}
+                            step={key === 'pricePerUnit' ? "0.01" : undefined}
+                            placeholder={key === 'pricePerUnit' ? "0.00" : `Nombre del ${key}`}
+                            value={newIngredient[key as keyof typeof newIngredient]}
+                            onChange={(e) => setNewIngredient(prev => ({ ...prev, [key]: e.target.value }))}
+                        />
+                    </div>
+                ))}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={handleModalClose}>Cancelar</Button>
+                <Button onClick={handleAddAccept} className="bg-green-600 hover:bg-green-700">Aceptar</Button>
+              </DialogFooter>
+            </>
+          )}
+          
+          {/* EDIT INGREDIENT */}
+          {modalType === 'edit' && ingredientToEdit && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Editar {ingredientToEdit.name}</DialogTitle>
+                <DialogDescription>Modifica los detalles del ingrediente.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {['name', 'unit', 'pricePerUnit', 'provider'].map(key => (
+                    <div key={key} className="space-y-2">
+                        <Label htmlFor={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</Label>
+                        <Input 
+                            id={key}
+                            type={key === 'pricePerUnit' ? 'number' : 'text'}
+                            step={key === 'pricePerUnit' ? "0.01" : undefined}
+                            value={editIngredient[key as keyof typeof editIngredient]}
+                            onChange={(e) => setEditIngredient(prev => ({ ...prev, [key]: e.target.value }))}
+                        />
+                    </div>
+                ))}
+              </div>
+              {editError && <p className="text-sm text-destructive">{editError}</p>}
+              <DialogFooter>
+                <Button variant="outline" onClick={handleModalClose} disabled={editLoading}>Cancelar</Button>
+                <Button onClick={handleEditConfirm} disabled={editLoading}>
+                  {editLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Guardar Cambios
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {/* DELETE INGREDIENT */}
+          {modalType === 'delete' && ingredientToDelete && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-destructive">Eliminar Ingrediente</DialogTitle>
+                <DialogDescription>
+                  ¿Estás seguro de eliminar el ingrediente <strong>"{ingredientToDelete.name}"</strong>?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 rounded-md space-y-2">
+                 <p className="text-sm font-semibold text-red-600 dark:text-red-300">
+                    ⚠️ Advertencia
+                 </p>
+                 <p className="text-xs text-red-600 dark:text-red-300">
+                    Esta acción también eliminará todo el historial de movimientos asociado a este ingrediente. Esta acción es **irreversible**.
+                 </p>
+                 <p className="text-sm text-muted-foreground">
                     Proveedor: {ingredientToDelete.provider}
-                  </Text>
-                </VStack>
-                
-                <HStack gap={3} justify="flex-end" mt={4}>
-                  <Button
-                    variant="ghost"
-                    onClick={handleDeleteCancel}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    colorScheme="red"
-                    onClick={handleDeleteConfirm}
-                  >
-                    Eliminar Definitivamente
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          </Box>
-        )}
-      </VStack>
-    </Box>
+                 </p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={handleModalClose} disabled={isLoading}>Cancelar</Button>
+                <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Eliminar Definitivamente
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

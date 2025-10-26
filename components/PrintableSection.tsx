@@ -1,26 +1,32 @@
-import { ReactNode, useRef } from 'react'
-import { Box } from '@chakra-ui/react'
-import Printer from './printer'
+import { ReactNode, useRef } from 'react';
+// No necesitamos Box
+import { cn } from '@/lib/utils'; // Para la clase de estilo
 
+// Asume que Printer es el componente que envuelve react-to-print
+import Printer from './printer'; 
+
+// --- Tipos ---
 type PrintableSectionProps = {
-  children: ReactNode
-  printLabel?: string
-  pdfLabel?: string
-  colorScheme?: string
-  showButtons?: boolean
-  buttonSize?: 'sm' | 'md' | 'lg'
-  printTitle?: string
-  onBeforePrint?: () => Promise<void> | void
-  onAfterPrint?: () => void
-  onPrintError?: (error: Error) => void
-  buttonsInline?: boolean
-  externalPrintRef?: React.RefObject<HTMLDivElement | null>
-}
+  children: ReactNode;
+  printLabel?: string;
+  pdfLabel?: string;
+  // Propiedad de color estándar de Chakra (asumida por Printer)
+  colorScheme?: string; 
+  showButtons?: boolean;
+  buttonSize?: 'sm' | 'md' | 'lg';
+  printTitle?: string;
+  onBeforePrint?: () => Promise<void> | void;
+  onAfterPrint?: () => void;
+  onPrintError?: (error: Error) => void;
+  buttonsInline?: boolean;
+  externalPrintRef?: React.RefObject<HTMLDivElement | null>;
+};
 
+// --- Subcomponente PrintButtons (Corregido) ---
 export const PrintButtons = ({
   printLabel = 'Imprimir',
   pdfLabel = 'Guardar PDF',
-  colorScheme = 'teal',
+  colorScheme = 'teal', 
   showButtons = true,
   buttonSize = 'md',
   onBeforePrint,
@@ -28,33 +34,35 @@ export const PrintButtons = ({
   onPrintError,
   targetRef 
 }: {
-  printLabel?: string
-  pdfLabel?: string
-  colorScheme?: string
-  showButtons?: boolean
-  buttonSize?: 'sm' | 'md' | 'lg'
-  onBeforePrint?: () => Promise<void> | void
-  onAfterPrint?: () => void
-  onPrintError?: (error: Error) => void
-  targetRef: React.RefObject<HTMLElement | null>
+  printLabel?: string;
+  pdfLabel?: string;
+  colorScheme?: string; // Corregido el tipo
+  showButtons?: boolean;
+  buttonSize?: 'sm' | 'md' | 'lg';
+  onBeforePrint?: () => Promise<void> | void;
+  onAfterPrint?: () => void;
+  onPrintError?: (error: Error) => void;
+  targetRef: React.RefObject<HTMLElement | null>;
 }) => {
-  if (!showButtons) return null
+  if (!showButtons) return null;
   
   return (
+    // Printer (componente de terceros)
     <Printer 
       targetRef={targetRef}
       printLabel={printLabel}
       pdfLabel={pdfLabel}
-      colorScheme={colorScheme}
+      colorScheme={colorScheme} // Propiedad que el componente espera
       showButtons={showButtons}
       buttonSize={buttonSize}
       onBeforePrint={onBeforePrint}
       onAfterPrint={onAfterPrint}
       onPrintError={onPrintError}
     />
-  )
-}
+  );
+};
 
+// --- Componente Principal PrintableSection ---
 const PrintableSection = ({
   children,
   printLabel = 'Imprimir',
@@ -70,13 +78,14 @@ const PrintableSection = ({
   externalPrintRef
 }: PrintableSectionProps) => {
   
-  const internalPrintRef = useRef<HTMLDivElement>(null)
-  const printRef = externalPrintRef || internalPrintRef
+  const internalPrintRef = useRef<HTMLDivElement>(null);
+  const printRef = externalPrintRef || internalPrintRef;
 
+  // 1. Caso de botones en línea
   if (buttonsInline) {
     return (
       <PrintButtons 
-        targetRef={printRef}
+        targetRef={printRef as React.RefObject<HTMLElement | null>}
         printLabel={printLabel}
         pdfLabel={pdfLabel}
         colorScheme={colorScheme}
@@ -86,14 +95,16 @@ const PrintableSection = ({
         onAfterPrint={onAfterPrint}
         onPrintError={onPrintError}
       />
-    )
+    );
   }
 
+  // 2. Caso de botones sobre el contenido
   return (
-    <Box>
-      <Box mb={showButtons ? 4 : 0}>
+    <div>
+      {/* Margen condicional (reemplaza Box) */}
+      <div className={cn({ "mb-4": showButtons })}>
         <PrintButtons 
-          targetRef={printRef}
+          targetRef={printRef as React.RefObject<HTMLElement | null>}
           printLabel={printLabel}
           pdfLabel={pdfLabel}
           colorScheme={colorScheme}
@@ -103,11 +114,13 @@ const PrintableSection = ({
           onAfterPrint={onAfterPrint}
           onPrintError={onPrintError}
         />
-      </Box>
+      </div>
 
-      <Box ref={printRef}>
+      <div ref={printRef}>
         {printTitle && (
-          <Box mb={6} textAlign="center">
+          <div className="mb-6 text-center"> 
+            
+            {/* Estilos CSS para impresión */}
             <style dangerouslySetInnerHTML={{
               __html: `
                 .print-title {
@@ -120,29 +133,23 @@ const PrintableSection = ({
                 }
               `
             }} />
+            
             <div className="print-title">
-              <h1 style={{ 
-                fontSize: '24px', 
-                fontWeight: 'bold', 
-                color: '#000', 
-                marginBottom: '8px' 
-              }}>
+              {/* Estilos Tailwind */}
+              <h1 className="text-2xl font-bold text-foreground mb-2 print:text-black">
                 {printTitle}
               </h1>
-              <p style={{ 
-                fontSize: '14px', 
-                color: '#666' 
-              }}>
+              <p className="text-sm text-muted-foreground print:text-gray-600">
                 Fecha: {new Date().toLocaleDateString('es-BO')}
               </p>
             </div>
-          </Box>
+          </div>
         )}
 
         {children}
-      </Box>
-    </Box>
-  )
-}
+      </div>
+    </div>
+  );
+};
 
-export default PrintableSection
+export default PrintableSection;

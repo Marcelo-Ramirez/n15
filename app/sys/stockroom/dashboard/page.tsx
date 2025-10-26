@@ -1,21 +1,30 @@
 'use client'
 
-import { Box, Heading, Text, VStack } from '@chakra-ui/react'
+// Ya no necesitas importar nada de @chakra-ui/react
 import AlmacenDashboard from '@/components/system/dashboards/AlmacenDashboard'
 
 export default function StockroomDashboardPage() {
   return (
-    <Box>
-      <VStack gap={6} align="stretch">
-        <Box>
-          <Heading size="lg" mb={2}>Panel de Almacén</Heading>
-          <Text color="gray.600">
-            Gestión de inventario, stock y movimientos de almacén
-          </Text>
-        </Box>
+    // Reemplaza Box con div, usando padding responsivo
+    <div className="p-4 md:p-6">
+      {/* Reemplaza VStack con un div usando flex y gap */}
+      <div className="flex flex-col gap-6 items-stretch">
         
+        {/* Encabezado (Reemplaza Box) */}
+        <div>
+          {/* Reemplaza Heading size="lg" */}
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-1">
+            Panel de Almacén
+          </h1>
+          {/* Reemplaza Text color="gray.600" */}
+          <p className="text-sm text-muted-foreground">
+            Gestión de inventario, stock y movimientos de almacén
+          </p>
+        </div>
+        
+        {/* Renderiza el componente de Dashboard (asume que ya está en Tailwind/Shadcn) */}
         <AlmacenDashboard />
-      </VStack>
-    </Box>
+      </div>
+    </div>
   )
 }

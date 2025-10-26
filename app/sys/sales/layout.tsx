@@ -1,8 +1,7 @@
 'use client'
 
-import { Box, Flex } from '@chakra-ui/react'
 import { useState } from 'react'
-import SystemSidebar from '@/components/layout/SystemSidebar'
+import SystemSidebar from '@/components/layout/SystemSidebar' // Asegúrate que la ruta sea correcta
 
 export default function SystemLayout({
   children,
@@ -10,31 +9,41 @@ export default function SystemLayout({
   children: React.ReactNode
 }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const userRole = 'sales'
+  
+  // El rol ahora está hardcodeado, pero en un proyecto real usarías useSession()
+  const userRole = 'sales' 
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed)
   }
 
+  // Definir las clases de margen y ancho en Tailwind
+  const marginLeftClass = isSidebarCollapsed ? 'ml-16' : 'ml-64' // 64px y 256px de Tailwind
+
   return (
-    <Flex minH="100vh" bg="gray.50">
-      <SystemSidebar 
-        role={userRole} 
+    // Reemplaza Flex: Contenedor principal con Flexbox y altura mínima
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      
+      {/* Renderiza el Sidebar (asume que SystemSidebar ya usa Tailwind) */}
+      <SystemSidebar
+        role={userRole}
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
       />
-      
-      <Box 
-        flex="1" 
-        display="flex" 
-        flexDirection="column"
-        ml={isSidebarCollapsed ? "60px" : "250px"}
-        transition="margin 0.3s ease"
+
+      {/* Reemplaza Box: Contenedor principal del contenido */}
+      <main
+        className={`
+          flex-1 flex flex-col 
+          ${marginLeftClass} 
+          transition-all duration-300 ease-in-out
+        `} // Flex-1, Flex-col, Margen dinámico y transición
       >
-        <Box flex="1" p={6}>
+        {/* Reemplaza Box: Área de contenido con padding */}
+        <div className="flex-1 p-4 md:p-6"> {/* p-4/p-6 para padding responsivo */}
           {children}
-        </Box>
-      </Box>
-    </Flex>
+        </div>
+      </main>
+    </div>
   )
 }
