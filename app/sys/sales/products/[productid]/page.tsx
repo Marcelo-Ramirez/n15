@@ -12,8 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardHeader,
-  CardTitle,
-  CardContent,
+  CardTitle
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -23,13 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -58,12 +50,8 @@ function ProductHistoryInner() {
   const router = useRouter();
   const params = useParams();
   
-  // ✅ CORRECCIÓN ID: Obtener el ID de la ruta ([id] o [productId])
-  // El ID debe venir de `params.id` (si la carpeta es [id]) o `params.productId`.
   const productId = (params.id || params.productId || '') as string;
   
-  // 🔍 LOG 1: Verificar el ID al inicio
-  console.log(`[INIT LOG] Componente cargado. ID detectado: ${productId} (Tipo: ${typeof productId})`);
 
   const [movements, setMovements] = useState<Movement[]>([]);
   const [product, setProduct] = useState<ProductDetails | null>(null);
@@ -71,7 +59,7 @@ function ProductHistoryInner() {
   const [error, setError] = useState<string | null>(null);
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [registerData, setRegisterData] = useState({ movementType: '', reason: '', quantity: '' });
+  const [registerData, setRegisterData] = useState({ quantity: '' });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
 
@@ -80,27 +68,19 @@ function ProductHistoryInner() {
   const role = isStockroomRole ? 'stockroom' : 'sales';
 
 
-  // --- Lógica de Fetch (GET - USANDO RUTA SYSTEM) ---
   const fetchHistory = useCallback(async () => {
-    // 🔍 LOG 2: Si el ID es vacío, esta guarda detiene el fetch.
     if (!productId) {
-      console.warn("⚠️ [FETCH] ID es vacío. Deteniendo la llamada a la API.");
       setIsLoading(false);
       return; 
     }
 
     setIsLoading(true);
     try {
-      // ✅ USAMOS LA RUTA QUE TÚ CONFIRMASTE QUE FUNCIONA: /api/system/... con query parameter
       const apiUrl = `/api/system/inventory/products/${productId}/history`
-      console.log(`➡️ [FETCH GET] Llamando a URL: ${apiUrl}`);
 
       const res = await fetch(apiUrl);
       const data = await res.json();
       
-      // 🔍 LOG 3: Estado y datos de la API
-      console.log(`   API Response Status: ${res.status}`);
-      console.log("   API Response Data:", data);
       
       if (!res.ok || !data.success) throw new Error(data.error || `Error del servidor: ${res.status}`);
       
@@ -110,11 +90,8 @@ function ProductHistoryInner() {
         currentQuantity: data.product.currentQuantity || 0,
         pricePerUnit: data.product.pricePerUnit || 0,
       } : null);
-      console.log("✅ Datos cargados con éxito.");
 
     } catch (err) {
-      // 🔍 LOG 4: Captura el error para que NO se quede cargando
-      console.error("❌ Fetch Error (Bloqueado):", err);
       setError(err instanceof Error ? err.message : "Error desconocido al obtener historial");
     } finally {
       setIsLoading(false);
@@ -128,16 +105,12 @@ function ProductHistoryInner() {
   }, [productId, fetchHistory]);
   
   // --- Lógica de Modal (POST - USANDO RUTA SYSTEM) ---
-  const handleOpenRegister = () => {
-  setRegisterData({ movementType: '', reason: '', quantity: '' });
-  setRegisterError(null);
-  setShowRegisterModal(true); // Usa showRegisterModal
-};
-  const handleRegisterCancel = () => { /* ... */ };
+  const handleOpenRegister = () => { setRegisterData({ quantity: '' }); setRegisterError(null); setShowRegisterModal(true); };
+  const handleRegisterCancel = () => { setShowRegisterModal(false); };
   
   const handleRegisterAccept = async () => {
-    if (!registerData.movementType || !registerData.reason || !registerData.quantity) {
-      setRegisterError('Por favor, selecciona tipo, razón y cantidad.');
+    if (!registerData.quantity) {
+      setRegisterError('Por favor, ingresa la cantidad.');
       return;
     }
     const numericQuantity = Number(registerData.quantity);
@@ -151,13 +124,13 @@ function ProductHistoryInner() {
     
     try {
       // ✅ USAMOS LA RUTA QUE TÚ CONFIRMASTE QUE FUNCIONA: /api/system/...
-      const res = await fetch(`/api/system/inventory/products/history`, {
+      const res = await fetch(`/api/system/inventory/products/${productId}/history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: Number(productId), 
-          movementType: registerData.movementType,
-          reason: registerData.reason,
+          movementType: 'salida',
+          reason: 'venta_mostrador',
           quantity: numericQuantity
         })
       });
@@ -166,34 +139,14 @@ function ProductHistoryInner() {
       if (!res.ok || !data.success) throw new Error(data.error);
       
       setShowRegisterModal(false);
-      toast.success('¡Movimiento registrado exitosamente!');
-      setRegisterData({ movementType: '', reason: '', quantity: '' });
+      toast.success('¡Venta registrada exitosamente!');
+      setRegisterData({ quantity: '' });
       await fetchHistory();
       
     } catch (err) {
-      console.error("❌ POST Error:", err);
       setRegisterError(err instanceof Error ? err.message : 'Error desconocido al registrar.');
     } finally {
       setRegisterLoading(false);
-    }
-  };
-
-  // --- Lógica de Razones ---
-  const getMovementReasons = () => { 
-    if (role === 'sales') {
-        return [
-            { value: 'venta_mostrador', label: 'Venta en Mostrador' },
-            { value: 'venta_pedido', label: 'Pedido Especial' },
-            { value: 'devolucion_cliente', label: 'Devolución de Cliente' },
-            { value: 'ajuste_venta', label: 'Ajuste (Ventas)' },
-        ];
-    } else { // stockroom
-        return [
-            { value: 'produccion', label: 'Producción/Fabricación' },
-            { value: 'compra', label: 'Compra a Proveedor' },
-            { value: 'ajuste_almacen', label: 'Ajuste de Almacén' },
-            { value: 'merma', label: 'Merma' },
-        ];
     }
   };
 
@@ -323,7 +276,7 @@ function ProductHistoryInner() {
           <h2 className="text-xl font-semibold text-foreground">Historial de Movimientos</h2>
           <Button onClick={handleOpenRegister} size="sm" disabled={!product}>
             <Plus className="mr-2 h-4 w-4" />
-            Registrar Movimiento
+            Registrar Venta
           </Button>
         </div>
 
@@ -335,50 +288,13 @@ function ProductHistoryInner() {
       <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Registrar Movimiento</DialogTitle>
+            <DialogTitle>Registrar Venta</DialogTitle>
             <DialogDescription>
               Producto: <strong>{product?.name || "N/A"}</strong>
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
-            {/* Tipo de Movimiento */}
-            <div className="space-y-2">
-              <Label htmlFor="movementType">Tipo de Movimiento</Label>
-              <Select
-                  value={registerData.movementType}
-                  onValueChange={(value: string) => setRegisterData(d => ({ ...d, movementType: value }))}
-              >
-                  <SelectTrigger id="movementType">
-                      <SelectValue placeholder="Selecciona tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="entrada">Entrada</SelectItem>
-                      <SelectItem value="salida">Salida</SelectItem>
-                  </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Razón */}
-            <div className="space-y-2">
-              <Label htmlFor="reason">Razón</Label>
-              <Select
-                  value={registerData.reason}
-                  onValueChange={(value: string) => setRegisterData(d => ({ ...d, reason: value }))}
-              >
-                  <SelectTrigger id="reason">
-                      <SelectValue placeholder="Selecciona razón" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      {getMovementReasons().map(reason => (
-                          <SelectItem key={reason.value} value={reason.value}>
-                              {reason.label}
-                          </SelectItem>
-                      ))}
-                  </SelectContent>
-              </Select>
-            </div>
-            
             {/* Cantidad */}
             <div className="space-y-2">
               <Label htmlFor="quantity">Cantidad</Label>

@@ -185,7 +185,7 @@ export default function ProductTable({ role }: ProductTableProps) {
     if (!productToDelete) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/inventory/products?id=${productToDelete.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/system/inventory/products/${productToDelete.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
       
