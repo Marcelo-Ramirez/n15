@@ -76,9 +76,7 @@ const renderBarLabel = (props: RechartsRenderProps) => {
       <rect
         x={xNum + widthNum / 2 - 25}
         y={yNum - 25}
-        width="50"
         height="18"
-        fill="rgba(255, 255, 255, 0.9)"
         stroke="#e2e8f0"
         strokeWidth="1"
         rx="4"
@@ -86,7 +84,7 @@ const renderBarLabel = (props: RechartsRenderProps) => {
       <text
         x={xNum + widthNum / 2}
         y={yNum - 12}
-        fill="#2d3748"
+        fill="white"
         textAnchor="middle"
         fontSize="10"
         fontWeight="bold"
@@ -171,7 +169,6 @@ const CustomReferenceLabel = (props: RechartsRenderProps) => {
 const ParetoChart = ({
   data,
   thresholds = { A: 70, B: 90, C: 100 },
-  chartHeight = 450,
 }: ParetoChartProps) => {
   const [showABC, setShowABC] = useState(false);
 
@@ -193,7 +190,6 @@ const ParetoChart = ({
           {showABC ? 'Ocultar Líneas ABC' : 'Mostrar Líneas ABC'}
         </Button>
         
-        {/* Contenedor del Gráfico: Usa la variable chartHeight */}
         <div className="w-full min-h-[300px] aspect-video bg-gray-50 dark:bg-gray-800 rounded-md p-2">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart 
@@ -204,7 +200,7 @@ const ParetoChart = ({
               
               <XAxis 
                 dataKey="name" 
-                tick={{ fontSize: 10, fill: 'hsl(var(--foreground))' }}
+                tick={{ fontSize: 10, fill: '#FFFFFF' }}
                 axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
                 angle={-30}
                 textAnchor="end"
@@ -216,8 +212,9 @@ const ParetoChart = ({
               <YAxis 
                 yAxisId="y1"
                 type="number"
-                tick={{ fontSize: 11, fill: 'hsl(var(--foreground))' }}
+                tick={{ fontSize: 11, fill: '#FFFFFF' }}
                 axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+                
                 tickFormatter={(value) => value.toLocaleString()}
                 width={50}
                 label={{ 
@@ -256,8 +253,8 @@ const ParetoChart = ({
               <Bar 
                 yAxisId="y1"
                 dataKey="value" 
-                fill="hsl(var(--primary))"
-                stroke="hsl(var(--primary))"
+                fill="#3182ce" 
+                stroke="#3182ce"
                 name="Valor"
               >
                 <LabelList content={renderBarLabel} />

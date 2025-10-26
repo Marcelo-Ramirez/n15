@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, BarChart, Clock, Loader2 } from 'lucide-react'; // Iconos de Lucide
 
 // Importa componentes Shadcn UI
+import { useRouter } from "next/navigation";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +39,7 @@ type ModalType = 'add' | 'edit' | 'delete' | null;
 // --- Componente ---
 export default function IngredientsPage() {
   // Estados de Fetch y Lista
+  const router = useRouter();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +77,8 @@ export default function IngredientsPage() {
 
   // --- HANDLERS DE NAVEGACIÓN Y MODAL (Mantenidos) ---
   const handleCalculateABC = () => {
-    globalThis.location.href = `/sys/stockroom/ingredients/abc`;
+  router.push(`/sys/stockroom/ingredients/abc`); // 2. Se usa
+
   };
 
   const handleEditOpen = (ingredient: Ingredient) => {
@@ -267,17 +270,17 @@ export default function IngredientsPage() {
                 
                 {/* Acciones */}
                 <div className="col-span-2 md:col-span-1 flex justify-end gap-2 flex-wrap">
-                  <Button variant="outline" size="sm" onClick={() => { 
-                       const encodedName = encodeURIComponent(ingredient.name);
-                       globalThis.location.href = `/sys/stockroom/ingredients/${encodedName}`;
+                 <Button variant="outline" size="sm" onClick={() => { 
+                  const encodedName = encodeURIComponent(ingredient.name); // 1. Se declara
+                  router.push(`/sys/stockroom/ingredients/${encodedName}`); // 2. Se usa
                   }}>
-                    <Clock className="h-4 w-4" />
-                  </Button>
+                   <Clock className="h-4 w-4" />
+                 </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEditOpen(ingredient)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => { 
-                       globalThis.location.href = `/sys/stockroom/ingredients/eoq-model?ingredientId=${ingredient.id}`;
+                       router.push(`/sys/stockroom/ingredients/eoq-model?ingredientId=${ingredient.id}`);
                   }}>
                     <BarChart className="h-4 w-4" />
                   </Button>

@@ -1,14 +1,17 @@
+// app/sys/stockroom/ingredients/[name]/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, BarChart, Clock, Loader2 } from 'lucide-react';  
-// Importa componentes Shadcn UI
+import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { toast } from 'sonner';
+
+// Componentes Shadcn/UI
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card
-} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -17,173 +20,126 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-// --- Tipos de Datos (Mantenidos) ---
-interface Ingredient {
-  id: number;
+// Definición de interfaces (mantenidas del código original)
+interface IngredientDetails {
   name: string;
-  unit: string;
-  currentQuantity: number;
-  pricePerUnit: number;
   provider: string;
-  createdAt: string;
+  reorderPoint: number;
+  pricePerUnit: number;
+  // Agrega aquí cualquier otra propiedad que venga en data.ingredient
 }
 
-type ModalType = 'add' | 'edit' | 'delete' | null;
+interface Movement {
+  id: number;
+  movementType: 'entrada' | 'salida' | 'ajuste'; // Tipado más estricto
+  reason: string;
+  quantity: number;
+  createdAt: string;
+  user: {
+    name: string;
+  };
+}
 
-// --- Componente ---
-export default function IngredientsPage() {
-  // Estados de Fetch y Lista
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+export default function IngredientHistoryPage() {
+  const router = useRouter();
+  const params = useParams();
+  
+  // Mantenemos la lógica de [name] como pediste
+  const name = decodeURIComponent(params.name as string); 
+
+  const [movements, setMovements] = useState<Movement[]>([]);
+  const [ingredient, setIngredient] = useState<IngredientDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Estados de Modals y CRUD
+  
+  // Estado del Modal (estilo Shadcn)
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<ModalType>(null);
-  
-  const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null);
-  const [ingredientToEdit, setIngredientToEdit] = useState<Ingredient | null>(null);
-  
-  const [newIngredient, setNewIngredient] = useState({ name: '', unit: '', pricePerUnit: '', provider: '' });
-  const [editIngredient, setEditIngredient] = useState({ name: '', unit: '', pricePerUnit: '', provider: '' });
-  
-  const [editLoading, setEditLoading] = useState(false);
-  const [editError, setEditError] = useState<string | null>(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerData, setRegisterData] = useState({
+    movementType: '',
+    reason: '',
+    quantity: ''
+  });
 
-  // --- FETCH DE INGREDIENTES (Mantenida) ---
-  useEffect(() => {
-    fetchIngredients();
-  }, []);
-
-  const fetchIngredients = async () => {
+  // Función estable para la obtención de datos
+  const fetchHistory = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/system/inventory/ingredients');
-      if (!response.ok) throw new Error('Error al obtener ingredientes');
-      const data = await response.json();
-      setIngredients(data.ingredients || []);
+      // Usamos la API que busca por nombre
+      const res = await fetch(`/api/system/inventory/ingredients/history?name=${encodeURIComponent(name)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al obtener historial");
+      setMovements(data.movements);
+      setIngredient(data.ingredient);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [name]); // La dependencia sigue siendo 'name'
 
-  // --- HANDLERS DE NAVEGACIÓN Y MODAL (Mantenidos) ---
-  const handleCalculateABC = () => {
-    globalThis.location.href = `/sys/stockroom/ingredients/abc`;
-  };
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
-  const handleEditOpen = (ingredient: Ingredient) => {
-    setIngredientToEdit(ingredient);
-    setEditIngredient({
-        name: ingredient.name,
-        unit: ingredient.unit,
-        pricePerUnit: ingredient.pricePerUnit.toString(),
-        provider: ingredient.provider
-    });
-    setEditError(null);
-    setModalType('edit');
+  // Lógica del Modal (adaptada a Shadcn y Sonner/Toast)
+  const handleOpenRegister = () => {
+    setRegisterData({ movementType: '', reason: '', quantity: '' });
     setIsModalOpen(true);
   };
 
-  const handleDeleteOpen = (ingredient: Ingredient) => {
-    setIngredientToDelete(ingredient);
-    setModalType('delete');
-    setIsModalOpen(true);
-  };
-  
   const handleModalClose = () => {
     setIsModalOpen(false);
-    setModalType(null);
-    setIngredientToDelete(null);
-    setIngredientToEdit(null);
-    setNewIngredient({ name: '', unit: '', pricePerUnit: '', provider: '' });
-    setEditError(null);
   };
 
-
-  // --- HANDLERS DE ACEPTAR/CONFIRMAR (Mantenida la lógica original) ---
-  const handleAddAccept = async () => {
-    if (!newIngredient.name || !newIngredient.unit || !newIngredient.pricePerUnit || !newIngredient.provider) {
-      toast.error('Validación', { description: 'Por favor completa todos los campos' });
+  const handleRegisterAccept = async () => {
+    if (!registerData.movementType || !registerData.reason || !registerData.quantity) {
+      toast.error('Validación', { description: 'Completa todos los campos' });
       return;
     }
-    setIsLoading(true);
+    setRegisterLoading(true);
+
     try {
-        const response = await fetch('/api/system/inventory/ingredients', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newIngredient),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Error al crear ingrediente');
-        
-        toast.success('Ingrediente creado', { description: `${newIngredient.name} fue agregado exitosamente.` });
-        handleModalClose();
-        await fetchIngredients();
+      const res = await fetch('/api/system/inventory/ingredients/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, // Enviamos el nombre a la API
+          movementType: registerData.movementType,
+          reason: registerData.reason,
+          quantity: Number(registerData.quantity)
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al registrar movimiento');
+
+      toast.success('Movimiento registrado', { description: `${registerData.movementType} de ${registerData.quantity} registrado.` });
+      setIsModalOpen(false);
+      await fetchHistory(); // Recarga los datos
+
     } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-        toast.error('Error al agregar', { description: errorMessage });
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error('Error al registrar', { description: errorMessage });
     } finally {
-        setIsLoading(false);
+      setRegisterLoading(false);
     }
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!ingredientToDelete) return;
-    setIsLoading(true);
-    try {
-        const response = await fetch(`/api/system/inventory/ingredients?id=${ingredientToDelete.id}`, { method: 'DELETE' });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Error al eliminar ingrediente');
-        
-        toast.success('Ingrediente eliminado', { description: `${ingredientToDelete.name} fue eliminado permanentemente.` });
-        handleModalClose();
-        await fetchIngredients();
-    } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-        toast.error('Error al eliminar', { description: errorMessage });
-    } finally {
-        setIsLoading(false);
-    }
-  };
-  
-  const handleEditConfirm = async () => {
-    if (!ingredientToEdit) return;
-    if (!editIngredient.name || !editIngredient.unit || !editIngredient.pricePerUnit || !editIngredient.provider) {
-        setEditError('Completa todos los campos');
-        return;
-    }
-    setEditLoading(true);
-    setEditError(null);
-    try {
-        const res = await fetch(`/api/system/inventory/ingredients?id=${ingredientToEdit.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(editIngredient)
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al editar ingrediente');
-        
-        toast.success('Ingrediente editado', { description: `${editIngredient.name} actualizado.` });
-        handleModalClose();
-        await fetchIngredients();
-    } catch (err) {
-        setEditError(err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
-        setEditLoading(false);
-    }
-  };
-
-
-  // --- VISTA DE CARGA Y ERROR (Shadcn) ---
+  // --- VISTA DE CARGA Y ERROR ---
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <span className="ml-3 text-muted-foreground">Cargando ingredientes...</span>
+        <span className="ml-3 text-muted-foreground">Cargando historial...</span>
       </div>
     );
   }
@@ -192,6 +148,9 @@ export default function IngredientsPage() {
     return (
       <Card className="p-4 border-destructive bg-destructive/10 text-destructive border-2 m-6">
         <p className="font-medium">{error}</p>
+        <Button variant="outline" onClick={() => router.back()} className="mt-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Volver
+        </Button>
       </Card>
     );
   }
@@ -199,190 +158,139 @@ export default function IngredientsPage() {
   // --- VISTA PRINCIPAL (JSX) ---
   return (
     <div className="p-4 md:p-6 space-y-6">
+      
+      {/* Botón Volver */}
+      <Button variant="outline" onClick={() => router.back()}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Volver a Ingredientes
+      </Button>
 
-      {/* Header y Botones de Acción */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Ingredientes</h1>
-          <p className="text-sm text-muted-foreground">Gestiona el inventario de ingredientes</p>
-        </div>
-        <div className="flex gap-3 flex-wrap">
-          {/* CORREGIDO: Usamos secuencia ; para evitar error 'void' */}
-          <Button onClick={() => { setModalType('add'); setIsModalOpen(true); }} className="bg-green-600 hover:bg-green-700">
-            <Plus className="mr-2 h-4 w-4" /> Añadir Ingrediente
-          </Button>
-          <Button variant="outline" onClick={handleCalculateABC}>
-            <BarChart className="mr-2 h-4 w-4" /> Calcular ABC
-          </Button>
-        </div>
+      {/* Detalles del Ingrediente */}
+      <Card className="p-6 space-y-3">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          Ingrediente
+        </h1>
+        <p className="text-lg font-semibold">{ingredient?.name || name}</p>
+        <p className="text-sm text-muted-foreground">
+          Proveedor: {ingredient?.provider || "-"}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Punto de Reorden: {ingredient?.reorderPoint ?? "No definido"}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Precio Unitario: Bs {ingredient?.pricePerUnit?.toFixed(2) ?? "-"}
+        </p>
+      </Card>
+
+      <Separator />
+
+      {/* Header del Historial */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold tracking-tight">
+          Historial de Movimientos
+        </h2>
+        <Button onClick={handleOpenRegister}>
+          Registrar Movimiento
+        </Button>
       </div>
 
-      {/* Ingredients List Header (Encabezado de la tabla para Desktop) */}
-      <div className="hidden md:block bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-5 gap-4 text-sm font-bold text-muted-foreground">
-          <div>Nombre / Proveedor</div>
-          <div>Unidad</div>
-          <div>Stock</div>
-          <div>Precio Unitario</div>
-          <div className="text-right">Acciones</div>
-        </div>
-      </div>
-
-      {/* Ingredients List */}
+      {/* Lista de Movimientos */}
       <div className="space-y-3">
-        {ingredients.length > 0 ? (
-          ingredients.map((ingredient) => (
-            <Card key={ingredient.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
-              {/* Layout responsivo: 2 columnas en móvil, 5 columnas en desktop */}
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-5 md:gap-4 items-center">
-                
-                {/* Nombre y Proveedor */}
-                <div className="col-span-2 md:col-span-1">
-                  <p className="font-medium">{ingredient.name}</p>
-                  <p className="text-xs text-muted-foreground">Proveedor: {ingredient.provider}</p>
+        {movements.length > 0 ? (
+          movements.map((m) => (
+            <Card key={m.id} className="p-4">
+              <div className="flex justify-between items-center flex-wrap gap-4">
+                <div>
+                  <p className={`font-bold ${m.movementType === 'entrada' ? 'text-green-600' : 'text-red-600'}`}>
+                    {m.movementType.toUpperCase()} ({m.quantity})
+                  </p>
+                  <p className="text-sm">Motivo: {m.reason}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Usuario: {m.user?.name || "-"}
+                  </p>
                 </div>
-                
-                {/* Unidad */}
-                <div className="col-span-1 md:col-span-1 text-sm">
-                  <span className="md:hidden font-semibold text-muted-foreground">Unidad: </span>{ingredient.unit}
-                </div>
-                
-                {/* Stock */}
-                <div className="col-span-1 md:col-span-1 text-sm font-bold text-primary">
-                  <span className="md:hidden font-semibold text-muted-foreground">Stock: </span>{ingredient.currentQuantity}
-                </div>
-                
-                {/* Precio */}
-                <div className="col-span-1 md:col-span-1 text-sm font-bold">
-                  <span className="md:hidden font-semibold text-muted-foreground">Precio: </span>Bs {ingredient.pricePerUnit.toFixed(2)}
-                </div>
-                
-                {/* Acciones */}
-                <div className="col-span-2 md:col-span-1 flex justify-end gap-2 flex-wrap">
-                  <Button variant="outline" size="sm" onClick={() => { 
-                       const encodedName = encodeURIComponent(ingredient.name);
-                       globalThis.location.href = `/sys/stockroom/ingredients/${encodedName}`;
-                  }}>
-                    <Clock className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEditOpen(ingredient)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => { 
-                       globalThis.location.href = `/sys/stockroom/ingredients/eoq-model?ingredientId=${ingredient.id}`;
-                  }}>
-                    <BarChart className="h-4 w-4" />
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDeleteOpen(ingredient)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(m.createdAt).toLocaleString()}
+                </p>
               </div>
             </Card>
           ))
         ) : (
           <Card className="p-8 text-center border-dashed border-2">
-            <p className="text-muted-foreground">No hay ingredientes registrados</p>
+            <p className="text-muted-foreground">No hay movimientos registrados</p>
           </Card>
         )}
       </div>
 
-      {/* --- MODALES (Dialogs de Shadcn) --- */}
+      {/* Modal para Registrar Movimiento */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[480px]">
-          
-          {/* ADD INGREDIENT */}
-          {modalType === 'add' && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Añadir Nuevo Ingrediente</DialogTitle>
-                <DialogDescription>Completa todos los campos para registrar el nuevo ingrediente.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                {['name', 'unit', 'pricePerUnit', 'provider'].map(key => (
-                    <div key={key} className="space-y-2">
-                        <Label htmlFor={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</Label>
-                        <Input 
-                            id={key}
-                            type={key === 'pricePerUnit' ? 'number' : 'text'}
-                            step={key === 'pricePerUnit' ? "0.01" : undefined}
-                            placeholder={key === 'pricePerUnit' ? "0.00" : `Nombre del ${key}`}
-                            value={newIngredient[key as keyof typeof newIngredient]}
-                            onChange={(e) => setNewIngredient(prev => ({ ...prev, [key]: e.target.value }))}
-                        />
-                    </div>
-                ))}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={handleModalClose}>Cancelar</Button>
-                <Button onClick={handleAddAccept} className="bg-green-600 hover:bg-green-700">Aceptar</Button>
-              </DialogFooter>
-            </>
-          )}
-          
-          {/* EDIT INGREDIENT */}
-          {modalType === 'edit' && ingredientToEdit && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Editar {ingredientToEdit.name}</DialogTitle>
-                <DialogDescription>Modifica los detalles del ingrediente.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                {['name', 'unit', 'pricePerUnit', 'provider'].map(key => (
-                    <div key={key} className="space-y-2">
-                        <Label htmlFor={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</Label>
-                        <Input 
-                            id={key}
-                            type={key === 'pricePerUnit' ? 'number' : 'text'}
-                            step={key === 'pricePerUnit' ? "0.01" : undefined}
-                            value={editIngredient[key as keyof typeof editIngredient]}
-                            onChange={(e) => setEditIngredient(prev => ({ ...prev, [key]: e.target.value }))}
-                        />
-                    </div>
-                ))}
-              </div>
-              {editError && <p className="text-sm text-destructive">{editError}</p>}
-              <DialogFooter>
-                <Button variant="outline" onClick={handleModalClose} disabled={editLoading}>Cancelar</Button>
-                <Button onClick={handleEditConfirm} disabled={editLoading}>
-                  {editLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Guardar Cambios
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+          <DialogHeader>
+            <DialogTitle>Registrar Nuevo Movimiento</DialogTitle>
+            <DialogDescription>
+              Añade una nueva entrada o salida para el ingrediente &quot&{name}&quot&.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            
+            {/* Tipo de Movimiento */}
+            <div className="space-y-2">
+              <Label htmlFor="movementType">Tipo de Movimiento</Label>
+              <Select 
+                onValueChange={(value) => setRegisterData(d => ({ ...d, movementType: value }))}
+                value={registerData.movementType}
+              >
+                <SelectTrigger id="movementType">
+                  <SelectValue placeholder="Selecciona un tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entrada">Entrada</SelectItem>
+                  <SelectItem value="salida">Salida</SelectItem>
+                  <SelectItem value="ajuste">Ajuste</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* DELETE INGREDIENT */}
-          {modalType === 'delete' && ingredientToDelete && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-destructive">Eliminar Ingrediente</DialogTitle>
-                <DialogDescription>
-                  {/* CORREGIDO: Uso seguro del texto del nombre */}
-                  ¿Estás seguro de eliminar el ingrediente <strong>&quot;{ingredientToDelete.name}&quot;</strong>?
-                </DialogDescription>
-              </DialogHeader>
-              <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 rounded-md space-y-2">
-                 <p className="text-sm font-semibold text-red-600 dark:text-red-300">
-                    ⚠️ Advertencia
-                 </p>
-                 <p className="text-xs text-red-600 dark:text-red-300">
-                    Esta acción también eliminará todo el historial de movimientos asociado a este ingrediente. Esta acción es **irreversible**.
-                 </p>
-                 <p className="text-sm text-muted-foreground">
-                    Proveedor: {ingredientToDelete.provider}
-                 </p>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={handleModalClose} disabled={isLoading}>Cancelar</Button>
-                <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Eliminar Definitivamente
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+            {/* Razón */}
+            <div className="space-y-2">
+              <Label htmlFor="reason">Razón</Label>
+              <Select
+                onValueChange={(value) => setRegisterData(d => ({ ...d, reason: value }))}
+                value={registerData.reason}
+              >
+                <SelectTrigger id="reason">
+                  <SelectValue placeholder="Selecciona una razón" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="produccion">Uso en Producción</SelectItem>
+                  <SelectItem value="compra">Compra a Proveedor</SelectItem>
+                  <SelectItem value="merma">Merma / Vencimiento</SelectItem>
+                  <SelectItem value="ajuste_inventario">Ajuste de Inventario</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
+            {/* Cantidad */}
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Cantidad</Label>
+              <Input
+                id="quantity"
+                type="number"
+                placeholder="0"
+                value={registerData.quantity}
+                onChange={e => setRegisterData(d => ({ ...d, quantity: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleModalClose} disabled={registerLoading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRegisterAccept} disabled={registerLoading}>
+              {registerLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Aceptar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
