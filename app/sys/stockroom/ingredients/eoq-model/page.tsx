@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 const InventoryEOQGraph = dynamic(() => import("@/components/InventoryEOQGraph"), { ssr: false });
 
 // --- Componente Lógico Principal ---
+// --- Componente Lógico Principal ---
 function EOQModelPageInner() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -37,20 +38,22 @@ function EOQModelPageInner() {
 
     // --- Funciones de Fetch (Mantenidas) ---
 
-    const fetchDailyDemand = useCallback(async () => {
-        if (!ingredientId) return;
-        setLoadingDaily(true);
-        try {
-            const res = await fetch(`/api/system/inventory/ingredients/daily-demand?ingredientId=${ingredientId}`);
-            const data = await res.json();
-            setDailyDemand(data.dailyDemand ?? 0);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Error al obtener la demanda diaria.");
-            setDailyDemand(0);
-        } finally {
-            setLoadingDaily(false);
-        }
-    }, [ingredientId]);
+  const fetchDailyDemand = useCallback(async () => {
+    if (!ingredientId) return; // Guardián
+    setLoadingDaily(true);
+    try {
+      const res = await fetch(`/api/system/inventory/ingredients/daily-demand?ingredientId=${ingredientId}`);
+      const data = await res.json();
+      // ✅ 3. Usar ?? para valor por defecto 0
+      setDailyDemand(data.dailyDemand ?? 0);
+    } catch (err) {
+       console.error("Error fetching daily demand:", err);
+       setError("Error al obtener la demanda diaria.");
+       setDailyDemand(0); // O null, dependiendo de cómo quieras manejar el error
+    } finally {
+       setLoadingDaily(false);
+    }
+  }, [ingredientId]);
 
     const fetchAnnualDemand = useCallback(async () => {
         if (!ingredientId) return;
@@ -69,37 +72,55 @@ function EOQModelPageInner() {
         }
     }, [ingredientId]);
 
-    const fetchEOQModel = useCallback(async () => {
-        if (!ingredientId) return;
-        setIsCalculating(true); 
-        try {
-            const res = await fetch(`/api/system/inventory/ingredients/eoq-model?ingredientId=${ingredientId}`);
-            const data = await res.json();
-            if (data.model) {
-                const model = data.model;
-                setAnnualDemand(model.annualDemand ?? null);
-                setOrderingCost(model.orderingCost?.toString() ?? "");
-                setAnnualMaintenanceCost(model.annualMaintenanceCost?.toString() ?? "");
-                setLeadTimeDays(model.leadTimeDays?.toString() ?? "");
-                setReorderPoint(model.reorderPoint ?? null);
-                
-                if (model.annualDemand && model.orderingCost && model.annualMaintenanceCost) {
-                    const D = Number(model.annualDemand);
-                    const S = Number(model.orderingCost);
-                    const H = Number(model.annualMaintenanceCost);
-                    if (!Number.isNaN(D) && !Number.isNaN(S) && !Number.isNaN(H) && D > 0 && S > 0 && H > 0) {
-                        setEoq(Math.sqrt((2 * D * S) / H));
-                    } else { setEoq(null); }
-                } else { setEoq(null); }
-            } else {
-                setOrderingCost(""); setAnnualMaintenanceCost(""); setLeadTimeDays(""); setReorderPoint(null); setEoq(null);
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Error al cargar el modelo EOQ guardado.");
-        } finally {
-            setIsCalculating(false);
+  const fetchEOQModel = useCallback(async () => {
+    if (!ingredientId) return; // Guardián
+    // Usamos el estado general o uno específico si se quiere diferenciar
+    setIsCalculating(true); 
+    try {
+      const res = await fetch(`/api/system/inventory/ingredients/eoq-model?ingredientId=${ingredientId}`);
+      const data = await res.json();
+      if (data.model) {
+        // ✅ 3. Usar ?? para valores por defecto
+        setAnnualDemand(data.model.annualDemand ?? null);
+        setOrderingCost(data.model.orderingCost?.toString() ?? "");
+        setAnnualMaintenanceCost(data.model.annualMaintenanceCost?.toString() ?? "");
+
+        setLeadTimeDays(data.model.leadTimeDays?.toString() ?? "");
+
+        setReorderPoint(data.model.reorderPoint ?? null);
+        
+        // Calcula EOQ si todos los datos existen al cargar
+        if (
+          data.model.annualDemand &&
+          data.model.orderingCost &&
+          data.model.annualMaintenanceCost
+        ) {
+          const D = Number(data.model.annualDemand);
+          const S = Number(data.model.orderingCost);
+          const H = Number(data.model.annualMaintenanceCost);
+
+          if (!Number.isNaN(D) && !Number.isNaN(S) && !Number.isNaN(H) && D > 0 && S > 0 && H > 0) {
+            setEoq(Math.sqrt((2 * D * S) / H));
+          } else {
+             setEoq(null); // Resetear si los datos cargados no son válidos
+          }
+        } else {
+            setEoq(null); // Resetear si faltan datos
         }
-    }, [ingredientId]);
+      } else {
+          setOrderingCost("");
+          setAnnualMaintenanceCost("");
+          setLeadTimeDays("");
+          setReorderPoint(null);
+          setEoq(null);
+      }
+    } catch (err) {
+        console.error("Error fetching EOQ model:", err);
+        setError("Error al cargar el modelo EOQ guardado.");
+    } finally {
+        setIsCalculating(false);
+    }
+  }, [ingredientId]);
 
     useEffect(() => {
         if (ingredientId) {
