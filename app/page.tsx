@@ -1,178 +1,127 @@
 "use client";
 
-import { 
-  Box, 
-  Container, 
-  Text, 
-  Button, 
-  VStack, 
-  HStack, 
-  SimpleGrid, 
-} from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
-import { PublicHeader } from "@/components/layout/PublicHeader";
-import { PublicFooter } from "@/components/layout/PublicFooter";
-// ✅ 1. Importar el componente Image de Next.js
-import Image from 'next/image'; 
+import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 
-// ✅ 2. Interfaz 'Product' eliminada porque no se usaba
+// ✅ CORRECCIÓN: Importar PublicHeader y PublicFooter
+// Asegúrate que las rutas sean correctas para tu proyecto
+import { PublicHeader } from "@/components/layout/PublicHeader"; 
+import { PublicFooter } from "@/components/layout/PublicFooter"; 
+
+// Importar componentes Shadcn UI
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+
+// --- Placeholder para la Tarjeta de Producto (Adaptación de tu Box) ---
+interface ProductCardProps {
+  title: string;
+  description: string;
+  price: string;
+  imageSrc: string;
+  imageAlt: string;
+}
+
+const ProductCard = ({ title, description, price, imageSrc, imageAlt }: ProductCardProps) => (
+  <Card className="w-full max-w-xs shadow-md hover:shadow-lg transition-shadow duration-300">
+    <CardContent className="p-0">
+      <div className="relative h-48 bg-muted/50 rounded-t-lg overflow-hidden">
+        <Image 
+          src={imageSrc} 
+          alt={imageAlt} 
+          fill={true} 
+          style={{ objectFit: 'contain' }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="p-4"
+        />
+      </div>
+    </CardContent>
+    <div className="p-6 text-center">
+      <CardTitle className="text-lg font-semibold mb-2 text-foreground">
+        {title}
+      </CardTitle>
+      <CardDescription className="text-sm text-muted-foreground mb-4">
+        {description}
+      </CardDescription>
+      <p className="text-xl font-bold text-primary">
+        {price}
+      </p>
+    </div>
+  </Card>
+);
+// --- Fin Placeholder ---
+
 
 export default function HomePage() {
   const router = useRouter();
+
+  const productData: ProductCardProps[] = [
+    { title: 'Gomita Beterraga', description: 'Gomita natural sabor beterraga', price: 'Bs 1.5', imageSrc: '/images/products/gomitaBeterraga.png', imageAlt: 'Gomita Beterraga' },
+    { title: 'Gomita Frutilla', description: 'Gomita natural sabor frutilla', price: 'Bs 1.5', imageSrc: '/images/products/gomitaFrutilla.png', imageAlt: 'Gomita Frutilla' },
+    { title: 'Pulpa Mandarina', description: 'Pulpa natural sabor mandarina', price: 'Bs 5', imageSrc: '/images/products/pulaMandarina.png', imageAlt: 'Pulpa Mandarina' },
+  ];
+
   return (
-    <Box minH="100vh" bg="gray.50">
-      <PublicHeader />
-      <Container maxW="7xl" py={12} mx="auto" textAlign="center">
-        <VStack gap={12} align="center" width="100%">
-          <VStack gap={8} textAlign="center" mb={0} align="center">
-            <Text fontSize="4xl" fontWeight="bold" color="gray.800">
+    <div className="min-h-screen bg-background dark:bg-gray-950">
+      <PublicHeader /> {/* El error desaparece con la importación */}
+
+      <div className="container max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
+        <div className="flex flex-col gap-12 items-center w-full">
+          
+          {/* Sección de Bienvenida y Botones */}
+          <div className="flex flex-col gap-8 items-center max-w-4xl">
+            <h1 className="text-5xl font-extrabold tracking-tight text-foreground md:text-6xl lg:text-7xl">
               Bienvenido a Nuestra Tienda de Gomitas
-            </Text>
-            <Text fontSize="xl" color="gray.600" maxW="600px">
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-3xl">
               Descubre nuestra deliciosa colección de gomitas premium elaboradas con los mejores ingredientes.
-            </Text>
-            <HStack gap={4} justify="center">
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
               <Button 
-                colorScheme="blue" 
-                size="lg"
                 onClick={() => router.push('/catalog')}
+                size="lg"
+                className="font-semibold"
               >
                 Ver Catálogo
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
                 onClick={() => router.push('/sys/login')}
+                className="font-semibold"
               >
                 Ingresar al Sistema
               </Button>
-            </HStack>
-          </VStack>
+            </div>
+          </div>
+
+          <Separator className="w-24 h-1 bg-primary rounded-full mt-8 mb-4" />
+
           {/* Sección de Productos Destacados */}
-          <Box width="100%">
-            <Text fontSize="2xl" fontWeight="bold" mb={6} textAlign="center">
+          <div className="w-full">
+            <h2 className="text-3xl font-bold mb-8 text-foreground text-center">
               Productos Destacados
-            </Text>
-            <SimpleGrid
-              columns={{ base: 1, md: 2, lg: 3 }}
-              gap={6}
-              justifyItems="center"
-              maxW="1100px"
-              mx="auto"
+            </h2>
+            <div
+              className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center max-w-6xl mx-auto"
             >
-              {/* Gomita Beterraga */}
-              <Box
-                bg="white"
-                p={6}
-                rounded="lg"
-                shadow="sm"
-                textAlign="center"
-                mx="auto"
-                maxW="320px"
-              >
-                {/* ✅ 1. Reemplazado <img> con <Image> */}
-                <Box
-                  position="relative" // Necesario para Image con fill={true}
-                  h="200px"
-                  bg="gray.200" // Fondo mientras carga o si la imagen es transparente
-                  rounded="md"
-                  mb={4}
-                  overflow="hidden" // Para contener la imagen si usa objectFit
-                >
-                  <Image 
-                    src="/images/products/gomitaBeterraga.png" 
-                    alt="Gomita Beterraga" 
-                    fill={true} // Llena el contenedor padre
-                    style={{ objectFit: 'contain' }} // Asegura que se vea completa
-                  />
-                </Box>
-                <Text fontWeight="semibold" mb={2}>
-                  Gomita Beterraga
-                </Text>
-                <Text color="gray.600" mb={4}>
-                  Gomita natural sabor beterraga
-                </Text>
-                <Text fontSize="lg" fontWeight="bold" color="blue.600">
-                  Bs 1.5
-                </Text>
-              </Box>
-              {/* Gomita Frutilla */}
-              <Box
-                bg="white"
-                p={6}
-                rounded="lg"
-                shadow="sm"
-                textAlign="center"
-                mx="auto"
-                maxW="320px"
-              >
-                {/* ✅ 1. Reemplazado <img> con <Image> */}
-                <Box
-                  position="relative" 
-                  h="200px"
-                  bg="gray.200"
-                  rounded="md"
-                  mb={4}
-                  overflow="hidden"
-                >
-                  <Image 
-                    src="/images/products/gomitaFrutilla.png" 
-                    alt="Gomita Frutilla" 
-                    fill={true} 
-                    style={{ objectFit: 'contain' }} 
-                  />
-                </Box>
-                <Text fontWeight="semibold" mb={2}>
-                  Gomita Frutilla
-                </Text>
-                <Text color="gray.600" mb={4}>
-                  Gomita natural sabor frutilla
-                </Text>
-                <Text fontSize="lg" fontWeight="bold" color="blue.600">
-                  Bs 1.5
-                </Text>
-              </Box>
-              {/* Pulpa Mandarina */}
-              <Box
-                bg="white"
-                p={6}
-                rounded="lg"
-                shadow="sm"
-                textAlign="center"
-                mx="auto"
-                maxW="320px"
-              >
-                 {/* ✅ 1. Reemplazado <img> con <Image> */}
-                <Box
-                  position="relative" 
-                  h="200px"
-                  bg="gray.200"
-                  rounded="md"
-                  mb={4}
-                  overflow="hidden"
-                >
-                  <Image 
-                    src="/images/products/pulaMandarina.png" 
-                    alt="Pulpa Mandarina" 
-                    fill={true} 
-                    style={{ objectFit: 'contain' }} 
-                  />
-                </Box>
-                <Text fontWeight="semibold" mb={2}>
-                  Pulpa Mandarina
-                </Text>
-                <Text color="gray.600" mb={4}>
-                  Pulpa natural sabor mandarina
-                </Text>
-                <Text fontSize="lg" fontWeight="bold" color="blue.600">
-                  Bs 5
-                </Text>
-              </Box>
-            </SimpleGrid>
-          </Box>
-        </VStack>
-      </Container>
-      <PublicFooter />
-    </Box>
+              {productData.map((product, index) => (
+                <ProductCard
+                  key={index}
+                  title={product.title}
+                  description={product.description}
+                  price={product.price}
+                  imageSrc={product.imageSrc}
+                  imageAlt={product.imageAlt}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <PublicFooter /> {/* El error desaparece con la importación */}
+    </div>
   );
 }

@@ -1,13 +1,21 @@
-"use client";
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
+// app/providers.tsx
+'use client';
+
 import { SessionProvider } from "next-auth/react";
+import { ThemeProvider } from "next-themes"; // Importa ThemeProvider
 
 export function Providers({ children }: { children: React.ReactNode }) {
-    return (
-        <SessionProvider>
-            <ChakraProvider value={defaultSystem}>
-                {children}
-            </ChakraProvider>
-        </SessionProvider>
-    );
+  return (
+    <SessionProvider>
+      {/* Envuelve con ThemeProvider */}
+      <ThemeProvider
+        attribute="class" // Usa clases CSS para el tema (estándar con Tailwind)
+        defaultTheme="system" // Usa el tema del sistema por defecto
+        enableSystem // Permite cambiar entre claro/oscuro/sistema
+        disableTransitionOnChange // Evita transiciones bruscas al cambiar tema
+      >
+        {children}
+      </ThemeProvider>
+    </SessionProvider>
+  );
 }

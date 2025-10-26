@@ -1,3 +1,5 @@
+// .eslintrc.js (o el nombre de tu archivo de configuración de ESLint)
+
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FlatCompat } from "@eslint/eslintrc";
@@ -18,12 +20,13 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "tailwind.config.js",
+      "postcss.config.js",
     ],
   },
   {
     files: ["**/*.ts", "**/*.tsx"], 
     rules: {
-      // 💡 Esto ignora cualquier variable que comience con '_' (por ejemplo, 'password: _')
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -33,6 +36,23 @@ const eslintConfig = [
       ],
     },
   },
+  {
+    files: ["**/*.config.js", "**/*.config.cjs"], 
+    languageOptions: {
+      globals: {
+        require: "readonly", 
+        module: "writable",
+        exports: "writable",
+      },
+    },
+    rules: {
+      "import/no-commonjs": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-var-requires": "off",
+      "import/extensions": "off", 
+    }
+  },
+
 ];
 
 export default eslintConfig;

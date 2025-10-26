@@ -1,79 +1,71 @@
-'use client'
+'use client';
 
-import { Box, Grid, Text, VStack } from '@chakra-ui/react'
-import StatsCard from '@/components/ui/StatsCard'
-import { FiUsers, FiPackage, FiDollarSign, FiTrendingUp } from 'react-icons/fi'
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
-export default function AdminDashboard() {
-  const stats = [
-    {
-      title: 'Total Users',
-      value: '156',
-      change: { value: '+12%', type: 'increase' as const },
-      icon: <FiUsers />
-    },
-    {
-      title: 'Products',
-      value: '89',
-      change: { value: '+5%', type: 'increase' as const },
-      icon: <FiPackage />
-    },
-    {
-      title: 'Revenue',
-      value: '$12,426',
-      change: { value: '+18%', type: 'increase' as const },
-      icon: <FiDollarSign />
-    },
-    {
-      title: 'Growth',
-      value: '24%',
-      change: { value: '+2%', type: 'increase' as const },
-      icon: <FiTrendingUp />
-    }
-  ]
+// --- Tipos Corregidos con readonly ---
+interface StatsCardProps {
+  // ✅ AÑADIDO: 'readonly' explícito para satisfacer al linter estricto
+  readonly title: string; 
+  readonly value: string | number;
+  readonly change?: { 
+    readonly value: string;
+    readonly type: 'increase' | 'decrease';
+  };
+  readonly icon?: React.ReactNode; 
+}
+
+// --- Componente ---
+export default function StatsCard({ title, value, change, icon }: StatsCardProps) {
+  const isIncrease = change?.type === 'increase';
 
   return (
-    <VStack gap={6} align="stretch">
-      <Box>
-        <Text fontSize="2xl" fontWeight="bold" mb={2}>
-          Admin Dashboard
-        </Text>
-        <Text color="gray.600">
-          Overview of your business metrics and performance
-        </Text>
-      </Box>
-
-      <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={6}>
-        {stats.map((stat, index) => (
-          <StatsCard
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            change={stat.change}
-            icon={stat.icon}
-          />
-        ))}
-      </Grid>
-
-      <Grid templateColumns="repeat(auto-fit, minmax(400px, 1fr))" gap={6}>
-        <Box bg="white" p={6} rounded="lg" shadow="sm" border="1px" borderColor="gray.200">
-          <Text fontSize="lg" fontWeight="semibold" mb={4}>
-            Recent Activity
-          </Text>
-          <Text color="gray.500">
-            Activity feed will be displayed here
-          </Text>
-        </Box>
-
-        <Box bg="white" p={6} rounded="lg" shadow="sm" border="1px" borderColor="gray.200">
-          <Text fontSize="lg" fontWeight="semibold" mb={4}>
-            Quick Actions
-          </Text>
-          <Text color="gray.500">
-            Quick action buttons will be displayed here
-          </Text>
-        </Box>
-      </Grid>
-    </VStack>
-  )
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 dark:bg-card">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between"> 
+          
+          {/* Columna de Texto y Valor */}
+          <div className="flex flex-col">
+            
+            <p className="text-sm font-medium text-muted-foreground mb-1">
+              {title}
+            </p>
+            
+            <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+              {value}
+            </h2>
+            
+            {/* Indicador de Cambio */}
+            {change && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "mt-2 text-xs w-fit flex items-center gap-1",
+                  isIncrease 
+                    ? "border-green-300 text-green-700 bg-green-50 dark:border-green-600 dark:bg-green-900/20" 
+                    : "border-red-300 text-red-700 bg-red-50 dark:border-red-600 dark:bg-red-900/20"
+                )}
+              >
+                {/* Icono de Lucide para el cambio */}
+                {isIncrease 
+                  ? <ArrowUpRight className="h-3 w-3" /> 
+                  : <ArrowDownRight className="h-3 w-3" />
+                }
+                {change.value}
+              </Badge>
+            )}
+          </div>
+          
+          {/* Columna de Icono */}
+          {icon && (
+            <div className="text-3xl text-muted-foreground/60 flex-shrink-0 pt-1">
+              {icon}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }

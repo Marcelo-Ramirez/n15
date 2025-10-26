@@ -1,74 +1,84 @@
-'use client'
+'use client';
 
-import { Box, HStack, Text, Button } from '@chakra-ui/react'
-import { FiBell, FiSettings, FiLogOut } from 'react-icons/fi'
+import { Bell, Settings, LogOut } from 'lucide-react'; // Iconos de Lucide
+
+// Importa componentes Shadcn UI
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface SystemHeaderProps {
-  username?: string
-  role?: string
+  username?: string;
+  role?: string;
 }
 
 export default function SystemHeader({ username = 'User', role = 'admin' }: SystemHeaderProps) {
-  return (
-    <Box
-      bg="white"
-      borderBottom="1px"
-      borderColor="gray.200"
-      px={6}
-      py={4}
-      position="sticky"
-      top={0}
-      zIndex={10}
-    >
-      <HStack justify="space-between" align="center">
-        <Box>
-          <Text fontSize="lg" fontWeight="semibold">
-            System Dashboard
-          </Text>
-          <Text fontSize="sm" color="gray.600">
-            {role.charAt(0).toUpperCase() + role.slice(1)} Panel
-          </Text>
-        </Box>
 
-        <HStack gap={4}>
-          <Button variant="ghost" size="sm">
-            <FiBell />
+  const userInitial = username.charAt(0).toUpperCase();
+  const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+
+  return (
+    // Reemplaza Box con header. Sticky, Shadow y zIndex
+    <header
+      className="bg-background dark:bg-card border-b dark:border-gray-800 px-6 py-3 shadow-md sticky top-0 z-50"
+    >
+      {/* Reemplaza HStack principal con div flex justify-between */}
+      <div className="flex items-center justify-between h-auto">
+
+        {/* 1. Sección de Título y Subtítulo (Izquierda) */}
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">
+            System Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {capitalizedRole} Panel
+          </p>
+        </div>
+
+        {/* 2. Sección de Acciones y Perfil (Derecha) */}
+        <div className="flex items-center space-x-4">
+          
+          {/* Botones de Acción (Bell & Settings) */}
+          <Button variant="ghost" size="icon" aria-label="Notifications">
+            <Bell className="h-5 w-5 text-muted-foreground" />
           </Button>
           
-          <Button variant="ghost" size="sm">
-            <FiSettings />
+          <Button variant="ghost" size="icon" aria-label="Settings">
+            <Settings className="h-5 w-5 text-muted-foreground" />
           </Button>
 
-          <HStack gap={2}>
-            <Box
-              w={8}
-              h={8}
-              bg="blue.500"
-              color="white"
-              rounded="full"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              fontSize="sm"
-              fontWeight="bold"
-            >
-              {username.charAt(0).toUpperCase()}
-            </Box>
-            <Box>
-              <Text fontSize="sm" fontWeight="medium">
-                {username}
-              </Text>
-              <Text fontSize="xs" color="gray.500">
-                {role}
-              </Text>
-            </Box>
-          </HStack>
+          {/* Separador vertical sutil */}
+          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1" />
+          
+          {/* Info de Usuario y Avatar */}
+          <div className="flex items-center space-x-2">
+            
+            {/* Avatar */}
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
+                {userInitial}
+              </AvatarFallback>
+            </Avatar>
 
-          <Button variant="ghost" size="sm" colorScheme="red">
-            <FiLogOut />
+            {/* Nombre y Rol */}
+            <div className="hidden sm:block"> {/* Ocultar en móvil para ahorrar espacio */}
+              <p className="text-sm font-medium text-foreground">{username}</p>
+              <p className="text-xs text-muted-foreground">{role}</p>
+            </div>
+            
+          </div>
+
+          {/* Botón de Logout */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            aria-label="Cerrar Sesión"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+            onClick={() => { console.log('Cerrar Sesión'); /* signOut() logic here */ }}
+          >
+            <LogOut className="h-5 w-5" />
           </Button>
-        </HStack>
-      </HStack>
-    </Box>
-  )
+        </div>
+      </div>
+    </header>
+  );
 }

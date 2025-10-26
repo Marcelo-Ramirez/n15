@@ -1,19 +1,13 @@
 'use client'
 
-import {
-  Box,
-  Button,
-  Input,
-  VStack,
-  HStack,
-  Text,
-  Container,
-  Link,
-  Heading
-} from '@chakra-ui/react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import NextLink from 'next/link'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface FormData {
   userName: string
@@ -47,43 +41,36 @@ export default function RegisterPage() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
-    // Validar userName
     if (!formData.userName.trim()) {
       newErrors.userName = 'El nombre de usuario es requerido'
     } else if (formData.userName.length < 3) {
       newErrors.userName = 'El nombre de usuario debe tener al menos 3 caracteres'
     }
 
-    // Validar name
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre completo es requerido'
     }
 
-    // Validar phone
     if (!formData.phone.trim()) {
       newErrors.phone = 'El teléfono es requerido'
     }
 
-    // Validar password
     if (!formData.password) {
       newErrors.password = 'La contraseña es requerida'
     } else if (formData.password.length < 6) {
       newErrors.password = 'La contraseña debe tener al menos 6 caracteres'
     }
 
-    // Validar confirmPassword
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Confirmar contraseña es requerido'
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Las contraseñas no coinciden'
     }
 
-    // Validar role
     if (!formData.role) {
       newErrors.role = 'El rol es requerido'
     }
 
-    // Validar registrationKey
     if (!formData.registrationKey.trim()) {
       newErrors.registrationKey = 'La clave de registro es requerida'
     }
@@ -92,18 +79,24 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleInputChange = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [field]: e.target.value
     }))
     
-    // Limpiar error del campo cuando el usuario empieza a escribir
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
         [field]: ''
       }))
+    }
+  }
+
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({ ...prev, role: value }))
+    if (errors.role) {
+      setErrors(prev => ({ ...prev, role: '' }))
     }
   }
 
@@ -132,7 +125,6 @@ export default function RegisterPage() {
         throw new Error(data.message || 'Error en el registro')
       }
 
-      // Registro exitoso, redirigir al login
       router.push('/sys/login?message=Registro exitoso. Por favor inicia sesión.')
     } catch (error) {
       setServerError(error instanceof Error ? error.message : 'Error desconocido')
@@ -142,198 +134,122 @@ export default function RegisterPage() {
   }
 
   return (
-    <Box
-      minH="100vh"
-      bg="gray.50"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      p={4}
-    >
-      <Container maxW="md">
-        <Box
-          bg="white"
-          p={8}
-          borderRadius="lg"
-          boxShadow="md"
-          border="1px"
-          borderColor="gray.200"
-        >
-          <VStack gap={6} align="stretch">
-            <VStack gap={2}>
-              <Heading size="lg" textAlign="center" color="gray.700">
-                Registro de Usuario del Sistema
-              </Heading>
-              <Text color="gray.600" textAlign="center">
-                Complete la información para crear una cuenta
-              </Text>
-            </VStack>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Registro de Usuario del Sistema</CardTitle>
+          <CardDescription>Complete la información para crear una cuenta</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {serverError && (
+            <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
+              {serverError}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="userName">Nombre de Usuario</Label>
+              <Input
+                id="userName"
+                type="text"
+                value={formData.userName}
+                onChange={handleInputChange('userName')}
+                placeholder="Ingrese su nombre de usuario"
+                className={errors.userName ? 'border-destructive' : ''}
+              />
+              {errors.userName && <p className="text-destructive text-sm mt-1">{errors.userName}</p>}
+            </div>
 
-            {serverError && (
-              <Box bg="red.100" color="red.800" p={3} borderRadius="md">
-                {serverError}
-              </Box>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre Completo</Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={handleInputChange('name')}
+                placeholder="Ingrese su nombre completo"
+                className={errors.name ? 'border-destructive' : ''}
+              />
+              {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
+            </div>
 
-            <form onSubmit={handleSubmit}>
-              <VStack gap={4}>
-                <Box w="full">
-                  <Text mb={1} fontWeight="medium" color="gray.700">
-                    Nombre de Usuario
-                  </Text>
-                  <Input
-                    type="text"
-                    value={formData.userName}
-                    onChange={handleInputChange('userName')}
-                    placeholder="Ingrese su nombre de usuario"
-                    borderColor={errors.userName ? 'red.300' : 'gray.300'}
-                  />
-                  {errors.userName && (
-                    <Text color="red.500" fontSize="sm" mt={1}>
-                      {errors.userName}
-                    </Text>
-                  )}
-                </Box>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Teléfono</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleInputChange('phone')}
+                placeholder="Ingrese su número de teléfono"
+                className={errors.phone ? 'border-destructive' : ''}
+              />
+              {errors.phone && <p className="text-destructive text-sm mt-1">{errors.phone}</p>}
+            </div>
 
-                <Box w="full">
-                  <Text mb={1} fontWeight="medium" color="gray.700">
-                    Nombre Completo
-                  </Text>
-                  <Input
-                    type="text"
-                    value={formData.name}
-                    onChange={handleInputChange('name')}
-                    placeholder="Ingrese su nombre completo"
-                    borderColor={errors.name ? 'red.300' : 'gray.300'}
-                  />
-                  {errors.name && (
-                    <Text color="red.500" fontSize="sm" mt={1}>
-                      {errors.name}
-                    </Text>
-                  )}
-                </Box>
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange('password')}
+                placeholder="Ingrese su contraseña"
+                className={errors.password ? 'border-destructive' : ''}
+              />
+              {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
+            </div>
 
-                <Box w="full">
-                  <Text mb={1} fontWeight="medium" color="gray.700">
-                    Teléfono
-                  </Text>
-                  <Input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange('phone')}
-                    placeholder="Ingrese su número de teléfono"
-                    borderColor={errors.phone ? 'red.300' : 'gray.300'}
-                  />
-                  {errors.phone && (
-                    <Text color="red.500" fontSize="sm" mt={1}>
-                      {errors.phone}
-                    </Text>
-                  )}
-                </Box>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange('confirmPassword')}
+                placeholder="Confirme su contraseña"
+                className={errors.confirmPassword ? 'border-destructive' : ''}
+              />
+              {errors.confirmPassword && <p className="text-destructive text-sm mt-1">{errors.confirmPassword}</p>}
+            </div>
 
-                <Box w="full">
-                  <Text mb={1} fontWeight="medium" color="gray.700">
-                    Contraseña
-                  </Text>
-                  <Input
-                    type="password"
-                    value={formData.password}
-                    onChange={handleInputChange('password')}
-                    placeholder="Ingrese su contraseña"
-                    borderColor={errors.password ? 'red.300' : 'gray.300'}
-                  />
-                  {errors.password && (
-                    <Text color="red.500" fontSize="sm" mt={1}>
-                      {errors.password}
-                    </Text>
-                  )}
-                </Box>
+            <div className="space-y-2">
+              <Label htmlFor="role">Rol</Label>
+              <Select onValueChange={handleRoleChange} value={formData.role}>
+                <SelectTrigger className={errors.role ? 'border-destructive' : ''}>
+                  <SelectValue placeholder="Seleccione un rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="stockroom">Almacén</SelectItem>
+                  <SelectItem value="sales">Ventas</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.role && <p className="text-destructive text-sm mt-1">{errors.role}</p>}
+            </div>
 
-                <Box w="full">
-                  <Text mb={1} fontWeight="medium" color="gray.700">
-                    Confirmar Contraseña
-                  </Text>
-                  <Input
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange('confirmPassword')}
-                    placeholder="Confirme su contraseña"
-                    borderColor={errors.confirmPassword ? 'red.300' : 'gray.300'}
-                  />
-                  {errors.confirmPassword && (
-                    <Text color="red.500" fontSize="sm" mt={1}>
-                      {errors.confirmPassword}
-                    </Text>
-                  )}
-                </Box>
+            <div className="space-y-2">
+              <Label htmlFor="registrationKey">Clave de Registro</Label>
+              <Input
+                id="registrationKey"
+                type="password"
+                value={formData.registrationKey}
+                onChange={handleInputChange('registrationKey')}
+                placeholder="Ingrese la clave de registro"
+                className={errors.registrationKey ? 'border-destructive' : ''}
+              />
+              {errors.registrationKey && <p className="text-destructive text-sm mt-1">{errors.registrationKey}</p>}
+            </div>
 
-                <Box w="full">
-                  <Text mb={1} fontWeight="medium" color="gray.700">
-                    Rol
-                  </Text>
-                  <select
-                    style={{
-                      width: '100%',
-                      padding: '8px',
-                      border: `1px solid ${errors.role ? '#FC8181' : '#D2D6DC'}`,
-                      borderRadius: '6px',
-                      backgroundColor: 'white'
-                    }}
-                    value={formData.role}
-                    onChange={handleInputChange('role')}
-                  >
-                    <option value="">Seleccione un rol</option>
-                    <option value="admin">Administrador</option>
-                    <option value="stockroom">Almacén</option>
-                    <option value="sales">Ventas</option>
-                  </select>
-                  {errors.role && (
-                    <Text color="red.500" fontSize="sm" mt={1}>
-                      {errors.role}
-                    </Text>
-                  )}
-                </Box>
-
-                <Box w="full">
-                  <Text mb={1} fontWeight="medium" color="gray.700">
-                    Clave de Registro
-                  </Text>
-                  <Input
-                    type="password"
-                    value={formData.registrationKey}
-                    onChange={handleInputChange('registrationKey')}
-                    placeholder="Ingrese la clave de registro"
-                    borderColor={errors.registrationKey ? 'red.300' : 'gray.300'}
-                  />
-                  {errors.registrationKey && (
-                    <Text color="red.500" fontSize="sm" mt={1}>
-                      {errors.registrationKey}
-                    </Text>
-                  )}
-                </Box>
-
-                <Button
-                  type="submit"
-                  colorScheme="blue"
-                  size="lg"
-                  w="full"
-                  loading={isLoading}
-                  loadingText="Registrando..."
-                >
-                  Registrarse
-                </Button>
-              </VStack>
-            </form>
-
-            <HStack justify="center" gap={2}>
-              <Text color="gray.600">¿Ya tienes una cuenta?</Text>
-              <Link asChild color="blue.500" fontWeight="medium">
-                <NextLink href="/sys/login">Iniciar Sesión</NextLink>
-              </Link>
-            </HStack>
-          </VStack>
-        </Box>
-      </Container>
-    </Box>
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? 'Registrando...' : 'Registrarse'}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-center items-center gap-2">
+          <p className="text-sm text-gray-600 dark:text-gray-400">¿Ya tienes una cuenta?</p>
+          <NextLink href="/sys/login" className="text-sm text-primary hover:underline">Iniciar Sesión</NextLink>
+        </CardFooter>
+      </Card>
+    </div>
   )
 }

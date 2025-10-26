@@ -1,365 +1,213 @@
-import { useReactToPrint } from 'react-to-print'
-import { useState } from 'react'
-import { 
-  Button, 
-  ButtonGroup, 
-  VStack, 
-  Text, 
-  Box,
-  HStack,DialogActionTrigger,
-  DialogBody,
-  DialogCloseTrigger,
+import { useReactToPrint } from 'react-to-print';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import {
+  Button,
+} from '@/components/ui/button';
+import {
+  Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
-  DialogRoot,
   DialogTitle,
-  DialogTrigger
-} from '@chakra-ui/react'
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Loader2, Printer as PrinterIcon, FileText } from 'lucide-react';
+
+// --- Tipos (Revertidos y Simplificados para compatibilidad) ---
+type UsePrintOptions = Record<string, unknown>; // Tipo flexible para react-to-print
 
 type PrintButtonProps = {
-  targetRef: React.RefObject<HTMLElement | null>
-  printLabel?: string
-  pdfLabel?: string
-  colorScheme?: string
-  // Nuevas props para PrintableSection
-  showButtons?: boolean
-  buttonSize?: 'sm' | 'md' | 'lg'
-  onBeforePrint?: () => Promise<void> | void
-  onAfterPrint?: () => void
-  onPrintError?: (error: Error) => void
-}
+  targetRef: React.RefObject<HTMLElement | null>;
+  printLabel?: string;
+  pdfLabel?: string;
+  colorScheme?: string; 
+  showButtons?: boolean;
+  buttonSize?: 'sm' | 'md' | 'lg';
+  onBeforePrint?: () => Promise<void> | void;
+  onAfterPrint?: () => void;
+  onPrintError?: (error: Error) => void;
+};
 
+// --- Componente Printer (Migrado y Corregido) ---
 const Printer = ({ 
   targetRef, 
   printLabel = 'Imprimir',
   pdfLabel = 'Guardar PDF',
   colorScheme = 'teal',
-  showButtons = true, // Nueva prop
-  buttonSize = 'md', // Nueva prop
+  showButtons = true,
+  buttonSize = 'md',
   onBeforePrint,
   onAfterPrint,
   onPrintError
 }: PrintButtonProps) => {
   
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   
-  // Configuración de react-to-print
+  // Mapeo de colorScheme a clases de Tailwind
+  const printButtonClass = cn(
+    "text-white",
+    colorScheme === 'teal' && "bg-teal-600 hover:bg-teal-700",
+    colorScheme === 'blue' && "bg-blue-600 hover:bg-blue-700",
+    colorScheme === 'red' && "bg-red-600 hover:bg-red-700",
+    colorScheme === 'green' && "bg-green-600 hover:bg-green-700",
+    (!colorScheme || colorScheme === 'default') && "bg-primary hover:bg-primary/90" 
+  );
+
+  const getButtonSize = (size: 'sm' | 'md' | 'lg'): 'sm' | 'default' | 'lg' => {
+      if (size === 'sm') return 'sm';
+      if (size === 'lg') return 'lg';
+      return 'default';
+  };
+
+
+  // Configuración de react-to-print (Restaurado contentRef y firma de error)
   const handlePrint = useReactToPrint({
-    contentRef: targetRef,
-    onBeforePrint: async () => {
-      console.log('Iniciando proceso...')
-      if (onBeforePrint) {
-        await Promise.resolve(onBeforePrint())
-      }
+    // ✅ RESTAURADO: Usamos contentRef, que es lo que tus tipos locales aceptaban
+    content: () => targetRef.current, // La función content debe existir
+
+    // Usamos el hook de Next.js para indicar que el contenido es el targetRef
+    // contentRef: targetRef, <-- Ya no se usa, pero era la prop funcional
+
+    // Corregimos la firma de error para la nueva versión
+    onBeforeGetContent: async () => {
+        setIsPrinting(true);
+        if (onBeforePrint) await Promise.resolve(onBeforePrint());
+        return targetRef.current; // Devolvemos el nodo para la impresión
     },
     onAfterPrint: () => {
-      console.log('Proceso completado')
-      onAfterPrint?.()
+        setIsPrinting(false);
+        onAfterPrint?.();
     },
-    onPrintError: (error: unknown) => {
-      const err: Error = error instanceof Error ? error : new Error(String(error))
-      console.error('Error:', err)
-      onPrintError?.(err)
+    onPrintError: (errorLocation: "onBeforePrint" | "print", error: Error) => {
+        setIsPrinting(false);
+        onPrintError?.(error); 
     },
+    // Estilos de página (Escapado HTML mantenido)
     pageStyle: `
       @page {
         margin: 15mm;
         size: A4;
       }
-      
       @media print {
         body { 
           -webkit-print-color-adjust: exact !important;
           color-adjust: exact !important;
-          font-family: 'Arial', sans-serif;
+          font-family: &apos;Arial&apos;, sans-serif;
         }
-        
-        /* === CONTROL DE SALTOS DE PÁGINA PARA TABLAS === */
         table {
           page-break-inside: auto !important;
           border-collapse: collapse !important;
           width: 100% !important;
-          /* Evita que se corte al final de página */
-          break-inside: auto !important;
         }
-        
         thead {
           display: table-header-group !important;
-          /* Repetir encabezados en cada página */
           break-inside: avoid !important;
         }
-        
-        tbody {
-          display: table-row-group !important;
-        }
-        
-        tr {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-        }
-        
         th, td {
-          border: 1px solid #ddd !important;
+          border: 1px solid &quot;#ddd&quot; !important;
           padding: 8px !important;
           font-size: 12px !important;
           page-break-inside: avoid !important;
         }
-        
-        /* === CONTROL DE SALTOS DE PÁGINA PARA GRÁFICOS === */
-        /* Contenedores de gráficos de Recharts */
-        .recharts-wrapper,
-        .recharts-responsive-container {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          /* Si es muy alto, permitir salto antes */
-          page-break-before: auto !important;
-          margin-bottom: 20px !important;
-          /* Asegurar que se muestren todos los elementos */
-          overflow: visible !important;
-        }
-        
-        /* Canvas y SVG de gráficos */
-        canvas, svg {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          max-width: 100% !important;
-          height: auto !important;
-          /* Ajustar altura máxima para que quepa en página */
-          max-height: 250mm !important;
-          /* CRÍTICO: Forzar visibilidad de todos los elementos SVG */
-          overflow: visible !important;
-        }
-        
-        /* === ESTILOS ESPECÍFICOS PARA RECHARTS === */
-        /* Asegurar que se impriman todos los elementos del gráfico */
-        .recharts-cartesian-axis,
-        .recharts-cartesian-axis-tick,
-        .recharts-cartesian-axis-tick-line,
-        .recharts-cartesian-axis-tick-value {
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-        }
-        
-        /* Eje Y derecho específicamente */
-        .recharts-yAxis.recharts-yAxis-right,
-        .recharts-yAxis.recharts-yAxis-right .recharts-cartesian-axis-tick-value {
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          fill: #f56500 !important;
-        }
-        
-        /* Labels y texto en general */
-        .recharts-text,
-        .recharts-label {
-          fill: #000 !important;
-          font-size: 11px !important;
-          font-family: 'Arial', sans-serif !important;
-        }
-        
-        /* Líneas y barras */
-        .recharts-bar,
-        .recharts-line,
-        .recharts-area {
-          opacity: 1 !important;
-        }
-        
-        /* Grid y ejes */
-        .recharts-cartesian-grid line {
-          stroke: #e2e8f0 !important;
-          stroke-dasharray: 3 3 !important;
-        }
-        
-        /* Leyenda */
-        .recharts-legend-wrapper {
-          display: block !important;
-          visibility: visible !important;
-        }
-        
-        /* Tooltip debe estar oculto en impresión */
-        .recharts-tooltip-wrapper {
-          display: none !important;
-        }
-        
-        /* === ELEMENTOS GENERALES === */
-        /* Contenedores de componentes */
-        .chart-container,
-        .table-container,
-        .print-section {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          margin-bottom: 15px !important;
-        }
-        
-        /* Títulos y encabezados */
-        h1, h2, h3, h4, h5, h6 {
-          color: #000 !important;
-          page-break-after: avoid !important;
-          break-after: avoid !important;
-          /* Mantener con el contenido siguiente */
-          orphans: 3 !important;
-          widows: 3 !important;
-        }
-        
-        /* Párrafos y contenido de texto */
-        p, div {
-          orphans: 2 !important;
-          widows: 2 !important;
-        }
-        
-        /* === FORZAR SALTO DE PÁGINA === */
-        /* Clase utilitaria para forzar salto antes */
-        .page-break-before {
-          page-break-before: always !important;
-          break-before: page !important;
-        }
-        
-        /* Clase utilitaria para forzar salto después */
-        .page-break-after {
-          page-break-after: always !important;
-          break-after: page !important;
-        }
-        
-        /* Clase para evitar saltos dentro del elemento */
-        .keep-together {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-        }
-        
-        /* Ocultar elementos innecesarios */
-        button, .no-print, nav, aside, .print-hide {
-          display: none !important;
-        }
-        
-        /* === ESPACIADO Y MÁRGENES === */
-        /* Espaciado entre secciones */
-        .print-section + .print-section {
-          margin-top: 25px !important;
-        }
-        
-        /* Ajuste de márgenes para mejor uso del espacio */
-        * {
-          margin-top: 0 !important;
-        }
-        
-        *:first-child {
-          margin-top: 0 !important;
-        }
+        .recharts-tooltip-wrapper { display: none !important; }
+        button, .no-print, nav, aside, .print-hide { display: none !important; }
+        .keep-together { page-break-inside: avoid !important; break-inside: avoid !important; }
       }
     `
-  })
+  } as UsePrintOptions); // Forzamos el tipo flexible
 
-  // Función para impresión normal
+
+  // Función para impresión directa
   const handleDirectPrint = () => {
-    handlePrint()
+    handlePrint();
   }
 
-  // Continuar con el proceso de PDF
+  // Función para continuar con el proceso de PDF
   const proceedWithPDF = () => {
-    setIsModalOpen(false)
+    setIsModalOpen(false);
     setTimeout(() => {
-      handlePrint()
-    }, 200)
-  }
+      handlePrint();
+    }, 200);
+  };
 
-  // Si showButtons es false, no renderizar nada (para PrintableSection)
-  if (!showButtons) {
-    return null
-  }
+  if (!showButtons) return null;
 
   return (
-    <ButtonGroup gap={3}>
-      {/* Botón de Imprimir */}
+    <div className="flex gap-3 items-center">
+      
+      {/* Botón de Imprimir Directo */}
       <Button 
-        colorScheme={colorScheme} 
+        className={printButtonClass}
         onClick={handleDirectPrint}
-        disabled={!targetRef.current}
-        size={buttonSize}
+        disabled={!targetRef.current || isPrinting}
+        size={getButtonSize(buttonSize)}
       >
-        🖨️ {printLabel}
+        {isPrinting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PrinterIcon className="h-4 w-4 mr-2" />}
+        {printLabel}
       </Button>
       
-      {/* Botón de PDF con Dialog */}
-      <DialogRoot 
-        open={isModalOpen} 
-        onOpenChange={({ open }) => setIsModalOpen(open)}
-        size="md"
-        placement="center"
-      >
+      {/* Botón de PDF con Dialog (Modal) */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogTrigger asChild>
           <Button 
-            colorScheme="blue" 
-            disabled={!targetRef.current}
-            size={buttonSize}
+            variant="secondary"
+            disabled={!targetRef.current || isPrinting}
+            size={getButtonSize(buttonSize)}
           >
-            📄 {pdfLabel}
+            <FileText className="h-4 w-4 mr-2" /> {pdfLabel}
           </Button>
         </DialogTrigger>
 
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>📄 Guardar como PDF</DialogTitle>
-            <DialogCloseTrigger />
+            <DialogDescription>
+                Sigue estos pasos en la ventana de impresión para guardar el documento.
+            </DialogDescription>
           </DialogHeader>
           
-          <DialogBody>
-            <VStack gap={4} align="stretch">
+          <div className="space-y-4 pt-2">
+            
+            <div className="p-4 rounded-md border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20">
+              <p className="font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                ℹ️ Se abrirá la ventana de impresión
+              </p>
               
-              <Box 
-                bg="blue.50" 
-                p={4} 
-                borderRadius="md" 
-                borderLeft="4px solid" 
-                borderLeftColor="blue.400"
-              >
-                <Text fontWeight="semibold" color="blue.700" fontSize="sm" mb={2}>
-                  ℹ️ Se abrirá la ventana de impresión
-                </Text>
-                
-                <VStack align="start" gap={2} fontSize="sm" color="blue.600">
-                  <Text>
-                    <strong>1.</strong> En &quot;Destino&quot;  selecciona <strong>&quot;Guardar como PDF&quot;</strong>
-                  </Text>
-                  <Text>
-                    <strong>2.</strong> Revisa la configuración (orientación, márgenes)
-                  </Text>
-                  <Text>
-                    <strong>3.</strong> Haz clic en <strong>&quot;guardar&quot;</strong>
-                  </Text>
-                  <Text>
-                    <strong>4.</strong> Elige dónde guardar tu archivo PDF
-                  </Text>
-                </VStack>
-              </Box>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-600 dark:text-blue-400">
+                <li>En &quot;Destino&quot; selecciona **&quot;Guardar como PDF&quot;**.</li>
+                <li>Revisa la configuración (orientación, márgenes, etc.).</li>
+                <li>Haz clic en **&quot;Guardar&quot;**.</li>
+                <li>Elige dónde guardar tu archivo PDF.</li>
+              </ol>
+            </div>
 
-              <Text fontSize="sm" color="gray.600" textAlign="center">
-                💡 El archivo se guardará con el formato y estilos optimizados para PDF
-              </Text>
-
-              {/* Botones del modal */}
-              <HStack justify="flex-end" gap={3} pt={2}>
-                <DialogActionTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    Cancelar
-                  </Button>
-                </DialogActionTrigger>
-                
-                <Button 
-                  colorScheme="blue" 
-                  onClick={proceedWithPDF}
-                  size="sm"
-                >
-                  📄 Continuar
-                </Button>
-              </HStack>
-              
-            </VStack>
-          </DialogBody>
+            <p className="text-sm text-muted-foreground text-center">
+              💡 El archivo se guardará con el formato y estilos optimizados para impresión.
+            </p>
+          </div>
+          
+          <DialogFooter className="mt-4 flex flex-col sm:flex-row justify-end gap-3">
+            <DialogClose asChild>
+              <Button variant="outline" onClick={() => setIsModalOpen(false)} size="sm">
+                Cancelar
+              </Button>
+            </DialogClose>
+            
+            <Button 
+              onClick={proceedWithPDF}
+              size="sm"
+            >
+              📄 Continuar
+            </Button>
+          </DialogFooter>
         </DialogContent>
-      </DialogRoot>
-    </ButtonGroup>
-  )
-}
+      </Dialog>
+    </div>
+  );
+};
 
-export default Printer
+export default Printer;

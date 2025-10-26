@@ -1,11 +1,25 @@
 "use client";
 
-import { Box, Heading, Text, VStack, HStack, Button, Input, Link } from "@chakra-ui/react";
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import NextLink from "next/link";
+import Link from "next/link"; // Usa Link de Next.js
 import { signIn, useSession, type SignInResponse } from "next-auth/react";
+import { Loader2 } from "lucide-react"; // Icono de carga
 
+// Importa componentes Shadcn UI
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+// --- Tipos y Helpers (sin cambios) ---
 type UserSession = {
   role?: string;
   requires2FA?: boolean;
@@ -17,6 +31,7 @@ const roleToPath: { [key: string]: string } = {
     admin: 'admin',
 };
 
+// --- Componente LoginForm con Shadcn UI ---
 function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,14 +40,15 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
+  // Lógica de redirección (sin cambios)
   const getRedirectUrl = useCallback((role: string) => {
     const callbackUrl = searchParams.get('callbackUrl');
     if (callbackUrl) return callbackUrl;
-
     const pathRole = roleToPath[role] || role;
     return `/sys/${pathRole}/user`;
-  }, [searchParams])
+  }, [searchParams]);
 
+  // Efecto para redireccionar al autenticar (sin cambios)
   useEffect(() => {
     const user = session?.user as unknown as UserSession | undefined;
     if (status === 'authenticated' && user) {
@@ -45,6 +61,7 @@ function LoginForm() {
     }
   }, [status, session, getRedirectUrl, router]);
 
+  // Manejador del submit (sin cambios en la lógica, solo el toast si lo usaras)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -58,59 +75,79 @@ function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Credenciales inválidas");
+      setError("Credenciales inválidas. Inténtalo de nuevo."); // Mensaje más descriptivo
     }
-    // El bloque 'else' se elimina.
-    // El 'useEffect' de arriba se encargará de la redirección
-    // cuando detecte el cambio de 'status' a 'authenticated'.
+    // No hay 'else', el useEffect maneja la redirección exitosa
   };
 
+  // --- JSX con Shadcn UI y Tailwind ---
   return (
-    <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="gray.900">
-      <VStack gap={8} w="full" maxW="400px" p={8}>
-        <Box textAlign="center">
-            <Heading as="h1" size="lg" mb={2} color="white">System Access</Heading>
-            <Text color="gray.400">Inicia sesión para acceder al sistema</Text>
-        </Box>
-
-        <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-            <VStack gap={4} align="stretch">
+    // Contenedor principal centrado
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-950 px-4">
+      <Card className="w-full max-w-sm shadow-lg"> {/* Ancho máximo para el Card */}
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">System Access</CardTitle>
+          <CardDescription>Inicia sesión para acceder al sistema</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4"> {/* Espaciado entre elementos del form */}
+            {/* Campo Usuario */}
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuario</Label>
               <Input
-                placeholder="Usuario"
+                id="username"
+                placeholder="tu_usuario"
                 value={formData.userName}
                 onChange={e => setFormData(d => ({ ...d, userName: e.target.value }))}
                 required
+                autoComplete="username" // Ayuda al autocompletado del navegador
               />
+            </div>
+            {/* Campo Contraseña */}
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
               <Input
-                placeholder="Contraseña"
+                id="password"
                 type="password"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={e => setFormData(d => ({ ...d, password: e.target.value }))}
                 required
+                autoComplete="current-password"
               />
-            </VStack>
-            {error && <Text color="red.400" mt={4}>{error}</Text>}
-        <Button type="submit" colorScheme="blue" loading={loading} loadingText={"Entrando..."} mt={4} w="full">
-          Entrar
-        </Button>
-        </form>
-
-        <HStack justify="space-between" w="full">
-          <Link as={NextLink} href="/sys/register" color="blue.300">
+            </div>
+            {/* Mensaje de Error */}
+            {error && <p className="text-sm text-destructive font-medium">{error}</p>}
+            {/* Botón de Submit */}
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                'Entrar'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row justify-between items-center text-sm pt-4 border-t"> {/* Footer responsivo */}
+          <Link href="/sys/register" className="text-primary hover:underline font-medium mb-2 sm:mb-0">
             ¿No tienes cuenta? Regístrate
           </Link>
-          <Link as={NextLink} href="/" color="gray.400">
+          <Link href="/" className="text-muted-foreground hover:underline">
             Volver al inicio
           </Link>
-        </HStack>
-      </VStack>
-    </Box>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 
+// Componente LoginPage que usa Suspense (sin cambios)
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div>Cargando...</div>}> {/* Añade un fallback a Suspense */}
       <LoginForm />
     </Suspense>
   );
