@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Settings } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 
 // Componentes Recharts (Mantenidos)
 import {
@@ -25,17 +24,14 @@ import {
 type ParetoData = { name: string; value: number; accumulated: number; };
 type ParetoChartProps = { data: ParetoData[]; thresholds?: { A: number; B: number; C: number }; chartHeight?: number; };
 
-// ✅ CORRECCIÓN FINAL: Tipo de props que Recharts envía a nuestros renderizadores.
-// Usamos string | number porque Recharts lo hace así, y así eliminamos el error TS2322.
 interface RechartsRenderProps {
-    x?: number | string; 
-    y?: number | string;
-    width?: number | string;
-    value?: number | string;
+    x?: unknown; 
+    y?: unknown;
+    width?: unknown;
+    value?: unknown;
     viewBox?: { y?: number; width?: number };
     color?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    payload?: any;
+    payload?: unknown;
     dataKey?: string;
 }
 
@@ -198,7 +194,7 @@ const ParetoChart = ({
         </Button>
         
         {/* Contenedor del Gráfico: Usa la variable chartHeight */}
-        <div className={cn("w-full bg-gray-50 dark:bg-gray-800 rounded-md p-2")} style={{ height: chartHeight }}>
+        <div className="w-full min-h-[300px] aspect-video bg-gray-50 dark:bg-gray-800 rounded-md p-2">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart 
               data={chartData} 

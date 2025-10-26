@@ -245,21 +245,19 @@ const InventoryABC = () => {
         </div>
         
         {/* Resumen ABC y Diagrama Pareto */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="col-span-1">
-                <h2 className="text-lg font-bold text-foreground mb-4">
-                    Resumen de Categorías
-                </h2>
-                <ABCSummary summary={summaryABC} thresholds={thresholds} />
-            </div>
+       <div className="w-full">
+  <h2 className="text-lg font-bold text-foreground mb-4">
+      Resumen de Categorías
+  </h2>
+  <ABCSummary summary={summaryABC} thresholds={thresholds} />
+</div>
 
-            <div className="col-span-1">
-                <h2 className="text-lg font-bold text-foreground mb-4">
-                    Diagrama de Pareto
-                </h2>
-                <ParetoChart data={paretoData} thresholds={thresholds} />
-            </div>
-        </div>
+<div className="w-full">
+  <h2 className="text-lg font-bold text-foreground mb-4">
+      Diagrama de Pareto
+  </h2>
+  <ParetoChart data={paretoData} thresholds={thresholds} />
+</div>
 
       </div>
     </div>
