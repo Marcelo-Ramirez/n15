@@ -1,0 +1,13 @@
+node_modules
+.next
+dist
+.git
+.gitignore
+Dockerfile
+*.log
+*.md
+.vscode
+.env.local
+.env.development
+coverage
+*.key

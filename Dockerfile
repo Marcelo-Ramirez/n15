@@ -1,40 +1,38 @@
-# --- 1. Etapa de Dependencias ---
-# Instala TODAS las dependencias (incluyendo devDependencies)
-# Es crucial copiar 'schema.prisma' para que 'npm install' genere el motor de Prisma para la plataforma correcta.
-FROM node:22-alpine AS dependencies
+# Etapa 1: Build y dependencias
+FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
 WORKDIR /app
+
 COPY package.json package-lock.json ./
-COPY prisma/schema.prisma ./prisma/
-RUN npm install
+RUN npm ci --omit=dev
 
-# --- 2. Etapa de Construcción (Builder) ---
-# Aquí se construye la app
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
-
-# ⚠️ ¡Importante! Tu script "build" usa --turbopack.
-# Turbopack es experimental y puede fallar en la compilación cruzada a ARM.
-# Si el build falla, quita "--turbopack" de tu package.json.
 RUN npm run build
 
-# --- 3. Etapa Final (Runner) ---
-# Esta es la imagen final que irá a producción
-FROM node:22-alpine AS runner
+# Etapa 2: Standalone, dependencias y empaquetado final
+FROM --platform=linux/arm64 node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copia solo los archivos 'standalone' generados
+# Copia el standalone y los assets necesarios
 COPY --from=builder /app/.next/standalone ./
-
-# Copia los assets estáticos y las imágenes
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+COPY .env .env
 
-# --- 4. Etapa de Exportación (OPCIONAL) ---
-# Esta etapa especial se usa solo si quieres exportar los archivos
-# sin el resto del sistema operativo (usando --output)
-FROM scratch AS export
-COPY --from=runner /app ./
+# Instala jq
+RUN apk add --no-cache jq
+
+# Limpia devDependencies del package.json standalone (opcional)
+RUN jq 'del(.devDependencies)' package.json > package-clean.json && mv package-clean.json package.json
+
+# Instala solo dependencias de producción necesarias para standalone
+RUN npm install --omit=dev
+
+# Genera Prisma Client para la plataforma final
+RUN npx prisma generate
+
+# Etapa 3: Exportar solo la carpeta /app (sin CMD)
+FROM scratch AS exportapp
+COPY --from=runner /app /app
