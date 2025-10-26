@@ -40,7 +40,7 @@ export function PublicFooter() {
             <div className="flex flex-col gap-2 items-center md:items-start text-sm">
               <p className="text-gray-400">info@muytunasys.com</p>
               <p className="text-gray-400">+1 234 567 8900</p>
-              <p className="text-gray-400">Ciudad de México, México</p>
+              <p className="text-gray-400">Ciudad de La Paz - Bolivia</p>
             </div>
           </div>
         </div>

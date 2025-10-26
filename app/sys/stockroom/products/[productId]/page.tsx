@@ -78,7 +78,7 @@ function ProductHistoryInner() {
   // Determina el rol basado en la URL (Mantenido)
   const isStockroomRole = typeof window !== 'undefined' && 
     globalThis.location.pathname.includes('/stockroom/');
-  const role = isStockroomRole ? 'stockroom' : 'sale';
+  const role = isStockroomRole ? 'stockroom' : 'sales';
 
   // --- Lógica de Fetch (Mantenida) ---
   const fetchHistory = useCallback(async () => {
@@ -163,7 +163,7 @@ function ProductHistoryInner() {
       { value: 'dano', label: 'Daño/Pérdida' }
     ];
 
-    if (role === 'sale') {
+    if (role === 'sales') {
       return [
         ...baseReasons,
         { value: 'venta', label: 'Venta' },
@@ -290,7 +290,7 @@ function ProductHistoryInner() {
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <p><span className="font-medium">Tipo:</span> {product.type}</p>
                 <p><span className="font-medium">Sabor:</span> {product.flavor}</p>
-                {role === 'sale' && (
+                {role === 'sales' && (
                   <p><span className="font-medium">Precio:</span> ${product.pricePerUnit?.toFixed(2) || "0.00"}</p>
                 )}
               </div>

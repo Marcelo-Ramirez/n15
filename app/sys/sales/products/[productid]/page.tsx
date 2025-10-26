@@ -1,18 +1,19 @@
-"use client";
+'use client';
 
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
-import { ArrowLeft, Plus, Loader2 } from "lucide-react"; // Iconos
+import { useEffect, useState, useCallback, Suspense } from "react";
+import { ArrowLeft, Plus, Loader2 } from "lucide-react"; 
+import { toast } from "sonner";
 
-// Importa componentes Shadcn UI
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardContent,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -29,291 +30,399 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { toast } from 'sonner';
-import { Separator } from "@/components/ui/separator"; 
+
+// Definición de interfaces
 interface ProductDetails {
-    id: number;
-    name: string;
-    type: string;
-    flavor: string;
-    currentQuantity: number;
-    pricePerUnit?: number;
+  id: number;
+  name: string;
+  type: string;
+  flavor: string;
+  currentQuantity: number; 
+  pricePerUnit: number;
 }
-
 interface Movement {
-    id: number;
-    movementType: string;
-    reason?: string;
-    quantity: number;
-    createdAt: string;
-    user: {
-        name: string;
-    };
+  id: number;
+  movementType: string;
+  reason: string;
+  quantity: number;
+  createdAt: string;
+  user: {
+    name: string;
+  };
 }
 
-// --- COMPONENTE PRINCIPAL ---
-export default function StockroomProductHistoryPage() {
-    const router = useRouter();
-    const params = useParams();
-    const productid = (params?.productid || "") as string;
+// --- Componente Lógico Interno ---
+function ProductHistoryInner() {
+  const router = useRouter();
+  const params = useParams();
+  
+  // ✅ CORRECCIÓN ID: Obtener el ID de la ruta ([id] o [productId])
+  // El ID debe venir de `params.id` (si la carpeta es [id]) o `params.productId`.
+  const productId = (params.id || params.productId || '') as string;
+  
+  // 🔍 LOG 1: Verificar el ID al inicio
+  console.log(`[INIT LOG] Componente cargado. ID detectado: ${productId} (Tipo: ${typeof productId})`);
 
-    const [movements, setMovements] = useState<Movement[]>([]);
-    const [product, setProduct] = useState<ProductDetails | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const [movements, setMovements] = useState<Movement[]>([]);
+  const [product, setProduct] = useState<ProductDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registerData, setRegisterData] = useState({ movementType: '', reason: '', quantity: '' });
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+
+  const isStockroomRole = typeof window !== 'undefined' && 
+    globalThis.location.pathname.includes('/stockroom/');
+  const role = isStockroomRole ? 'stockroom' : 'sales';
+
+
+  // --- Lógica de Fetch (GET - USANDO RUTA SYSTEM) ---
+  const fetchHistory = useCallback(async () => {
+    // 🔍 LOG 2: Si el ID es vacío, esta guarda detiene el fetch.
+    if (!productId) {
+      console.warn("⚠️ [FETCH] ID es vacío. Deteniendo la llamada a la API.");
+      setIsLoading(false);
+      return; 
+    }
+
+    setIsLoading(true);
+    try {
+      // ✅ USAMOS LA RUTA QUE TÚ CONFIRMASTE QUE FUNCIONA: /api/system/... con query parameter
+      const apiUrl = `/api/system/inventory/products/${productId}/history`
+      console.log(`➡️ [FETCH GET] Llamando a URL: ${apiUrl}`);
+
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+      
+      // 🔍 LOG 3: Estado y datos de la API
+      console.log(`   API Response Status: ${res.status}`);
+      console.log("   API Response Data:", data);
+      
+      if (!res.ok || !data.success) throw new Error(data.error || `Error del servidor: ${res.status}`);
+      
+      setMovements(data.movements || []);
+      setProduct(data.product ? { 
+        ...data.product, 
+        currentQuantity: data.product.currentQuantity || 0,
+        pricePerUnit: data.product.pricePerUnit || 0,
+      } : null);
+      console.log("✅ Datos cargados con éxito.");
+
+    } catch (err) {
+      // 🔍 LOG 4: Captura el error para que NO se quede cargando
+      console.error("❌ Fetch Error (Bloqueado):", err);
+      setError(err instanceof Error ? err.message : "Error desconocido al obtener historial");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    if (productId) {
+        fetchHistory();
+    }
+  }, [productId, fetchHistory]);
+  
+  // --- Lógica de Modal (POST - USANDO RUTA SYSTEM) ---
+  const handleOpenRegister = () => {
+  setRegisterData({ movementType: '', reason: '', quantity: '' });
+  setRegisterError(null);
+  setShowRegisterModal(true); // Usa showRegisterModal
+};
+  const handleRegisterCancel = () => { /* ... */ };
+  
+  const handleRegisterAccept = async () => {
+    if (!registerData.movementType || !registerData.reason || !registerData.quantity) {
+      setRegisterError('Por favor, selecciona tipo, razón y cantidad.');
+      return;
+    }
+    const numericQuantity = Number(registerData.quantity);
+    if (isNaN(numericQuantity) || numericQuantity <= 0) {
+        setRegisterError('La cantidad debe ser un número positivo.');
+        return;
+    }
     
-    // Estado de Modal de Registro
-    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false); // Usa el Dialog de Shadcn
-    const [registerData, setRegisterData] = useState({ movementType: '', reason: '', quantity: '' });
-    const [registerLoading, setRegisterLoading] = useState(false);
-    const [registerError, setRegisterError] = useState<string | null>(null);
+    setRegisterLoading(true);
+    setRegisterError(null);
     
+    try {
+      // ✅ USAMOS LA RUTA QUE TÚ CONFIRMASTE QUE FUNCIONA: /api/system/...
+      const res = await fetch(`/api/system/inventory/products/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: Number(productId), 
+          movementType: registerData.movementType,
+          reason: registerData.reason,
+          quantity: numericQuantity
+        })
+      });
+      
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error);
+      
+      setShowRegisterModal(false);
+      toast.success('¡Movimiento registrado exitosamente!');
+      setRegisterData({ movementType: '', reason: '', quantity: '' });
+      await fetchHistory();
+      
+    } catch (err) {
+      console.error("❌ POST Error:", err);
+      setRegisterError(err instanceof Error ? err.message : 'Error desconocido al registrar.');
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
 
+  // --- Lógica de Razones ---
+  const getMovementReasons = () => { 
+    if (role === 'sales') {
+        return [
+            { value: 'venta_mostrador', label: 'Venta en Mostrador' },
+            { value: 'venta_pedido', label: 'Pedido Especial' },
+            { value: 'devolucion_cliente', label: 'Devolución de Cliente' },
+            { value: 'ajuste_venta', label: 'Ajuste (Ventas)' },
+        ];
+    } else { // stockroom
+        return [
+            { value: 'produccion', label: 'Producción/Fabricación' },
+            { value: 'compra', label: 'Compra a Proveedor' },
+            { value: 'ajuste_almacen', label: 'Ajuste de Almacén' },
+            { value: 'merma', label: 'Merma' },
+        ];
+    }
+  };
 
-    // Función estable para la obtención de datos (Mantenida)
-    const fetchData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const res = await fetch(`/api/inventory/products/${productid}`);
-            const data = await res.json();
-            
-            if (!res.ok) throw new Error(data.error || "Error al obtener datos");
-
-            setProduct(data.product);
-            setMovements(data.movements);
-
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Error desconocido");
-        } finally {
-            setIsLoading(false);
-        }
-    }, [productid]);
-
-    useEffect(() => {
-        if (productid) {
-            fetchData();
-        }
-    }, [productid, fetchData]);
-
-
-    // --- HANDLERS DE MODAL Y API ---
-    const handleOpenRegister = () => {
-        setRegisterData({ movementType: '',reason: '', quantity: '' });
-        setRegisterError(null);
-        setIsRegisterModalOpen(true);
-    };
-
-    const handleRegisterCancel = () => {
-        setIsRegisterModalOpen(false);
-        setRegisterError(null);
-    };
-
-    const handleRegisterAccept = useCallback(async () => {
-        if (!registerData.movementType || !registerData.quantity) {
-            setRegisterError('Completa todos los campos');
-            return;
-        }
-        setRegisterLoading(true);
-        setRegisterError(null);
-        
-        try {
-            const res = await fetch(`/api/inventory/products/${productid}`, { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: 3, // Asumido
-                    movementType: registerData.movementType,
-                    quantity: Number(registerData.quantity)
-                })
-            });
-            const data = await res.json();
-            
-            if (!res.ok) throw new Error(data.error || 'Error al registrar movimiento');
-            
-            toast.success('Movimiento registrado', { description: `Cantidad de ${registerData.quantity} registrada.` });
-            setIsRegisterModalOpen(false);
-            setRegisterData({ movementType: '',reason: '', quantity: '' });
-            await fetchData(); 
-        } catch (err) {
-            setRegisterError(err instanceof Error ? err.message : 'Error desconocido');
-        } finally {
-            setRegisterLoading(false);
-        }
-    }, [registerData.movementType, registerData.quantity, productid, fetchData]);
-
-
-    // --- VISTAS CONDICIONALES ---
+  // --- Función de Renderizado (Limpieza de Vistas) ---
+  const renderMovementList = () => {
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center h-[50vh]">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="ml-3 text-muted-foreground">Cargando historial...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <Card className="p-4 border-destructive bg-destructive/10 text-destructive border-2 m-6">
-                <p className="font-medium">Error: {error}</p>
+            <Card className="p-4 border-destructive bg-destructive/10 text-destructive border-2">
+              <p className="font-medium">Error: {error}</p>
             </Card>
         );
     }
 
-    // --- JSX PRINCIPAL (Migrado) ---
+    if (movements.length === 0) {
+        return (
+            <Card className="p-8 text-center border-dashed border-2">
+              <p className="text-muted-foreground text-lg">No hay movimientos registrados</p>
+            </Card>
+        );
+    }
+  
+    // VISTA DE LISTA
     return (
-        <div className="p-4 md:p-6 space-y-6">
-            
-            {/* Botón Volver */}
-            <Button variant="ghost" onClick={() => router.back()} className="text-sm text-primary hover:bg-accent">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-            </Button>
-            
-            <div className="space-y-6">
-                {/* 1. Detalles del Producto */}
-                <Card className="p-6">
-                    <CardHeader className="p-0 mb-4">
-                        <CardTitle className="text-2xl font-bold tracking-tight">Producto: {product?.name || "N/A"}</CardTitle>
-                        <CardDescription className="text-sm text-muted-foreground">Historial de Movimientos de Inventario</CardDescription>
-                    </CardHeader>
-                    <Separator className="mb-4" />
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                            <Label className="text-xs text-muted-foreground">Tipo</Label>
-                            <p className="font-medium text-foreground">{product?.type || "-"}</p>
-                        </div>
-                        <div>
-                            <Label className="text-xs text-muted-foreground">Sabor</Label>
-                            <p className="font-medium text-foreground">{product?.flavor || "-"}</p>
-                        </div>
-                        <div>
-                            <Label className="text-xs text-muted-foreground">Cant. Actual</Label>
-                            <p className="font-medium text-foreground">{product?.currentQuantity || 0}</p>
-                        </div>
-                        <div>
-                            <Label className="text-xs text-muted-foreground">Precio Unitario</Label>
-                            <p className="font-medium text-foreground">${product?.pricePerUnit?.toFixed(2) ?? "-"}</p>
-                        </div>
-                    </div>
-                </Card>
+      <div className="space-y-3">
+        {movements.map((movement) => {
+          const isEntry = movement.movementType === 'entrada';
+          const quantityDisplay = `${movement.quantity > 0 ? "+" : ""}${movement.quantity}`;
+          
+          return (
+            <Card key={movement.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start flex-wrap gap-2">
                 
-                <Separator />
-
-                {/* 2. Sección de Historial y Botón de Acción */}
-                <div className="flex justify-between items-center flex-wrap gap-4">
-                    <h2 className="text-xl font-semibold text-foreground">Historial de Movimientos</h2>
-                    <Button onClick={handleOpenRegister} size="sm">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Registrar Movimiento
-                    </Button>
+                {/* Detalles */}
+                <div className="flex flex-col gap-1">
+                  <Badge 
+                    variant={isEntry ? "default" : "destructive"} 
+                    className={cn("w-fit uppercase text-xs font-bold", isEntry && "bg-green-600")}
+                  >
+                    {movement.movementType}
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Motivo:</span> {movement.reason}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Usuario:</span> {movement.user?.name || "Sistema"}
+                  </p>
                 </div>
-
-                {/* 3. Lista de Movimientos */}
-                {movements.length === 0 ? (
-                    <p className="text-muted-foreground text-center p-8 border border-dashed rounded-lg">No hay movimientos registrados</p>
-                ) : (
-                    <div className="space-y-3">
-                        {movements.map((m) => {
-                            const isEntry = m.movementType === 'entrada';
-                            const quantityDisplay = `${m.quantity > 0 ? "+" : "-"}${Math.abs(m.quantity)}`;
-
-                            return (
-                                <Card key={m.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex justify-between items-center flex-wrap gap-2">
-                                        {/* Detalles del Movimiento */}
-                                        <div className="flex flex-col">
-                                            <p className="font-bold text-lg">
-                                                {m.movementType.toUpperCase()}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">Razón: {m.reason || "N/A"}</p>
-                                            <p className="text-xs text-muted-foreground">Registrado por: {m.user?.name || "-"}</p>
-                                        </div>
-                                        
-                                        {/* Cantidad y Fecha */}
-                                        <div className="text-right">
-                                            <p className={cn("font-extrabold text-xl", isEntry ? "text-green-600" : "text-red-600")}>
-                                                {quantityDisplay}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {new Date(m.createdAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-
-            {/* --- MODAL DE REGISTRO (Dialog) --- */}
-            <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Registrar Movimiento</DialogTitle>
-                        <DialogDescription>Registra una entrada o salida de inventario para: **{product?.name || "N/A"}**</DialogDescription>
-                    </DialogHeader>
-                    
-                    <div className="grid gap-4 py-4">
-                        {/* Tipo de Movimiento */}
-                        <div className="space-y-2">
-                            <Label htmlFor="movementType">Tipo de Movimiento</Label>
-                            <Select
-                                value={registerData.movementType}
-                                onValueChange={(value: string) => setRegisterData(d => ({ ...d, movementType: value }))}
-                            >
-                                <SelectTrigger id="movementType">
-                                    <SelectValue placeholder="Selecciona tipo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="entrada">Entrada</SelectItem>
-                                    <SelectItem value="salida">Salida</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                        {/* Cantidad */}
-                        <div className="space-y-2">
-                            <Label htmlFor="quantity">Cantidad</Label>
-                            <Input
-                                id="quantity"
-                                type="number"
-                                placeholder="Cantidad"
-                                value={registerData.quantity}
-                                onChange={e => setRegisterData(d => ({ ...d, quantity: e.target.value }))}
-                            />
-                        </div>
-                        
-                        {/* Si el movimiento es SALIDA, pide la razón (opcional) */}
-                        {registerData.movementType === 'salida' && (
-                            <div className="space-y-2">
-                                <Label htmlFor="reason">Razón de Salida (Opcional)</Label>
-                                <Input
-                                    id="reason"
-                                    placeholder="Motivo de la salida (ej: Muestras, Producción)"
-                                    value={registerData.reason || ''}
-                                    onChange={e => setRegisterData(d => ({ ...d, reason: e.target.value }))}
-                                />
-                            </div>
-                        )}
-
-                    </div>
-                    
-                    {registerError && <p className="text-sm text-destructive font-medium text-center">{registerError}</p>}
-
-                    <DialogFooter className="mt-4">
-                        <Button variant="outline" onClick={handleRegisterCancel} disabled={registerLoading}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleRegisterAccept} disabled={registerLoading}>
-                            {registerLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Registrar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
+                
+                {/* Cantidad y Fecha */}
+                <div className="text-right">
+                  <p className={cn("font-extrabold text-xl", isEntry ? "text-green-600" : "text-red-600")}>
+                    {quantityDisplay}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(movement.createdAt).toLocaleString('es-ES', {
+                      year: 'numeric', month: 'short', day: 'numeric',
+                      hour: '2-digit', minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     );
+  };
+
+  // --- JSX Principal ---
+  return (
+    <div className="p-4 md:p-6 space-y-6">
+      
+      {/* Botón Volver */}
+      <Button variant="ghost" onClick={() => router.back()} className="text-sm text-primary hover:bg-accent w-fit">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Volver
+      </Button>
+
+      <div className="space-y-6">
+        
+        {/* Información del Producto */}
+        <Card className="p-5">
+          <CardHeader className="p-0 mb-4">
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              {role === 'stockroom' ? 'Producto - Almacén' : 'Producto - Ventas'}
+            </CardTitle>
+          </CardHeader>
+          
+          <Separator className="mb-4" />
+          
+          {/* Detalles del Producto */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <p className="font-bold text-lg text-foreground">
+                {product?.name || "Cargando..."}
+              </p>
+              <Badge 
+                variant={product && product.currentQuantity > 0 ? "default" : "destructive"} 
+                className={cn("text-base px-3 py-1", product && product.currentQuantity > 0 && "bg-green-600")}
+              >
+                Stock: {product?.currentQuantity ?? '...'}
+              </Badge>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <p><span className="font-medium">Tipo:</span> {product?.type || '-'}</p>
+              <p><span className="font-medium">Sabor:</span> {product?.flavor || '-'}</p>
+              {role === 'sales' && (
+                <p><span className="font-medium">Precio:</span> Bs {product?.pricePerUnit?.toFixed(2) || "0.00"}</p>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Separator />
+
+        {/* Header del Historial */}
+        <div className="flex justify-between items-center flex-wrap gap-4">
+          <h2 className="text-xl font-semibold text-foreground">Historial de Movimientos</h2>
+          <Button onClick={handleOpenRegister} size="sm" disabled={!product}>
+            <Plus className="mr-2 h-4 w-4" />
+            Registrar Movimiento
+          </Button>
+        </div>
+
+        {/* Lista de Movimientos */}
+        {renderMovementList()} 
+      </div>
+
+      {/* --- MODAL DE REGISTRO (Dialog) --- */}
+      <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Movimiento</DialogTitle>
+            <DialogDescription>
+              Producto: <strong>{product?.name || "N/A"}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            {/* Tipo de Movimiento */}
+            <div className="space-y-2">
+              <Label htmlFor="movementType">Tipo de Movimiento</Label>
+              <Select
+                  value={registerData.movementType}
+                  onValueChange={(value: string) => setRegisterData(d => ({ ...d, movementType: value }))}
+              >
+                  <SelectTrigger id="movementType">
+                      <SelectValue placeholder="Selecciona tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="entrada">Entrada</SelectItem>
+                      <SelectItem value="salida">Salida</SelectItem>
+                  </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Razón */}
+            <div className="space-y-2">
+              <Label htmlFor="reason">Razón</Label>
+              <Select
+                  value={registerData.reason}
+                  onValueChange={(value: string) => setRegisterData(d => ({ ...d, reason: value }))}
+              >
+                  <SelectTrigger id="reason">
+                      <SelectValue placeholder="Selecciona razón" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      {getMovementReasons().map(reason => (
+                          <SelectItem key={reason.value} value={reason.value}>
+                              {reason.label}
+                          </SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Cantidad */}
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Cantidad</Label>
+              <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  placeholder="Ingrese la cantidad"
+                  value={registerData.quantity}
+                  onChange={(e) => setRegisterData(d => ({ ...d, quantity: e.target.value }))}
+              />
+            </div>
+          </div>
+          
+          {registerError && (
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md">
+              <p className="text-destructive text-sm font-medium">{registerError}</p>
+            </div>
+          )}
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={handleRegisterCancel} disabled={registerLoading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRegisterAccept} disabled={registerLoading}>
+              {registerLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Registrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Componente Wrapper para Suspense
+export default function ProductHistoryPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    }>
+      <ProductHistoryInner />
+    </Suspense>
+  );
 }

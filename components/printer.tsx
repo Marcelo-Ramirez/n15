@@ -183,9 +183,9 @@ const Printer = ({
               </p>
               
               <ol className="list-decimal list-inside space-y-1 text-sm text-blue-600 dark:text-blue-400">
-                <li>En "Destino" selecciona **"Guardar como PDF"**.</li>
+                <li>En &quot;Destino&quot; selecciona **&quot;Guardar como PDF&quot;**.</li>
                 <li>Revisa la configuración (orientación, márgenes, etc.).</li>
-                <li>Haz clic en **"Guardar"**.</li>
+                <li>Haz clic en **&quot;Guardar&quot;**.</li>
                 <li>Elige dónde guardar tu archivo PDF.</li>
               </ol>
             </div>
