@@ -1,7 +1,6 @@
 // app/layout.tsx
 import { Providers } from './providers';
-// import { Toaster } from "@/components/ui/toaster"; // <-- ELIMINA ESTA LÍNEA
-import { Toaster as Sonner } from "@/components/ui/sonner"; // <-- IMPORTA SONNER
+import { Toaster as Sonner } from "@/components/ui/sonner"; 
 import './globals.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -10,7 +9,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           {children}
-          <Sonner /> {/* <-- AÑADE SONNER AQUÍ */}
+          <Sonner /> 
         </Providers>
       </body>
     </html>

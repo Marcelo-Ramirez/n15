@@ -54,3 +54,14 @@ export interface OrderItem {
     productId: number;
     quantity: number;
 }
+export interface Product {
+    id: number;
+    name: string;
+    flavor: string;
+    type: string;
+    imageUrl: string;
+    pricePerUnit: number; // Float en Prisma
+    currentQuantity: number; // Float en Prisma
+    createdAt: Date;
+    updatedAt: Date;
+}
