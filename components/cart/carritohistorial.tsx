@@ -94,8 +94,19 @@ export function CartSummaryModal({ isOpen, onClose, cart, setCart /*, onOpenLogi
             onClose(); 
             setIsQrModalOpen(true); 
 
-        } catch (error: any) {
-            alert(`Error al iniciar el pago: ${error.message}`);
+        } catch (error) {
+           let errorMessage = "Un error desconocido ha ocurrido al iniciar el pago.";
+
+            // 💡 Paso clave: Estrechar el tipo a 'Error' para poder acceder a '.message'
+            if (error instanceof Error) {
+                // Ahora TS sabe que es un objeto Error y tiene la propiedad 'message'
+                errorMessage = error.message; 
+            } else if (typeof error === 'object' && error !== null && 'message' in error) {
+                 // Manejo para objetos de error que NO son instancias de Error (común en JS moderno)
+                errorMessage = (error as { message: string }).message;
+            }
+            
+            alert(`Error al iniciar el pago: ${errorMessage}`);
         } finally {
             setIsInitiating(false);
         }

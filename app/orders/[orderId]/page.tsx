@@ -52,9 +52,20 @@ export default function OrderDetailPage() {
                 }
                 const data = await res.json();
                 setOrder(data.order);
-            } catch (err: any) {
-                setError(err.message);
-            } finally {
+            // app/(sistema_interno)/orders/[orderId]/page.tsx
+// ...
+            } catch (err) { // ✅ 'err' es ahora 'unknown'
+                let errorMessage = 'Error desconocido al cargar el pedido.';
+                
+                // 💡 Comprobación de tipo para asegurar que tiene 'message'
+                if (err instanceof Error) {
+                    errorMessage = err.message;
+                } else if (typeof err === 'object' && err !== null && 'message' in err) {
+                    errorMessage = (err as { message: string }).message;
+                }
+                
+                setError(errorMessage);
+            } finally {
                 setLoading(false);
             }
         };

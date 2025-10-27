@@ -44,7 +44,7 @@ export function ClientLoginModal({ isOpen, onClose, onLoginSuccess, onOpenRegist
             onLoginSuccess(); // Notifica al componente padre para que actualice la sesión (ej. con useSession)
             onClose();
 
-        } catch (err) {
+        } catch {
             setError('Error de conexión con el servidor.')
         } finally {
             setIsLoading(false)
