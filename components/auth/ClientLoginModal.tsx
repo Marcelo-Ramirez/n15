@@ -53,33 +53,35 @@ export function ClientLoginModal({ isOpen, onClose, onLoginSuccess, onOpenRegist
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[400px] bg-black text-white">
                 <DialogHeader>
-                    <DialogTitle>Iniciar Sesión Cliente</DialogTitle>
-                    <DialogDescription>Accede a tu carrito y historial de pedidos.</DialogDescription>
+                <DialogTitle className="text-white">Iniciar Sesión Cliente</DialogTitle>
+                <DialogDescription className="text-gray-300">Accede a tu carrito y historial de pedidos.</DialogDescription>
                 </DialogHeader>
                 
                 {error && <p className="text-destructive text-sm font-medium">{error}</p>}
 
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="userName">Usuario</Label>
+                        <Label htmlFor="userName" className="text-gray-200">Usuario</Label>
                         <Input
                             id="userName"
                             type="text"
                             value={formData.userName}
                             onChange={e => setFormData(d => ({ ...d, userName: e.target.value }))}
                             required
+                            className="bg-gray-800 text-white"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="password">Contraseña</Label>
+                        <Label htmlFor="password" className="text-gray-200">Contraseña</Label>
                         <Input
                             id="password"
                             type="password"
                             value={formData.password}
                             onChange={e => setFormData(d => ({ ...d, password: e.target.value }))}
                             required
+                            className="bg-gray-800 text-white"
                         />
                     </div>
                     

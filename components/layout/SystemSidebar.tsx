@@ -182,7 +182,7 @@ export default function SystemSidebar({ role, isCollapsed = false, onToggle }: S
                     key="logout"
                     variant="ghost"
                     asChild
-                    onClick={() => signOut({ callbackUrl: '/sys/login' })}
+                    onClick={() => signOut({ callbackUrl: `${window.location.origin}/sys/login` })}
                     className="h-auto w-full p-0"
                   >
                     {ItemContent}

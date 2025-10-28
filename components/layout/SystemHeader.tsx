@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, Settings, LogOut } from 'lucide-react'; // Iconos de Lucide
+import { signOut } from 'next-auth/react';
 
 // Importa componentes Shadcn UI
 import { Button } from '@/components/ui/button';
@@ -73,7 +74,7 @@ export default function SystemHeader({ username = 'User', role = 'admin' }: Syst
             size="icon" 
             aria-label="Cerrar Sesión"
             className="text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
-            onClick={() => { console.log('Cerrar Sesión'); /* signOut() logic here */ }}
+            onClick={() => signOut({ callbackUrl: `${window.location.origin}` })}
           >
             <LogOut className="h-5 w-5" />
           </Button>

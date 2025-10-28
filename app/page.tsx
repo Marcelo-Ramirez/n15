@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import gomitaBeterraga from './images/products/gomita/g-beterraga.png';
 import gomitaFrutilla from './images/products/gomita/g-frutilla.png';
 import pulpaMandarina from './images/products/pulpa/p-mandarina.png';
+import gomitaLimon from './images/products/gomita/g-limon.png';
 
 interface ProductCardProps {
   title: string;
@@ -82,6 +83,7 @@ export default function HomePage() {
     { title: 'Gomita Beterraga', description: 'Gomita natural sabor beterraga', price: 'Bs 1.5', imageSrc: gomitaBeterraga, imageAlt: 'Gomita Beterraga' },
     { title: 'Gomita Frutilla', description: 'Gomita natural sabor frutilla', price: 'Bs 1.5', imageSrc: gomitaFrutilla, imageAlt: 'Gomita Frutilla' },
     { title: 'Pulpa Mandarina', description: 'Pulpa natural sabor mandarina', price: 'Bs 5', imageSrc: pulpaMandarina, imageAlt: 'Pulpa Mandarina' },
+  { title: 'Gomita Limón', description: 'Gomita natural sabor limón', price: 'Bs 1.5', imageSrc: gomitaLimon, imageAlt: 'Gomita Limón' },
   ];
 
   return (

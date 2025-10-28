@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Fragment } from 'react';
+import { PublicHeader } from '@/components/layout/PublicHeader';
 import { useRouter } from 'next/navigation'; 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs"; 
@@ -227,7 +228,8 @@ export default function OrdersDashboardPage() {
     }, []);
 
     return (
-        <Fragment> 
+        <Fragment>
+            <PublicHeader />
             <Tabs defaultValue={defaultTab} className="w-full" activationMode="manual"> 
                 {/* La TabsList vive en el layout padre (app/(sistema_interno)/layout.tsx) */}
                 

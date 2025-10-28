@@ -266,23 +266,12 @@ export default function CatalogPage() {
                 {/* 🛒 ICONO DE CARRITO Y BOTÓN DE LOGIN/LOGOUT */}
                 {/* ⚠️ NOTA: Este elemento fijo puede superponerse al menú del layout padre. Considera moverlo al layout. */}
                 <div className="fixed top-20 right-8 z-50 flex items-center space-x-2">
-                    {/* Botón de Autenticación/Perfil */}
-                    {status === 'authenticated' ? (
-                        <Button variant="outline" size="icon" onClick={() => signOut()} className="rounded-full h-12 w-12 border-2 border-primary" title="Cerrar Sesión">
-                            <LogOut className="h-6 w-6 text-primary" />
-                        </Button>
-                    ) : status === 'unauthenticated' ? (
-                        <Button onClick={openLogin} className="rounded-full px-4 h-12" size="sm" title="Iniciar Sesión">
-                            Entrar
-                        </Button>
-                    ) : (
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    )}
+                    
 
                     {/* Botón del Carrito */}
                     <Button 
-                        variant="default" 
-                        className="relative h-12 w-12 rounded-full shadow-xl"
+                        variant="ghost" 
+                        className="relative h-12 w-12 rounded-full shadow-xl bg-gray-800 text-white flex items-center justify-center"
                         onClick={handleOpenSummaryChecked} 
                         disabled={status === 'loading'}
                         title="Ver Carrito"
