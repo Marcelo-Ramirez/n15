@@ -7,12 +7,10 @@ DELETE FROM "Inventory_movements";
 DELETE FROM "Product_movements";
 DELETE FROM "Products";
 DELETE FROM "Ingredients";
-DELETE FROM "Users";
 
 
 
 -- Reinicia los contadores de autoincremento de las tablas
-DELETE FROM sqlite_sequence WHERE name = 'Users';
 DELETE FROM sqlite_sequence WHERE name = 'Ingredients';
 DELETE FROM sqlite_sequence WHERE name = 'Products';
 DELETE FROM sqlite_sequence WHERE name = 'Order_clients';
@@ -387,53 +385,6 @@ INSERT INTO "Inventory_movements" (
 (1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-110 days')),
 (1, 21, 'salida', 'Producción de pulpas', 5.0, DATETIME('now', '-80 days')),
 (1, 21, 'entrada', 'Reposición de stock', 25.0, DATETIME('now', '-70 days'));
-
----
--- Inserta un pedido del cliente.
-INSERT INTO "Order_clients" (
-  "client_id",
-  "product_id",
-  "quantity",
-  "status",
-  "createdAt"
-) VALUES (
-  1,
-  1,
-  5.0,
-  'pending',
-  DATETIME('now')
-);
-
----
--- Inserta una orden de venta.
-INSERT INTO "Sale_orders" (
-  "user_id",
-  "order_client_id",
-  "totalCostOrder",
-  "createdAt"
-) VALUES (
-  1,
-  1,
-  7.50,
-  DATETIME('now')
-);
-
----
--- Inserta un producto vendido.
-INSERT INTO "Sale_products" (
-  "user_id",
-  "product_id",
-  "quantity",
-  "sale_order_id",
-  "createdAt"
-) VALUES (
-  1,
-  1,
-  5.0,
-  1,
-  DATETIME('now')
-);
-
 ---
 -- Inserta un movimiento de producto.
 INSERT INTO "Product_movements" (
@@ -476,3 +427,149 @@ INSERT INTO "Ingredients_EOQ_model" (
   14.0,
   DATETIME('now')
 );
+---
+-- 1. LIMPIEZA Y REINICIO DE CONTADORES
+---
+DELETE FROM "Sale_products";
+DELETE FROM "Sale_orders";
+DELETE FROM "Order_clients"; -- Limpiamos esta también por si acaso
+DELETE FROM sqlite_sequence WHERE name = 'Order_clients';
+DELETE FROM sqlite_sequence WHERE name = 'Sale_orders';
+DELETE FROM sqlite_sequence WHERE name = 'Sale_products';
+
+---
+-- 2. INSERCIÓN DE DEMANDA HISTÓRICA (12 MESES, ~72 Sale_products, Formato ISO Z)
+---
+-- Creamos 2 órdenes por mes (una por usuario), cada una con varios productos.
+
+-- Mes 12 (Hace ~360 / ~345 días)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 1, 55.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-360 days')), -- SO ID 1 (User 1)
+(2, 2, 40.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-345 days')); -- SO ID 2 (User 2)
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 1, 10.0, 1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-360 days')),
+(1, 3, 5.0, 1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-360 days')),
+(1, 5, 8.0, 1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-360 days')),
+(2, 9, 3.0, 2, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-345 days')),
+(2, 11, 4.0, 2, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-345 days'));
+
+-- Mes 11 (Hace ~330 / ~315 días)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 3, 65.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-330 days')), -- SO ID 3
+(2, 4, 50.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-315 days')); -- SO ID 4
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 2, 12.0, 3, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-330 days')),
+(1, 4, 15.0, 3, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-330 days')),
+(2, 10, 5.0, 4, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-315 days')),
+(2, 12, 6.0, 4, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-315 days')),
+(2, 13, 2.0, 4, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-315 days'));
+
+-- Mes 10 (Hace ~300 / ~285 días)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 5, 45.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days')), -- SO ID 5
+(2, 6, 70.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-285 days')); -- SO ID 6
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 1, 8.0, 5, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days')),
+(1, 5, 10.0, 5, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days')),
+(2, 9, 7.0, 6, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-285 days')),
+(2, 10, 4.0, 6, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-285 days')),
+(2, 11, 9.0, 6, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-285 days'));
+
+-- Mes 9 (Hace ~270 / ~255 días)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 7, 80.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-270 days')), -- SO ID 7
+(2, 8, 30.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-255 days')); -- SO ID 8
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 2, 18.0, 7, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-270 days')),
+(1, 3, 12.0, 7, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-270 days')),
+(1, 4, 5.0, 7, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-270 days')),
+(2, 12, 2.0, 8, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-255 days')),
+(2, 13, 3.0, 8, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-255 days'));
+
+-- Mes 8 (Hace ~240 / ~225 días)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 9, 50.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-240 days')), -- SO ID 9
+(2, 10, 60.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-225 days')); -- SO ID 10
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 1, 7.0, 9, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-240 days')),
+(1, 5, 15.0, 9, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-240 days')),
+(2, 9, 6.0, 10, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-225 days')),
+(2, 10, 8.0, 10, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-225 days'));
+
+-- Mes 7 (Hace ~210 / ~195 days)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 11, 75.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-210 days')), -- SO ID 11
+(2, 12, 48.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-195 days')); -- SO ID 12
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 2, 14.0, 11, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-210 days')),
+(1, 3, 9.0, 11, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-210 days')),
+(1, 4, 11.0, 11, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-210 days')),
+(2, 11, 5.0, 12, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-195 days')),
+(2, 12, 4.0, 12, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-195 days'));
+
+-- Mes 6 (Hace ~180 / ~165 days)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 13, 90.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-180 days')), -- SO ID 13
+(2, 14, 55.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-165 days')); -- SO ID 14
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 1, 20.0, 13, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-180 days')),
+(1, 5, 18.0, 13, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-180 days')),
+(2, 9, 4.0, 14, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-165 days')),
+(2, 13, 6.0, 14, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-165 days'));
+
+-- Mes 5 (Hace ~150 / ~135 days)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 15, 62.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')), -- SO ID 15
+(2, 16, 72.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-135 days')); -- SO ID 16
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 2, 11.0, 15, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
+(1, 3, 14.0, 15, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
+(2, 10, 7.0, 16, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-135 days')),
+(2, 11, 5.0, 16, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-135 days')),
+(2, 12, 3.0, 16, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-135 days'));
+
+-- Mes 4 (Hace ~120 / ~105 days)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 17, 88.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-120 days')), -- SO ID 17
+(2, 18, 41.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-105 days')); -- SO ID 18
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 4, 20.0, 17, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-120 days')),
+(1, 5, 22.0, 17, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-120 days')),
+(2, 9, 2.0, 18, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-105 days')),
+(2, 13, 5.0, 18, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-105 days'));
+
+-- Mes 3 (Hace ~90 / ~75 días)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 19, 70.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-90 days')), -- SO ID 19
+(2, 20, 95.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-75 days')); -- SO ID 20
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 1, 12.0, 19, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-90 days')),
+(1, 2, 16.0, 19, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-90 days')),
+(2, 10, 9.0, 20, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-75 days')),
+(2, 11, 6.0, 20, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-75 days')),
+(2, 12, 7.0, 20, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-75 days'));
+
+-- Mes 2 (Hace ~60 / ~45 días)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 21, 58.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-60 days')), -- SO ID 21
+(2, 22, 82.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-45 days')); -- SO ID 22
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 3, 13.0, 21, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-60 days')),
+(1, 4, 17.0, 21, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-60 days')),
+(2, 9, 8.0, 22, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-45 days')),
+(2, 13, 10.0, 22, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-45 days'));
+
+-- Mes 1 (Hace ~30 / ~15 días)
+INSERT INTO "Sale_orders" ("user_id", "order_client_id", "totalCostOrder", "createdAt") VALUES 
+(1, 23, 105.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')), -- SO ID 23
+(2, 24, 66.0, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-15 days')); -- SO ID 24
+INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id", "createdAt") VALUES 
+(1, 5, 25.0, 23, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')),
+(1, 1, 15.0, 23, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')),
+(1, 2, 10.0, 23, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')),
+(2, 10, 6.0, 24, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-15 days')),
+(2, 11, 7.0, 24, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-15 days')),
+(2, 12, 5.0, 24, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-15 days'));
+
+-- Nota: Los order_client_id en Sale_orders se asumen correlativos (1 a 24), ajusta si tu lógica es diferente.
+-- Los totalCostOrder son aproximados.
