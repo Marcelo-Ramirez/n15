@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -16,33 +17,57 @@ export default function ProductivityPanel({ initialData }: { initialData?: { raw
   const [products, setProducts] = useState<ProductSummary[]>(initialData?.products ?? []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const fetchMonth = useCallback(async () => {
+  // Keep client state in sync when server-provided initialData changes (e.g., navigation)
+  useEffect(() => {
+    if (initialData) {
+      setRawMaterialCost(initialData.rawMaterialCost ?? null);
+      setSalesRevenue(initialData.salesRevenue ?? null);
+      setProducts(initialData.products ?? []);
+    }
+  }, [initialData]);
+  const fetchMonth = useCallback(async (): Promise<boolean> => {
     setLoading(true);
     try {
       setError(null);
+  console.log('ProductivityPanel: fetching month data for', { year, month });
       const res = await fetch(`/api/admin/productivity/month-data?year=${year}&month=${month}`, { credentials: 'include' });
+  console.log('ProductivityPanel: fetch sent to', `/api/admin/productivity/month-data?year=${year}&month=${month}`);
       const json = await res.json();
-      if (!res.ok) {
-        setError(json?.error || 'Error fetching data');
-        setRawMaterialCost(null);
-        setSalesRevenue(null);
-        setProducts([]);
-      } else {
-        setRawMaterialCost(Number((json.rawMaterialCost || 0).toFixed(2)));
-        setSalesRevenue(Number((json.salesRevenue || 0).toFixed(2)));
-        setProducts(json.products || []);
+      // Debug: log full response so the button reveals what the API returned
+      // Use console.group for readability
+      try {
+        console.groupCollapsed('productivity/month-data response');
+        console.log('status', res.status, 'ok', res.ok);
+        console.log('body', json);
+        console.groupEnd();
+      } catch (logErr) {
+        // ignore logging errors
       }
+      if (!res.ok) {
+        // Keep previously rendered initialData values; just surface the error
+        setError(json?.error || 'Error fetching data');
+        return false;
+      }
+
+      setRawMaterialCost(Number((json.rawMaterialCost || 0).toFixed(2)));
+      setSalesRevenue(Number((json.salesRevenue || 0).toFixed(2)));
+      setProducts(json.products || []);
+      return true;
     } catch (e) {
       console.error(e);
       setError('Network error');
+      return false;
     } finally {
       setLoading(false);
     }
   }, [year, month]);
 
   useEffect(() => {
-    fetchMonth();
+    // Don't auto-fetch on mount: rely on server-provided initialData to render immediately.
+    // Keep this effect to refresh when year/month change only if you want auto-refresh.
+    // For now, do nothing here so the 'Actualizar' button controls client fetches.
   }, [fetchMonth]);
 
   // fetchMonth implemented above with useCallback
@@ -60,8 +85,30 @@ export default function ProductivityPanel({ initialData }: { initialData?: { raw
           ))}
         </select>
         <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} className="border p-2 rounded w-24" />
-      </div>
-
+        </div>
+            <div className="mb-4 flex gap-2">
+                <button
+                    type="button"
+            onClick={async () => {
+              console.log('btn Actualizar clicked for', { year, month });
+              try {
+                const ok = await fetchMonth();
+                // if fetchMonth could not confirm success, fallback to server navigation
+                if (!ok) {
+                  console.log('client fetch did not return ok - navigating to server page to force initialData');
+                  router.push(`/sys/admin/productivity?year=${year}&month=${month}`);
+                }
+              } catch (e) {
+                console.error('error on actualizar click', e);
+                router.push(`/sys/admin/productivity?year=${year}&month=${month}`);
+              }
+            }}
+                    disabled={loading}
+                    className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
+                >
+                    {loading ? 'Cargando...' : 'Actualizar'}
+                </button>
+            </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Costo de Materia Prima</Label>

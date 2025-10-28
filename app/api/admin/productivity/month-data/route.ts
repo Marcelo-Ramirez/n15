@@ -10,7 +10,9 @@ function startOfMonth(year: number, month: number) {
 }
 
 function endOfMonth(year: number, month: number) {
-  return new Date(year, month, 0, 23, 59, 59, 999);
+  // month is 1-indexed; compute end by taking the first day of next month minus 1ms
+  const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+  return new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59, 999);
 }
 
 export async function GET(req: Request) {
@@ -23,8 +25,9 @@ export async function GET(req: Request) {
     const year = Number(url.searchParams.get('year')) || new Date().getFullYear();
     const month = Number(url.searchParams.get('month')) || (new Date().getMonth() + 1);
 
-    const start = startOfMonth(year, month);
-    const end = endOfMonth(year, month);
+  const start = startOfMonth(year, month);
+  const end = endOfMonth(year, month);
+  console.log('API month-data: requested', { year, month, start: start.toISOString(), end: end.toISOString() });
 
     // 1) Raw material cost: sum of inventory movements of type 'salida' and reason containing 'produccion' in that month
     const movs = await prisma.inventoryMovement.findMany({
@@ -39,18 +42,24 @@ export async function GET(req: Request) {
       },
       include: { ingredient: true }
     });
+  console.log('API month-data: movs found', movs.length);
 
-    let rawMaterialCost = 0;
-    for (const m of movs) {
-      const price = m.ingredient?.pricePerUnit ?? 0;
-      rawMaterialCost += (m.quantity || 0) * price;
-    }
+        let rawMaterialCost = 0;
+        for (const m of movs) {
+          if (m.ingredient && m.ingredient.pricePerUnit) {
+            // Ensure cost uses absolute quantity for 'salida' movements so cost is positive
+            const qty = Math.abs(m.quantity || 0);
+            rawMaterialCost += qty * m.ingredient.pricePerUnit;
+          }
+        }
+        console.log('API month-data: normalized rawMaterialCost by taking absolute quantity for salida movements');
 
     // 2) Sales revenue and per-product breakdown for the month
     const sales = await prisma.saleProduct.findMany({
       where: { createdAt: { gte: start, lte: end } },
       include: { product: true }
     });
+  console.log('API month-data: sales found', sales.length);
 
   let salesRevenue = 0;
   const byProduct: Record<string, ProductSummary> = {};
