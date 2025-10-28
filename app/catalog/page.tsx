@@ -6,6 +6,7 @@ import { PublicFooter } from '@/components/layout/PublicFooter';
 // ✅ Importación de NextAuth
 import { useSession, signOut } from "next-auth/react";
 import Image from 'next/image';
+import productImages from '@/components/imageMap/productImages';
 import { Search, ShoppingCart, Loader2, LogOut } from 'lucide-react'; 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; 
@@ -47,12 +48,27 @@ const ProductCard = (props: ProductCardProps) => {
     const { name, description, flavor, pricePerUnit, currentQuantity, imageUrl } = productProps;
     const isOutOfStock = currentQuantity === 0;
 
+    // Normalize imageUrl key: ensure it starts with '/images/' when looking up in the static map
+    const normalizeKey = (url?: string | null) => {
+        if (!url) return undefined;
+        // If already starts with /images use as-is, otherwise try to prefix
+        if (url.startsWith('/images/')) return url;
+        if (url.startsWith('images/')) return `/${url}`;
+        // If it's an absolute URL (http) or data: return as-is
+        if (/^https?:\/\//i.test(url) || url.startsWith('data:')) return url;
+        // fallback: try to prefix
+        return `/${url}`;
+    };
+
+    const lookupKey = typeof imageUrl === 'string' ? normalizeKey(imageUrl) : undefined;
+    const resolvedImage = lookupKey && productImages[lookupKey] ? productImages[lookupKey] : (imageUrl as string | undefined);
+
     return (
         <Card className="w-full max-w-xs sm:max-w-[320px] md:max-w-md shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between overflow-hidden">
             <div className="relative h-48 bg-gray-100 dark:bg-gray-800 rounded-t-lg overflow-hidden flex items-center justify-center">
-                {imageUrl ? (
+                {resolvedImage ? (
                     <Image 
-                        src={imageUrl} 
+                        src={resolvedImage} 
                         alt={name} 
                         fill={true} 
                         style={{ objectFit: 'contain' }}

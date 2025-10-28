@@ -116,31 +116,70 @@ async function main() {
   }
   console.log(`✅ 50 movimientos de inventario creados`);
 
-  // 5. Crear Productos (30 productos)
-  console.log('🍰 Creando productos...');
+  // 5. Crear Productos (solo lista solicitada)
+  console.log('� Creando los productos solicitados...');
   const products = [];
-  const placeholderImages = [
-    '/placeholder-cake.svg',
-    '/placeholder-cupcake.svg', 
-    '/placeholder-pastry.svg'
+
+  // Lista solicitada: 8 gomitas y 8 pulpas
+  const gomitas = [
+    'gomita de tuna',
+    'gomita de manzana',
+    'gomita de manzanilla',
+    'gomita de zanahoria',
+    'gomita de frutilla',
+    'gomita de beterraga',
+    'gomita de limon',
+    'gomita de mandarina',
   ];
-  
-  for (let i = 0; i < 30; i++) {
-    const productType = productTypes[random(0, productTypes.length - 1)];
-    const flavor = flavors[random(0, flavors.length - 1)];
-    
+
+  const pulpas = [
+    'pulpa de tuna',
+    'pulpa de manzana',
+    'pulpa de manzanilla',
+    'pulpa de zanahoria',
+    'pulpa de frutilla',
+    'pulpa de beterraga',
+    'pulpa de limon',
+    'pulpa de mandarina',
+  ];
+
+  // Predecible: gimita prices integer 1-3 Bs; pulpa prices 5-10 Bs (enteros)
+  for (const name of gomitas) {
+    const key = name.split(' ').slice(-1)[0];
+    const imageFile = `g-${key}.png`;
+    const imageUrl = `/images/products/gomita/${imageFile}`;
+
     const product = await prisma.product.create({
       data: {
-        name: `${productType} de ${flavor}`,
-        flavor,
-        type: productType,
-        imageUrl: placeholderImages[i % placeholderImages.length],
-        pricePerUnit: randomFloat(20, 150),
-        currentQuantity: random(0, 100), // Ahora es entero
+        name,
+        flavor: key,
+        type: 'Gomita',
+        imageUrl,
+        pricePerUnit: random(1, 3),
+        currentQuantity: random(10, 100),
       },
     });
     products.push(product);
   }
+
+  for (const name of pulpas) {
+    const key = name.split(' ').slice(-1)[0];
+    const imageFile = `p-${key}.png`;
+    const imageUrl = `/images/products/pulpa/${imageFile}`;
+
+    const product = await prisma.product.create({
+      data: {
+        name,
+        flavor: key,
+        type: 'Pulpa',
+        imageUrl,
+        pricePerUnit: random(5, 10),
+        currentQuantity: random(5, 50),
+      },
+    });
+    products.push(product);
+  }
+
   console.log(`✅ ${products.length} productos creados`);
 
   // 6. Crear Órdenes de Clientes (40 órdenes)
