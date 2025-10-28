@@ -573,3 +573,45 @@ INSERT INTO "Sale_products" ("user_id", "product_id", "quantity", "sale_order_id
 
 -- Nota: Los order_client_id en Sale_orders se asumen correlativos (1 a 24), ajusta si tu lógica es diferente.
 -- Los totalCostOrder son aproximados.
+
+---
+---
+-- CORRECCIÓN DEL ERROR P2023: Asegurar el formato de fecha ISO 8601 sin el 'Z' final
+---
+INSERT INTO "Order_clients" (
+    "client_id",
+    "product_id",
+    "quantity",
+    "status",
+    "createdAt"
+) VALUES
+-- NOTA: Se reemplaza strftime('%Y-%m-%dT%H:%M:%fZ', ...) por strftime('%Y-%m-%d %H:%M:%S', ...)
+-- ÓRDENES MÁS ANTIGUAS (Meses 7 a 12) -> completado
+(1, 1, 10.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-360 days')), -- ID 1 (Fecha segura)
+(2, 2, 5.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-345 days')),  -- ID 2
+(1, 3, 12.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-330 days')), -- ID 3
+(2, 4, 15.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-315 days')), -- ID 4
+(1, 5, 8.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-300 days')),  -- ID 5
+(2, 6, 10.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-285 days')), -- ID 6
+(1, 7, 18.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-270 days')), -- ID 7
+(2, 8, 12.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-255 days')), -- ID 8
+(1, 9, 7.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-240 days')),  -- ID 9
+(2, 10, 6.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-225 days')), -- ID 10
+(1, 11, 14.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-210 days')), -- ID 11
+(2, 12, 9.0, 'completado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-195 days')), -- ID 12
+
+-- ÓRDENES INTERMEDIAS (Meses 2 a 6) -> reservado
+(1, 13, 20.0, 'reservado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-180 days')), -- ID 13
+(2, 14, 18.0, 'reservado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-165 days')), -- ID 14
+(1, 15, 11.0, 'reservado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-150 days')), -- ID 15
+(2, 1, 14.0, 'reservado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-135 days')), -- ID 16
+(1, 2, 20.0, 'reservado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-120 days')), -- ID 17
+(2, 3, 22.0, 'reservado', strftime('%Y-%m-%d %H:%M:%S', 'now', '-105 days')), -- ID 18
+(1, 4, 12.0, 'pendiente_verificacion', strftime('%Y-%m-%d %H:%M:%S', 'now', '-90 days')), -- ID 19
+(2, 5, 16.0, 'pendiente_verificacion', strftime('%Y-%m-%d %H:%M:%S', 'now', '-75 days')), -- ID 20
+(1, 6, 13.0, 'pendiente_verificacion', strftime('%Y-%m-%d %H:%M:%S', 'now', '-60 days')), -- ID 21
+(2, 7, 17.0, 'pendiente_verificacion', strftime('%Y-%m-%d %H:%M:%S', 'now', '-45 days')), -- ID 22
+
+-- ÓRDENES MÁS RECIENTES (Mes 1) -> revisar pago
+(1, 8, 25.0, 'pendiente_verificacion', strftime('%Y-%m-%d %H:%M:%S', 'now', '-30 days')), -- ID 23
+(2, 9, 15.0, 'pendiente_verificacion', strftime('%Y-%m-%d %H:%M:%S', 'now', '-15 days')); -- ID 24
