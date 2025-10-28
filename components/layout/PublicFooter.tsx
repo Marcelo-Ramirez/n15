@@ -1,5 +1,7 @@
 // PublicFooter.tsx
+"use client";
 import Link from 'next/link';
+import { Home, Info, Mail, HelpCircle, LogIn } from 'lucide-react';
 
 export function PublicFooter() {
   return (
@@ -26,10 +28,12 @@ export function PublicFooter() {
             <h4 className="font-bold text-base">Enlaces</h4>
             {/* VStack de enlaces */}
             <nav className="flex flex-col gap-2 items-center md:items-start text-sm">
-              <Link href="/catalog" className="text-gray-400 hover:text-white transition-colors">Catálogo</Link>
-              <Link href="/about" className="text-gray-400 hover:text-white transition-colors">Sobre Nosotros</Link>
-              <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contacto</Link>
-              <Link href="/faq" className="text-gray-400 hover:text-white transition-colors">FAQ</Link>
+              <Link href="/catalog" className="flex items-center text-gray-400 hover:text-white transition-colors"><Home className="mr-2 h-4 w-4 text-gray-400" />Catálogo</Link>
+              <Link href="/about" className="flex items-center text-gray-400 hover:text-white transition-colors"><Info className="mr-2 h-4 w-4 text-gray-400" />Sobre Nosotros</Link>
+              <Link href="/contact" className="flex items-center text-gray-400 hover:text-white transition-colors"><Mail className="mr-2 h-4 w-4 text-gray-400" />Contacto</Link>
+              <Link href="/faq" className="flex items-center text-gray-400 hover:text-white transition-colors"><HelpCircle className="mr-2 h-4 w-4 text-gray-400" />FAQ</Link>
+              {/* enlace discreto al sistema - parece texto pero es funcional */}
+              <Link href="/sys/login" className="flex items-center text-sm text-gray-400 hover:text-gray-300 transition-colors"><LogIn className="mr-2 h-4 w-4 text-gray-400" />sys</Link>
             </nav>
           </div>
           

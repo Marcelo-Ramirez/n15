@@ -3,6 +3,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from 'next/image';
+import logoImg from '@/app/images/logo/logo.png';
 import Link from 'next/link';
 import { Menu, ShoppingCart, User, Package, ListOrdered} from 'lucide-react'; // Iconos
 
@@ -39,11 +40,12 @@ export function PublicHeader() {
           {/* LOGO (Izquierda) */}
           <div className="flex items-center space-x-4 cursor-pointer" onClick={() => router.push("/")}>
             <Image
-              src="/images/logos/logo.png"
+              src={logoImg}
               alt="MuytunaSys"
-              width={120} // Ancho fijo para Next Image
-              height={40} // Altura fija
+              width={65}
+              height={40}
               className="object-contain"
+              priority={true}
             />
           </div>
 
@@ -51,14 +53,22 @@ export function PublicHeader() {
           <nav className="hidden md:flex items-center space-x-6">
             {NavLinks.map((link) => (
               <Link key={link.href} href={link.href} passHref legacyBehavior>
-                <a className={commonClasses}>{link.label}</a>
+                <a className={`${commonClasses} flex items-center gap-2`}>
+                  {/* desktop icon next to label */}
+                  <link.icon className="h-4 w-4 text-gray-200" />
+                  <span>{link.label}</span>
+                </a>
               </Link>
             ))}
           </nav>
           
           {/* MENÚ RESPONSIVO (Móvil) */}
           <div className="md:hidden flex items-center space-x-3">
-             
+            {/* Botón Catálogo visible en móvil */}
+            <Button variant="ghost" size="sm" onClick={() => router.push('/catalog')} className="flex items-center gap-2 px-3">
+              <Package className="h-4 w-4" />
+              <span className="text-sm">Catálogo</span>
+            </Button>
             {/* 1. Botón Carrito (Visible en Móvil) */}
             <Button variant="ghost" size="icon" onClick={() => router.push('/cart')}>
               <ShoppingCart className="h-5 w-5" />
@@ -71,7 +81,7 @@ export function PublicHeader() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-48 bg-background dark:bg-gray-950 shadow-lg rounded-md">
                 {NavLinks.map((link) => (
                     <DropdownMenuItem key={link.href} onClick={() => router.push(link.href)}>
                         <link.icon className="mr-2 h-4 w-4" />

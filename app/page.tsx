@@ -15,41 +15,63 @@ import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/c
 import { Separator } from "@/components/ui/separator";
 
 // --- Placeholder para la Tarjeta de Producto (Adaptación de tu Box) ---
+import gomitaBeterraga from './images/products/gomita/g-beterraga.png';
+import gomitaFrutilla from './images/products/gomita/g-frutilla.png';
+import pulpaMandarina from './images/products/pulpa/p-mandarina.png';
+
 interface ProductCardProps {
   title: string;
   description: string;
   price: string;
-  imageSrc: string;
+  imageSrc: any; // StaticImageData | string
   imageAlt: string;
 }
 
-const ProductCard = ({ title, description, price, imageSrc, imageAlt }: ProductCardProps) => (
-  <Card className="w-full max-w-xs shadow-md hover:shadow-lg transition-shadow duration-300">
-    <CardContent className="p-0">
-      <div className="relative h-48 bg-muted/50 rounded-t-lg overflow-hidden">
-        <Image 
-          src={imageSrc} 
-          alt={imageAlt} 
-          fill={true} 
-          style={{ objectFit: 'contain' }}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="p-4"
-        />
+const ProductCard = ({ title, description, price, imageSrc, imageAlt }: ProductCardProps) => {
+  // If imageSrc is StaticImageData we can access width/height
+  const isStatic = typeof imageSrc === 'object' && imageSrc?.width && imageSrc?.height;
+  const isPortrait = isStatic ? (imageSrc.height > imageSrc.width) : false;
+
+  // For portrait images increase container height and render with contain and computed dimensions
+    if (isPortrait) {
+    const ratio = imageSrc.width / imageSrc.height;
+    const targetHeight = 200; // px (reduced so it fits unified container)
+    const targetWidth = Math.round(targetHeight * ratio);
+
+    return (
+      <Card className="w-full max-w-xs shadow-md hover:shadow-lg transition-shadow duration-300">
+        <CardContent className="p-0">
+          <div className="relative h-56 bg-muted/50 rounded-t-lg overflow-hidden flex items-center justify-center p-4">
+            <Image src={imageSrc} alt={imageAlt} width={targetWidth} height={targetHeight} style={{ objectFit: 'contain', objectPosition: 'center' }} />
+          </div>
+        </CardContent>
+        <div className="p-6 text-center">
+          <CardTitle className="text-lg font-semibold mb-2 text-foreground">{title}</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground mb-4">{description}</CardDescription>
+          <p className="text-xl font-bold text-primary">{price}</p>
+        </div>
+      </Card>
+    );
+  }
+
+  // Default: landscape or unknown size -> fill and cover
+  return (
+    <Card className="w-full max-w-xs shadow-md hover:shadow-lg transition-shadow duration-300">
+      <CardContent className="p-0">
+        <div className="relative h-56 bg-muted/50 rounded-t-lg overflow-hidden flex items-center justify-center p-4">
+          <div className="relative w-full h-full">
+            <Image src={imageSrc} alt={imageAlt} fill style={{ objectFit: 'cover', objectPosition: 'center' }} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
+          </div>
+        </div>
+      </CardContent>
+      <div className="p-6 text-center">
+        <CardTitle className="text-lg font-semibold mb-2 text-foreground">{title}</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground mb-4">{description}</CardDescription>
+        <p className="text-xl font-bold text-primary">{price}</p>
       </div>
-    </CardContent>
-    <div className="p-6 text-center">
-      <CardTitle className="text-lg font-semibold mb-2 text-foreground">
-        {title}
-      </CardTitle>
-      <CardDescription className="text-sm text-muted-foreground mb-4">
-        {description}
-      </CardDescription>
-      <p className="text-xl font-bold text-primary">
-        {price}
-      </p>
-    </div>
-  </Card>
-);
+    </Card>
+  );
+};
 // --- Fin Placeholder ---
 
 
@@ -57,9 +79,9 @@ export default function HomePage() {
   const router = useRouter();
 
   const productData: ProductCardProps[] = [
-    { title: 'Gomita Beterraga', description: 'Gomita natural sabor beterraga', price: 'Bs 1.5', imageSrc: '/images/products/gomitaBeterraga.png', imageAlt: 'Gomita Beterraga' },
-    { title: 'Gomita Frutilla', description: 'Gomita natural sabor frutilla', price: 'Bs 1.5', imageSrc: '/images/products/gomitaFrutilla.png', imageAlt: 'Gomita Frutilla' },
-    { title: 'Pulpa Mandarina', description: 'Pulpa natural sabor mandarina', price: 'Bs 5', imageSrc: '/images/products/pulaMandarina.png', imageAlt: 'Pulpa Mandarina' },
+    { title: 'Gomita Beterraga', description: 'Gomita natural sabor beterraga', price: 'Bs 1.5', imageSrc: gomitaBeterraga, imageAlt: 'Gomita Beterraga' },
+    { title: 'Gomita Frutilla', description: 'Gomita natural sabor frutilla', price: 'Bs 1.5', imageSrc: gomitaFrutilla, imageAlt: 'Gomita Frutilla' },
+    { title: 'Pulpa Mandarina', description: 'Pulpa natural sabor mandarina', price: 'Bs 5', imageSrc: pulpaMandarina, imageAlt: 'Pulpa Mandarina' },
   ];
 
   return (
@@ -78,22 +100,7 @@ export default function HomePage() {
               Descubre nuestra deliciosa colección de gomitas premium elaboradas con los mejores ingredientes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
-              <Button 
-                onClick={() => router.push('/catalog')}
-                size="lg"
-                className="font-semibold"
-              >
-                Ver Catálogo
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => router.push('/sys/login')}
-                className="font-semibold"
-              >
-                Ingresar al Sistema
-              </Button>
+              {/* Botones eliminados: la navegación a catálogo está en el header y el acceso al sistema está en el footer como link 'sys' */}
             </div>
           </div>
 

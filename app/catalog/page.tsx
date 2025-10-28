@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect, useMemo, Fragment } from "react";
+import { PublicHeader } from '@/components/layout/PublicHeader';
+import { PublicFooter } from '@/components/layout/PublicFooter';
 // ✅ Importación de NextAuth
 import { useSession, signOut } from "next-auth/react";
 import Image from 'next/image';
@@ -231,7 +233,8 @@ export default function CatalogPage() {
 
     return (
         // ✅ Usamos Fragment para evitar div innecesario, ya que el layout padre lo envuelve
-        <Fragment> 
+        <Fragment>
+            <PublicHeader />
             <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 
                 {/* Encabezado y Búsqueda */}
@@ -313,8 +316,7 @@ export default function CatalogPage() {
                 onClose={() => setIsRegisterModalOpen(false)}
                 onOpenLogin={openLogin} 
             />
-            
-            {/* ❌ Footer ya no es necesario aquí */}
+            <PublicFooter />
         </Fragment>
     );
 }
