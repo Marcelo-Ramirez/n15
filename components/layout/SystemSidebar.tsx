@@ -63,6 +63,8 @@ export default function SystemSidebar({ role, isCollapsed = false, onToggle }: S
     const roleSpecificItems: Record<UserRole, Omit<SidebarItem, 'isUserButton' | 'isLogout'>[]> = {
       admin: [
         { label: 'Dashboard', href: `/sys/${role}/dashboard`, icon: iconMap.FiHome },
+  { label: 'Capacidad de producción', href: `/sys/${role}/production-capacity`, icon: iconMap.FiBarChart },
+        { label: 'Productividad', href: `/sys/${role}/productivity`, icon: iconMap.FiBarChart },
         { label: 'Gestión de Usuarios', href: `/sys/${role}/users`, icon: iconMap.FiUsers },
       ],
       stockroom: [

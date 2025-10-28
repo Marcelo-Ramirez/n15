@@ -1,22 +1,20 @@
 // app/api/orders/[orderId]/route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db'; // ⚡️ Asegúrate que sea /prisma si es tu alias
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // ⚡️ Ajusta la ruta
+import { authOptions } from '@/lib/auth'; // ⚡️ Ajusta la ruta
 
-interface RouteParams {
-    params: { orderId: string }
-}
-
-export async function GET(request: Request, { params }: RouteParams) {
-    const session = await getServerSession(authOptions);
-    const { orderId } = params;
+export async function GET(request: Request, context: any) {
+    const session = await getServerSession(authOptions as any);
+    const { params } = context;
+    const { orderId } = params as { orderId: string };
 
     // ... (Verificaciones de sesión y IDs) ...
-    if (!session || !session.user || !session.user.id) {
+    if (!session || !(session as any).user || !(session as any).user.id) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const clientId = parseInt(session.user.id, 10);
+    const clientId = parseInt((session as any).user.id, 10);
     const requestedOrderId = parseInt(orderId, 10); // ID de OrderClient
     if (isNaN(clientId) || isNaN(requestedOrderId)) {
         return NextResponse.json({ error: 'ID inválido' }, { status: 400 });

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 // ⚠️ ASUME: Tu cliente Prisma está accesible a través de @/lib/prisma
 import { prisma } from '@/lib/db'; 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'; 
+import { authOptions } from '@/lib/auth'; 
 // Importamos el tipo PrismaClient para tipar la transacción
 import { PrismaClient } from '@prisma/client'; 
 

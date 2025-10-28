@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Fragment } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation'; 
+import { useRouter } from 'next/navigation'; 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; 
@@ -215,9 +215,16 @@ const HistoryTab = () => {
 //      COMPONENTE PRINCIPAL (PAGE)
 // =====================================
 export default function OrdersDashboardPage() {
-    const searchParams = useSearchParams();
-    // Pestaña por defecto: 'pending' o 'history'
-    const defaultTab = searchParams.get('tab') || 'pending'; 
+    const [defaultTab, setDefaultTab] = useState('pending');
+    // Pestaña por defecto: 'pending' o 'history' - read from window location on client
+    useEffect(() => {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            setDefaultTab(params.get('tab') || 'pending');
+        } catch (e) {
+            setDefaultTab('pending');
+        }
+    }, []);
 
     return (
         <Fragment> 
