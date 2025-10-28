@@ -73,8 +73,20 @@ export default function ProductivityPanel({ initialData }: { initialData?: { raw
   // fetchMonth implemented above with useCallback
 
   const profits = salesRevenue !== null && rawMaterialCost !== null && laborCost !== '' ? salesRevenue - rawMaterialCost - Number(laborCost) : null;
-
   const fmt = (n: number) => n.toLocaleString('es-ES', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+
+  // Productivity = salesRevenue / (rawMaterialCost + laborCost)
+  const productivity = (() => {
+    if (salesRevenue === null || rawMaterialCost === null || laborCost === '') return null;
+    const denom = rawMaterialCost + Number(laborCost);
+    if (denom === 0) return null;
+    return salesRevenue / denom;
+  })();
+
+  // debug
+  useEffect(() => {
+    console.log('productivity debug', { salesRevenue, rawMaterialCost, laborCost, productivity });
+  }, [salesRevenue, rawMaterialCost, laborCost, productivity]);
 
   return (
     <div>
@@ -128,6 +140,11 @@ export default function ProductivityPanel({ initialData }: { initialData?: { raw
         <div>
           <Label>Resultado (Ganancias - MP - Mano de obra)</Label>
       <Card className="p-3 mt-2">{profits !== null ? fmt(Number(profits.toFixed(2))) : '-'}</Card>
+        </div>
+
+        <div>
+          <Label>Productividad (Ganancias / (MP + Mano obra))</Label>
+          <Card className="p-3 mt-2">{productivity !== null ? productivity.toFixed(4) : '-'}</Card>
         </div>
       </div>
 
