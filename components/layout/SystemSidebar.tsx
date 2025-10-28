@@ -3,7 +3,7 @@
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import {
-  Home, Users, Package, BarChart3, LogOut, Menu, X, User, ShoppingCart, type LucideIcon,TrendingUp
+  Home, Users, Package, BarChart3, LogOut, Menu, X, User, ShoppingCart, type LucideIcon,TrendingUp, Wrench
 } from 'lucide-react';
 import { cn } from "@/lib/utils"; // Utilidad para combinar clases condicionalmente
 
@@ -46,6 +46,7 @@ const iconMap = {
   FiX: X,
   FiUser: User,
   FiShoppingCart: ShoppingCart,
+  FiWrench: Wrench,
 };
 
 // --- Componente ---
@@ -66,6 +67,7 @@ export default function SystemSidebar({ role, isCollapsed = false, onToggle }: S
         { label: 'Dashboard', href: `/sys/${role}/dashboard`, icon: iconMap.FiHome },
         { label: 'Gestión de Usuarios', href: `/sys/${role}/users`, icon: iconMap.FiUsers },
         { label: 'Pronóstico de Demanda', href: `/sys/${role}/pronostico-demanda`, icon: iconMap.FiTrendingUp },
+        { label: 'Reporte de Mantenimiento', href: `/sys/${role}/mantenimiento`, icon: iconMap.FiWrench },
       ],
       stockroom: [
         { label: 'Ingredientes', href: `/sys/${role}/ingredients`, icon: iconMap.FiBarChart },

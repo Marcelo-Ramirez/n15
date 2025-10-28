@@ -1,7 +1,7 @@
 // pages/api/auth/[...nextauth].ts
 import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { verifyUser } from "@/lib/db";
+import { verifyUser,getUserByUserName } from "@/lib/db";
 import { verify2FA } from "@/lib/twofactor/verify";
 import { decrypt } from "@/lib/twofactor/encrypt"; // ⚡ Descifrar el secreto TOTP
 
@@ -69,44 +69,52 @@ export const authOptions: AuthOptions = {
   pages: { signIn: "/login" },
   session: { strategy: "jwt" },
 
-  callbacks: {
-    async jwt({ token, user, trigger, session: newSessionData }) {
-      if (trigger === "update" && newSessionData) {
-        if (newSessionData?.requires2FA !== undefined) {
-          token.requires2FA = newSessionData.requires2FA;
+  callbacks: {
+    async jwt({ token, user, trigger }) {
+        if (user) {
+            const customUser = user;
+            token.id = customUser.id;
+            token.name = customUser.name;
+            token.userName = customUser.userName; 
+            token.role = customUser.role;
+            
+            token.requires2FA = customUser.requires2FA || false;
+            token.twoFactorEnabled = customUser.twoFactorEnabled || false;
+            
+            token.createdAt = customUser.createdAt instanceof Date 
+                ? customUser.createdAt.toISOString() 
+                : customUser.createdAt;
         }
-        if (newSessionData?.twoFactorEnabled !== undefined) {
-          token.twoFactorEnabled = newSessionData.twoFactorEnabled;
+
+        if (trigger === "update" && token.userName) {
+            try {
+                const dbUser = await getUserByUserName(token.userName);
+                
+                if (dbUser) {
+                    token.twoFactorEnabled = dbUser.twoFactorEnabled;
+                    token.requires2FA = false; 
+                }
+            } catch (e) {
+                console.error("Error recargando usuario para update:", e);
+            }
         }
-      }
-    
-      if (user) {
-        token.id = user.id;
-        token.name = user.name;
-        token.userName = user.userName; 
-        token.role = user.role;
-        token.requires2FA = user.requires2FA || false;
-        token.twoFactorEnabled = user.twoFactorEnabled || false;
-       token.createdAt = user.createdAt instanceof Date 
-            ? user.createdAt.toISOString() 
-            : user.createdAt;
-      }
-      return token; 
-    },
-    
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id;
-        session.user.name = token.name;
-        session.user.userName = token.userName; 
-        session.user.role = token.role;
-        session.user.requires2FA = token.requires2FA || false;
-        session.user.twoFactorEnabled = token.twoFactorEnabled || false;
-        session.user.createdAt = token.createdAt;
-      }
-      return session;
-    },
-  },
+
+        return token; 
+    },
+    
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.userName = token.userName; 
+        session.user.role = token.role;
+        session.user.requires2FA = token.requires2FA || false;
+        session.user.twoFactorEnabled = token.twoFactorEnabled || false;
+        session.user.createdAt = token.createdAt;
+      }
+      return session;
+    },
+  },
 
   secret: process.env.NEXTAUTH_SECRET || "tu-secreto-aqui",
 };

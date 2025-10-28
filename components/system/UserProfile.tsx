@@ -77,51 +77,45 @@ export default function UserProfile() {
     }
   };
 
-  const handleConfirm2FA = async () => {
-    setIsConfirming2FA(true);
-    try {
-      const response = await fetch("/api/auth/2fa/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "No se pudo confirmar 2FA.");
-      toast.success("¡2FA activado correctamente!"); // Usa toast de sonner
-      await update({ // Actualiza la sesión de NextAuth
-        ...session,
-        user: { ...session?.user, twoFactorEnabled: true }
-      });
-      setToken("");
-      setIsDialogOpen(false); // Cierra Dialog
-    } catch (error) {
-      toast.error("Error al confirmar", { // Usa toast de sonner
-        description: error instanceof Error ? error.message : "Fallo al confirmar 2FA.",
-      });
-    } finally {
-      setIsConfirming2FA(false);
-    }
-  };
+  const handleConfirm2FA = async () => {
+    setIsConfirming2FA(true);
+    try {
+      const response = await fetch("/api/auth/2fa/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudo confirmar 2FA.");
+      toast.success("¡2FA activado correctamente!"); 
+      await update(); 
+      setToken("");
+      setIsDialogOpen(false); 
+    } catch (error) {
+      toast.error("Error al confirmar", {
+        description: error instanceof Error ? error.message : "Fallo al confirmar 2FA.",
+      });
+    } finally {
+      setIsConfirming2FA(false);
+    }
+  };
 
-  const handleDisable2FA = async () => {
-    setIsDisabling2FA(true);
-    try {
-      const response = await fetch('/api/auth/2fa/disable', { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'No se pudo desactivar 2FA.');
-      toast.success("2FA ha sido desactivado."); // Usa toast de sonner
-      await update({
-         ...session,
-         user: { ...session?.user, twoFactorEnabled: false }
-      });
-    } catch (error) {
-      toast.error("Error al desactivar", { // Usa toast de sonner
-        description: error instanceof Error ? error.message : 'Ocurrió un error.',
-      });
-    } finally {
-        setIsDisabling2FA(false);
-    }
-  };
+  const handleDisable2FA = async () => {
+    setIsDisabling2FA(true);
+    try {
+      const response = await fetch('/api/auth/2fa/disable', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'No se pudo desactivar 2FA.');
+      toast.success("2FA ha sido desactivado."); 
+      await update();
+    } catch (error) {
+      toast.error("Error al desactivar", { 
+        description: error instanceof Error ? error.message : 'Ocurrió un error.',
+      });
+    } finally {
+        setIsDisabling2FA(false);
+    }
+  };
 
   // --- Renderizado Condicional ---
   if (status === "loading") {

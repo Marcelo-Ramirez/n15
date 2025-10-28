@@ -218,9 +218,12 @@ export default function OrdersDashboardPage() {
     const searchParams = useSearchParams();
     // Pestaña por defecto: 'pending' o 'history'
     const defaultTab = searchParams.get('tab') || 'pending'; 
-
+    const router = useRouter();
     return (
         <Fragment> 
+             <div className="p-12 text-center text-white-600">
+                <Button variant="link" onClick={() => router.back()}>Volver</Button>
+            </div>
             <Tabs defaultValue={defaultTab} className="w-full" activationMode="manual"> 
                 {/* La TabsList vive en el layout padre (app/(sistema_interno)/layout.tsx) */}
                 

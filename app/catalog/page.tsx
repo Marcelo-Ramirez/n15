@@ -4,11 +4,11 @@ import React, { useState, useEffect, useMemo, Fragment } from "react";
 // ✅ Importación de NextAuth
 import { useSession, signOut } from "next-auth/react";
 import Image from 'next/image';
-import { Search, ShoppingCart, Loader2, LogOut } from 'lucide-react'; 
+import { Search, ShoppingCart, Loader2, LogOut,ArrowLeft } from 'lucide-react'; 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { useRouter } from 'next/navigation';
 // ✅ Importación de los Modals
 import { AddToCartModal } from '@/components/cart/AddToCartModal'; 
 import { CartSummaryModal } from '@/components/cart/carritohistorial'; 
@@ -93,7 +93,7 @@ const ProductCard = (props: ProductCardProps) => {
 
 export default function CatalogPage() {
     const { data: session, status } = useSession(); 
-    
+    const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -232,6 +232,17 @@ export default function CatalogPage() {
     return (
         // ✅ Usamos Fragment para evitar div innecesario, ya que el layout padre lo envuelve
         <Fragment> 
+        <div className="fixed top-20 left-8 z-50"> 
+            <Button 
+                variant="outline" 
+                onClick={() => router.back()} // Navega a la página anterior
+                // Usamos h-12 y rounded-full para coincidir con los estilos de los botones de la derecha (Mis Pedidos/Carrito)
+                className="text-primary hover:bg-primary/10 h-12 px-4 border-2 rounded-full shadow-lg" 
+            >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver
+            </Button>
+        </div>
             <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 
                 {/* Encabezado y Búsqueda */}
