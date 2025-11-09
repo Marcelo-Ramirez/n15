@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useMemo, Fragment, useCallback } from "react";
 import { useSession} from "next-auth/react";
-import { Search, ShoppingBag, Loader2, Menu } from 'lucide-react'; 
+import { PublicHeader } from "@/components/layout/PublicHeader";
+import { PublicFooter } from "@/components/layout/PublicFooter"; 
 import { Button } from "@/components/ui/button";
 import { AddToCartModal } from '@/components/cart/AddToCartModal'; 
 import { CartSummaryModal } from '@/components/cart/carritohistorial'; 
@@ -218,62 +219,11 @@ export default function CatalogPage() {
     // --- RENDERIZADO ---
 
     return (
-        <Fragment> 
-            
-            {/* 🍎 MODIFICACIÓN CLAVE: Contenedor Fijo para el Header y Título Centrado */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-zinc-200/50 dark:border-zinc-800">
-                <div className="container max-w-7xl mx-auto flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
-                    
-                    {/* --- Botón de Menú (Izquierda) --- */}
-                    <div className="flex-1 flex justify-start pointer-events-auto">
-                        <Button 
-                            variant="outline" 
-                            onClick={() => console.log('Abrir menú lateral/sidebar')} 
-                            className="h-12 w-12 border-2 rounded-full shadow-lg bg-background text-zinc-800 dark:text-zinc-200" 
-                            size="icon"
-                            title="Abrir Menú"
-                        >
-                            <Menu className="h-6 w-6" /> 
-                        </Button>
-                    </div>
-                    
-                    {/* --- Título Centrado (Superpuesto para asegurar el centro) --- */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 pointer-events-auto">
-                            Gomitas Saludables
-                        </h1>
-                    </div>
-
-                    {/* --- Contenedor de Carrito (Derecha) --- */}
-                    <div className="flex-1 flex justify-end pointer-events-auto">
-                        <div className="flex items-center space-x-2">
-                            {status === 'loading' && (
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                            )}
-                            <Button 
-                                variant="ghost" 
-                                className="relative h-12 w-12 rounded-full shadow-none hover:bg-zinc-200/50 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-                                onClick={handleOpenSummaryChecked} 
-                                disabled={status === 'loading'}
-                                size="icon"
-                                title="Ver Carrito"
-                            >
-                                <ShoppingBag className="h-6 w-6" />
-                                {totalItemsInCart > 0 && (
-                                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-yellow-600 rounded-full">
-                                        {totalItemsInCart}
-                                    </span>
-                                )}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
+        <Fragment>
+            <PublicHeader />
 
             {/* --- LAYOUT DEL CATÁLOGO --- */}
-            {/* 🍎 CORRECCIÓN: Ajustamos el pt para que el contenido comience después del header fijo */}
-            <main className="flex-1 pt-[100px] sm:pt-[110px]"> 
+            <main className="min-h-screen bg-background pt-24"> 
 
                 {/* Barra de Búsqueda (CORREGIDA CON DEBOUNCE) */}
                 <div className="px-4 py-3 max-w-xl mx-auto"> 
@@ -368,6 +318,7 @@ export default function CatalogPage() {
                 />
                 
             </main>
+            <PublicFooter />
         </Fragment>
     );
 }
