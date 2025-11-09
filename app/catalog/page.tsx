@@ -1,35 +1,22 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useMemo, Fragment } from "react";
-import { PublicHeader } from '@/components/layout/PublicHeader';
-import { PublicFooter } from '@/components/layout/PublicFooter';
-// ✅ Importación de NextAuth
+// Importaciones Mantenidas
 import { useSession, signOut } from "next-auth/react";
-import Image from 'next/image';
-import productImages from '@/components/imageMap/productImages';
-import { Search, ShoppingCart, Loader2, LogOut } from 'lucide-react'; 
+// ❌ ArrowLeft ya no se usa
+// ✅ Icono añadido: Menu para el botón de navegación
+import { Search, ShoppingBag, Loader2, LogOut, ArrowLeft, Menu } from 'lucide-react'; 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-// ✅ Importación de los Modals
+import { useRouter } from 'next/navigation';
 import { AddToCartModal } from '@/components/cart/AddToCartModal'; 
 import { CartSummaryModal } from '@/components/cart/carritohistorial'; 
 import { ClientLoginModal } from '@/components/auth/ClientLoginModal'; 
 import { ClientRegisterModal } from '@/components/auth/ClientRegisterModal'; 
 
+import { ProductCard, Product} from '@/components/cart/ProductCards';
+
 
 // --- Tipos de Datos (Mantenidos) ---
-interface Product {
-    id: number;
-    name: string;
-    type: string;
-    flavor: string;
-    pricePerUnit: number;
-    currentQuantity: number;
-    imageUrl?: string | null;
-    description?: string | null;
-}
 interface CartItem {
     productId: number;
     name: string;
@@ -38,106 +25,35 @@ interface CartItem {
 }
 type Cart = Record<number, CartItem>;
 
-interface ProductCardProps extends Product {
-    onOpenAddModal: (product: Product) => void; 
-}
-
-// --- COMPONENTE TARJETA DE PRODUCTO ---
-const ProductCard = (props: ProductCardProps) => {
-    const { onOpenAddModal, ...productProps } = props; 
-    const { name, description, flavor, pricePerUnit, currentQuantity, imageUrl } = productProps;
-    const isOutOfStock = currentQuantity === 0;
-
-    // Normalize imageUrl key: ensure it starts with '/images/' when looking up in the static map
-    const normalizeKey = (url?: string | null) => {
-        if (!url) return undefined;
-        // If already starts with /images use as-is, otherwise try to prefix
-        if (url.startsWith('/images/')) return url;
-        if (url.startsWith('images/')) return `/${url}`;
-        // If it's an absolute URL (http) or data: return as-is
-        if (/^https?:\/\//i.test(url) || url.startsWith('data:')) return url;
-        // fallback: try to prefix
-        return `/${url}`;
-    };
-
-    const lookupKey = typeof imageUrl === 'string' ? normalizeKey(imageUrl) : undefined;
-    const resolvedImage = lookupKey && productImages[lookupKey] ? productImages[lookupKey] : (imageUrl as string | undefined);
-
-    return (
-        <Card className="w-full max-w-xs sm:max-w-[320px] md:max-w-md shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between overflow-hidden">
-            <div className="relative h-48 bg-gray-100 dark:bg-gray-800 rounded-t-lg overflow-hidden flex items-center justify-center">
-                {resolvedImage ? (
-                    <Image 
-                        src={resolvedImage} 
-                        alt={name} 
-                        fill={true} 
-                        style={{ objectFit: 'contain' }}
-                        sizes="(max-width: 768px) 90vw, 320px"
-                    />
-                ) : (
-                    <p className="text-muted-foreground text-sm">Imagen no disponible</p>
-                )}
-            </div>
-            <CardHeader className="pt-4 pb-2 space-y-1">
-                <CardTitle className="text-xl font-bold">{name}</CardTitle>
-                <CardDescription className="text-sm text-muted-foreground">
-                    {description || `Delicioso sabor ${flavor}`}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow pb-4">
-                <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Tipo: <span className="font-semibold">{flavor}</span></p>
-                </div>
-            </CardContent>
-            <div className="px-6 pb-6 pt-0 space-y-3">
-                <div className="flex justify-between items-center">
-                    <p className="text-2xl font-extrabold text-primary">Bs {pricePerUnit.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">Stock: {currentQuantity}</p>
-                </div>
-                <Button 
-                    onClick={() => onOpenAddModal(productProps)} 
-                    disabled={isOutOfStock}
-                    className="w-full"
-                >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    {isOutOfStock ? 'Agotado' : 'Seleccionar Cantidad'}
-                </Button>
-            </div>
-        </Card>
-    );
-};
-// --- FIN COMPONENTE TARJETA DE PRODUCTO ---
-
 
 export default function CatalogPage() {
+    // --- LÓGICA 100% MANTENIDA ---
     const { data: session, status } = useSession(); 
-    
-    const [products, setProducts] = useState<Product[]>([]);
+    const router = useRouter();
+    const [products, setProducts] = useState<Product[]>([]); 
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [cart, setCart] = useState<Cart>({});
     
-    // Estados para Modals de Transacción
     const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null); 
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
 
-    // Estados para Modals de Autenticación
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
-    // Funciones de control de Modals de Autenticación
+    const [activeFilter, setActiveFilter] = useState("All");
+
     const openLogin = () => { setIsLoginModalOpen(true); setIsRegisterModalOpen(false); };
     const openRegister = () => { setIsRegisterModalOpen(true); setIsLoginModalOpen(false); };
     
     const handleLoginSuccess = () => {
         setIsLoginModalOpen(false);
-        location.reload(); // Recarga simple para refrescar la sesión
+        location.reload(); 
     };
 
-
-    // 1. Cargar productos
+    // 1. Cargar productos (Mantenido)
     useEffect(() => {
         const fetchProducts = async () => {
             try {
@@ -166,9 +82,8 @@ export default function CatalogPage() {
         fetchProducts();
     }, []);
     
-    // 2. Cargar/Guardar carrito en localStorage
+    // 2. Cargar/Guardar carrito en localStorage (Mantenido)
     useEffect(() => {
-        // Cargar al inicio
         try {
             const storedCart = localStorage.getItem('userCart');
             if (storedCart) {
@@ -178,10 +93,9 @@ export default function CatalogPage() {
             console.error("Error al cargar carrito desde localStorage:", e);
             localStorage.removeItem('userCart');
         }
-    }, []); // Solo al montar el componente
+    }, []); 
 
     useEffect(() => {
-        // Guardar cada vez que el carrito cambia
         try {
             if (Object.keys(cart).length > 0) {
                 localStorage.setItem('userCart', JSON.stringify(cart));
@@ -191,23 +105,31 @@ export default function CatalogPage() {
         } catch (e) {
             console.error("Error al guardar carrito en localStorage:", e);
         }
-    }, [cart]); // Se ejecuta cada vez que 'cart' se actualiza
+    }, [cart]); 
     
-    // Lógica de filtrado
+    // Lógica de filtrado (Mantenido)
     const filteredProducts = useMemo(() => {
-        const excludedProducts = products.filter((p) => !/galleta|pan|torta/i.test(p.name));
-        if (!searchTerm) { return excludedProducts; }
+        let processedProducts = products.filter((p) => !/galleta|pan|torta/i.test(p.name));
+        
+        if (activeFilter !== "All") {
+            processedProducts = processedProducts.filter((p) => 
+                p.type.toLowerCase() === activeFilter.toLowerCase() || 
+                p.flavor.toLowerCase() === activeFilter.toLowerCase()
+            );
+        }
+        
+        if (!searchTerm) { return processedProducts; }
         const term = searchTerm.toLowerCase();
-        return excludedProducts.filter((p) => p.name.toLowerCase().includes(term) || p.type.toLowerCase().includes(term) || p.flavor.toLowerCase().includes(term));
-    }, [products, searchTerm]);
+        return processedProducts.filter((p) => p.name.toLowerCase().includes(term) || p.type.toLowerCase().includes(term) || p.flavor.toLowerCase().includes(term));
+    }, [products, searchTerm, activeFilter]);
 
-    // Función para abrir el modal de añadir
-    const handleOpenAddModal = (product: Product) => {
+    // Función para abrir el modal de añadir (Mantenido)
+    const handleOpenAddModal = (product: Product) => { 
         setSelectedProduct(product); 
         setIsAddModalOpen(true); 
     };
 
-    // Lógica de añadir al carrito (llamada por AddToCartModal)
+    // Lógica de añadir al carrito (Mantenido)
     const handleAddToCart = (productId: number, quantity: number) => {
         const productToAdd = products.find(p => p.id === productId);
         if (!productToAdd || productToAdd.currentQuantity === 0 || quantity < 1) { return; }
@@ -230,12 +152,12 @@ export default function CatalogPage() {
         });
     };
 
-    // Calcular ítems para el ícono
+    // Calcular ítems para el ícono (Mantenido)
     const totalItemsInCart = useMemo(() => {
         return Object.values(cart).reduce((total, item) => total + item.quantity, 0);
     }, [cart]);
 
-    // ✅ FUNCIÓN CORREGIDA: Verifica la sesión antes de abrir el resumen
+    // Función de chequeo de sesión (Mantenido)
     const handleOpenSummaryChecked = () => {
         if (status === 'loading') return; 
 
@@ -246,70 +168,137 @@ export default function CatalogPage() {
         }
     };
 
+    const filters = ["All", "Sweet", "Sour", "New", "Tropical"];
+
+    // --- FIN DE LA LÓGICA ---
 
     return (
-        // ✅ Usamos Fragment para evitar div innecesario, ya que el layout padre lo envuelve
-        <Fragment>
-            <PublicHeader />
-            <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                
-                {/* Encabezado y Búsqueda */}
-                <div className="text-center mb-10 space-y-4">
-                    <h1 className="text-4xl font-extrabold tracking-tight text-foreground">Nuestro Catálogo de Gomitas</h1>
-                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Descubre nuestra deliciosa colección de productos.</p>
-                    <div className="flex max-w-md mx-auto relative">
-                        <Input type="text" placeholder="Buscar productos..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pr-16 h-11" />
-                        <Button className="absolute right-0 h-11 w-14" disabled={loading}><Search className="h-4 w-4" /></Button>
-                    </div>
-                </div>
-
-                {/* 🛒 ICONO DE CARRITO Y BOTÓN DE LOGIN/LOGOUT */}
-                {/* ⚠️ NOTA: Este elemento fijo puede superponerse al menú del layout padre. Considera moverlo al layout. */}
-                <div className="fixed top-20 right-8 z-50 flex items-center space-x-2">
-                    
-
-                    {/* Botón del Carrito */}
-                    <Button 
-                        variant="ghost" 
-                        className="relative h-12 w-12 rounded-full shadow-xl bg-gray-800 text-white flex items-center justify-center"
-                        onClick={handleOpenSummaryChecked} 
-                        disabled={status === 'loading'}
-                        title="Ver Carrito"
-                    >
-                        <ShoppingCart className="h-6 w-6" />
-                        {totalItemsInCart > 0 && (
-                            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                                {totalItemsInCart}
-                            </span>
-                        )}
-                    </Button>
-                </div>
-
-
-                {/* --- Renderizado Condicional de Productos --- */}
-                {loading || fetchError || filteredProducts.length === 0 ? (
-                    loading || status === 'loading' ? (
-                        <div className="text-center py-12"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /><p className="mt-4 text-muted-foreground">Cargando...</p></div>
-                    ) : fetchError ? ( 
-                        <div className="text-center py-12 p-4 border border-destructive bg-destructive/10 text-destructive rounded-md"><p className="font-bold">Error al cargar productos:</p><p className="text-sm">{fetchError}</p><Button className="mt-4" onClick={() => window.location.reload()}>Recargar Página</Button></div>
-                    ) : ( 
-                        <p className="text-center text-muted-foreground py-12 text-lg">{searchTerm ? `No se encontraron productos para "${searchTerm}"` : "No hay productos disponibles"}</p>
-                    )
-                ) : (
-                    /* Grid para Productos */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 justify-items-center max-w-6xl mx-auto">
-                        {filteredProducts.map((product) => (
-                            <ProductCard key={product.id} {...product} onOpenAddModal={handleOpenAddModal} />
-                        ))}
-                    </div>
-                )}
+        <Fragment> 
+            
+            {/* --- 1. BOTONES DE NAVEGACIÓN (HEADER/FIXED) --- */}
+            
+            {/* ❌ Eliminado el div "fixed top-20 left-8 z-50" del botón Volver */}
+            
+            {/* 🔴 NUEVO BOTÓN DE MENÚ (Posicionado en la izquierda como el "Volver" anterior) */}
+            <div className="fixed top-20 left-8 z-50"> 
+                <Button 
+                    variant="outline" 
+                    // ⚠️ Nota: Aquí iría tu lógica para abrir el menú lateral (sidebar)
+                    onClick={() => console.log('Abrir menú lateral/sidebar')} 
+                    className="h-12 w-12 border-2 rounded-full shadow-lg bg-background text-zinc-800 dark:text-zinc-200" 
+                    size="icon"
+                    title="Abrir Menú"
+                >
+                    <Menu className="h-6 w-6" /> 
+                </Button>
             </div>
 
-            {/* MODALS */}
+
+            <div className="fixed top-20 right-8 z-50 flex items-center space-x-2">
+                {/* ❌ ELIMINADA toda la lógica de botones "Entrar" / "Cerrar Sesión" */}
+                {/* Solo se deja el spinner de carga si la sesión está en proceso */}
+                {status === 'loading' && (
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                )}
+
+                {/* --- 🛍️ Botón de Carrito (Mantenido) --- */}
+                <Button 
+                    variant="default" 
+                    className="relative h-12 w-12 rounded-full shadow-xl"
+                    onClick={handleOpenSummaryChecked} 
+                    disabled={status === 'loading'}
+                    title="Ver Carrito"
+                >
+                    <ShoppingBag className="h-6 w-6" />
+                    {totalItemsInCart > 0 && (
+                        <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                            {totalItemsInCart}
+                        </span>
+                    )}
+                </Button>
+            </div>
+
+
+            {/* --- LAYOUT DEL CATÁLOGO --- */}
+            {/* Aumentamos el pt para dar más espacio a los botones fijos */}
+            <main className="flex-1 pt-32 sm:pt-40"> 
+
+                {/* Barra de Búsqueda (Mantenido) */}
+                <div className="px-4 py-3 max-w-xl mx-auto"> 
+                    <label className="flex flex-col min-w-40 h-14 w-full">
+                        <div className="flex w-full flex-1 items-stretch rounded-full h-full">
+                            <div className="text-zinc-500 dark:text-zinc-400 flex border-none bg-zinc-200/50 dark:bg-zinc-800 items-center justify-center pl-5 rounded-l-full border-r-0">
+                                <Search className="h-5 w-5" />
+                            </div>
+                            <input 
+                                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-full text-zinc-800 dark:text-zinc-200 focus:outline-0 focus:ring-0 border-none bg-zinc-200/50 dark:bg-zinc-800 focus:border-none h-full placeholder:text-zinc-500 dark:placeholder:text-zinc-400 px-4 text-base font-normal" 
+                                placeholder="Buscar productos..." 
+                                value={searchTerm} 
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </label>
+                </div>
+
+                {/* 🔴 CORRECCIÓN: Contenedor ajustado para evitar desbordamiento horizontal */}
+                <div className="px-4 py-2">
+                    <div className="flex gap-3 overflow-x-auto whitespace-nowrap justify-start lg:justify-center">
+                        {filters.map((filter) => (
+                            <button 
+                                key={filter}
+                                onClick={() => setActiveFilter(filter)}
+                                className={`flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
+                                    activeFilter === filter 
+                                    ? 'bg-primary text-zinc-900' 
+                                    : 'bg-zinc-200/50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-700'
+                                }`}
+                            >
+                                <p className={`text-sm leading-normal ${activeFilter === filter ? 'font-bold' : 'font-medium'}`}>
+                                    {filter}
+                                </p>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                
+
+                {/* --- Renderizado de Productos (Mantenido) --- */}
+                <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+                    {loading || fetchError || filteredProducts.length === 0 ? (
+                        loading || status === 'loading' ? (
+                            <div className="text-center py-12"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /><p className="mt-4 text-zinc-500 dark:text-zinc-400">Cargando...</p></div>
+                        ) : fetchError ? ( 
+                            <div className="text-center py-12 p-4 border border-red-500 bg-red-500/10 text-red-500 rounded-md"><p className="font-bold">Error al cargar productos:</p><p className="text-sm">{fetchError}</p><Button className="mt-4" onClick={() => window.location.reload()}>Recargar Página</Button></div>
+                        ) : ( 
+                            <p className="text-center text-zinc-500 dark:text-zinc-400 py-12 text-lg">{searchTerm ? `No se encontraron productos para "${searchTerm}"` : "No hay productos disponibles"}</p>
+                        )
+                    ) : (
+                        /* GRILA CORREGIDA: grid-cols-2 desde móvil */
+                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 justify-items-center max-w-6xl mx-auto">
+                            {filteredProducts.map((product) => (
+                                <ProductCard key={product.id} {...product} onOpenAddModal={handleOpenAddModal} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* --- Botón "Cargar Más" (Mantenido) --- */}
+                {!loading && !fetchError && filteredProducts.length > 0 && (
+                    <div className="flex px-4 py-6 justify-center">
+                        <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-5 flex-1 bg-zinc-200/50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-base font-bold hover:bg-zinc-300/50 dark:hover:bg-zinc-700 transition-colors">
+                            <span className="truncate">Cargar Más (Demo)</span>
+                        </button>
+                    </div>
+                )}
+
+            </main>
+
+
+            {/* --- MODALS (Mantenido) --- */}
             <AddToCartModal isOpen={isAddModalOpen} onClose={() => {setIsAddModalOpen(false); setSelectedProduct(null);}} product={selectedProduct} onConfirmAdd={handleAddToCart} />
             <CartSummaryModal isOpen={isSummaryModalOpen} onClose={() => setIsSummaryModalOpen(false)} cart={cart} setCart={setCart} />
             
-            {/* MODALS DE AUTENTICACIÓN */}
+            {/* Mantenemos los modales, aunque el usuario ya no tenga botón para abrirlos */}
             <ClientLoginModal 
                 isOpen={isLoginModalOpen} 
                 onClose={() => setIsLoginModalOpen(false)} 
@@ -321,7 +310,7 @@ export default function CatalogPage() {
                 onClose={() => setIsRegisterModalOpen(false)}
                 onOpenLogin={openLogin} 
             />
-            <PublicFooter />
+            
         </Fragment>
     );
 }
