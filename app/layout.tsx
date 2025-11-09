@@ -5,10 +5,12 @@ import './globals.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es">
       <body>
         <Providers>
-          {children}
+          <div id="page-wrapper" className="min-h-screen transition-transform duration-300 ease-in-out md:translate-x-0">
+            {children}
+          </div>
           <Sonner /> 
         </Providers>
       </body>
