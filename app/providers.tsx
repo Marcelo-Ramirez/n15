@@ -10,7 +10,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       {/* Envuelve con ThemeProvider */}
       <ThemeProvider
         attribute="class" // Usa clases CSS para el tema (estándar con Tailwind)
-        defaultTheme="system" // Usa el tema del sistema por defecto
+        defaultTheme="system" // Respeta el tema del sistema al iniciar
         enableSystem // Permite cambiar entre claro/oscuro/sistema
         disableTransitionOnChange // Evita transiciones bruscas al cambiar tema
       >

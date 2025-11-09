@@ -111,7 +111,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background dark:bg-gray-950">
+    <div className="min-h-screen bg-background">
       <PublicHeader />
 
       <div className="container max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
