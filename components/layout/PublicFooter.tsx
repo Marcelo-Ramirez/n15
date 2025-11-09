@@ -28,7 +28,7 @@ export function PublicFooter() {
             <h4 className="font-bold text-base">Enlaces</h4>
             {/* VStack de enlaces */}
             <nav className="flex flex-col gap-2 items-center md:items-start text-sm">
-              <Link href="/catalog" className="flex items-center text-gray-400 hover:text-white transition-colors"><Home className="mr-2 h-4 w-4 text-gray-400" />Catálogo</Link>
+              <Link href="/catalog" className="flex items-center text-gray-400 hover:text-white transition-colors"><Home className="mr-2 h-4 w-4 text-gray-400" />Tienda</Link>
               <Link href="/about" className="flex items-center text-gray-400 hover:text-white transition-colors"><Info className="mr-2 h-4 w-4 text-gray-400" />Sobre Nosotros</Link>
               <Link href="/contact" className="flex items-center text-gray-400 hover:text-white transition-colors"><Mail className="mr-2 h-4 w-4 text-gray-400" />Contacto</Link>
               <Link href="/faq" className="flex items-center text-gray-400 hover:text-white transition-colors"><HelpCircle className="mr-2 h-4 w-4 text-gray-400" />FAQ</Link>
