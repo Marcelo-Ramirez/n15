@@ -32,6 +32,7 @@ const MobileNavItems = [
 const mobilePageTitles: Record<string, string> = {
   '/catalog': 'Gomitas Saludables',
   '/about': 'Sobre Nosotros',
+  '/contact': 'Contáctanos',
 };
 
 type SessionStatus = ReturnType<typeof useSession>['status'];

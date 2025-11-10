@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import { PublicFooter } from "@/components/layout/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { Leaf, HeartPulse, ShoppingBag } from "lucide-react";
 
@@ -153,7 +152,6 @@ export default function AboutPage() {
         </section>
       </main>
 
-      <PublicFooter />
     </div>
   );
 }
