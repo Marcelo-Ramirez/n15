@@ -3,9 +3,8 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
-import logoImg from '@/app/images/logo/logo.png';
 import Link from 'next/link';
-import { Menu, User, Package, ListOrdered, LogOut, Moon, Sun, X, ShoppingBag } from 'lucide-react'; // Iconos
+import { Menu, User, Package, ListOrdered, LogOut, Moon, Sun, X, ShoppingBag, Info, Phone, Home } from 'lucide-react'; // Iconos
 import { useSession, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
@@ -17,8 +16,151 @@ import { Button } from "@/components/ui/button";
 const NavLinks = [
   { href: '/catalog', label: 'Tienda', icon: Package },
   { href: '/orders', label: 'Mis Pedidos', icon: ListOrdered },
+  { href: '/about', label: 'Sobre Nosotros', icon: Info },
+  { href: '/contact', label: 'Contactanos', icon: Phone },
   { href: '/profile', label: 'Mi Cuenta', icon: User },
 ];
+
+const MobileNavItems = [
+  { href: '/', label: 'Inicio', icon: Home },
+  { href: '/catalog', label: 'Tienda', icon: Package },
+  { href: '/orders', label: 'Mis Pedidos', icon: ListOrdered },
+  { href: '/about', label: 'Sobre Nosotros', icon: Info },
+  { href: '/contact', label: 'Contactanos', icon: Phone },
+];
+
+const mobilePageTitles: Record<string, string> = {
+  '/catalog': 'Gomitas Saludables',
+  '/about': 'Sobre Nosotros',
+};
+
+type SessionStatus = ReturnType<typeof useSession>['status'];
+type SessionData = ReturnType<typeof useSession>['data'];
+
+interface DesktopNavLinksProps {
+  links: typeof NavLinks;
+  status: SessionStatus;
+  session: SessionData;
+  isActive: (href: string) => boolean;
+  commonClasses: string;
+  activeClasses: string;
+  onLogin: () => void;
+}
+
+const DesktopNavLinks = ({
+  links,
+  status,
+  session,
+  isActive,
+  commonClasses,
+  activeClasses,
+  onLogin,
+}: DesktopNavLinksProps) => (
+  <>
+    {links.map((link) => {
+      const itemClasses = `${commonClasses} flex items-center gap-1 ${isActive(link.href) ? activeClasses : ''}`;
+
+      if (link.href === '/profile') {
+        if (status === 'authenticated') {
+          return (
+            <Link key={link.href} href={link.href} className={itemClasses}>
+              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs">
+                {session?.user?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <span>{session?.user?.name || 'Usuario'}</span>
+            </Link>
+          );
+        }
+
+        return (
+          <button
+            key={link.href}
+            type="button"
+            onClick={onLogin}
+            className={`${commonClasses} flex items-center gap-1`}
+          >
+            <User className="h-6 w-6" />
+            <span>Iniciar Sesión</span>
+          </button>
+        );
+      }
+
+      const Icon = link.icon;
+      return (
+        <Link key={link.href} href={link.href} className={itemClasses}>
+          <Icon className="h-6 w-6" />
+          <span>{link.label}</span>
+        </Link>
+      );
+    })}
+  </>
+);
+
+interface MobileNavListProps {
+  isActive: (href: string) => boolean;
+  onNavigate: (href: string) => void;
+  isAuthenticated: boolean;
+  activeClasses: string;
+}
+
+const MobileNavList = ({
+  isActive,
+  onNavigate,
+  isAuthenticated,
+  activeClasses,
+}: MobileNavListProps) => (
+  <nav className="flex-1 p-4 space-y-4">
+    {isAuthenticated ? (
+      <button
+        type="button"
+        onClick={() => onNavigate('/profile')}
+        className={`flex items-center gap-3 w-full text-left p-2 rounded-md transition-colors text-foreground ${isActive('/profile') ? activeClasses : 'hover:bg-primary'}`}
+      >
+        <User className="h-5 w-5" />
+        <span>Ver Perfil</span>
+      </button>
+    ) : null}
+
+    {MobileNavItems.map((item) => {
+      const Icon = item.icon;
+      return (
+        <button
+          key={item.href}
+          type="button"
+          onClick={() => onNavigate(item.href)}
+          className={`flex items-center gap-3 w-full text-left p-2 rounded-md transition-colors text-foreground ${isActive(item.href) ? activeClasses : 'hover:bg-primary'}`}
+        >
+          <Icon className="h-5 w-5" />
+          <span>{item.label}</span>
+        </button>
+      );
+    })}
+  </nav>
+);
+
+interface MobileThemeToggleProps {
+  isDark: boolean;
+  toggleTheme: () => void;
+}
+
+const MobileThemeToggle = ({ isDark, toggleTheme }: MobileThemeToggleProps) => (
+  <label className="flex items-center justify-between w-full p-2 rounded-md transition-colors cursor-pointer text-foreground">
+    <span className="flex items-center gap-3">
+      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      <span>{isDark ? 'Modo Claro' : 'Modo Oscuro'}</span>
+    </span>
+    <input
+      type="checkbox"
+      checked={isDark}
+      onChange={toggleTheme}
+      className="sr-only"
+    />
+    <div className="relative">
+      <div className={`w-10 h-6 rounded-full shadow-inner transition-colors ${isDark ? 'bg-amber-500' : 'bg-muted'}`}></div>
+      <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isDark ? 'translate-x-4' : 'translate-x-0'}`}></div>
+    </div>
+  </label>
+);
 
 export function PublicHeader() {
   const router = useRouter();
@@ -26,11 +168,17 @@ export function PublicHeader() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Estado animación abierta/cerrada
   const [isSidebarMounted, setIsSidebarMounted] = useState(false); // Controla montaje para animación
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const { resolvedTheme, setTheme } = useTheme();
   const pathname = usePathname();
 
-  const commonClasses = "text-sm font-medium text-foreground hover:text-primary transition-colors";
+  const commonClasses = "text-sm font-medium text-foreground hover:bg-gray-100 dark:hover:bg-zinc-700 hover:text-primary transition-colors px-3 rounded-lg h-10";
+
+  const isActive = (href: string) => pathname === href;
+
+  const isDark = resolvedTheme === 'dark';
+  const activeClasses = isDark ? 'bg-primary text-zinc-900' : 'bg-yellow-400 text-zinc-900';
+  const mobilePageTitle = mobilePageTitles[pathname] ?? null;
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -52,7 +200,6 @@ export function PublicHeader() {
     };
   }, [isSidebarOpen]);
 
-  const isDark = resolvedTheme === 'dark';
   const overlayColor = isDark ? 'bg-black/70' : 'bg-white/50';
   const toggleTheme = () => setTheme(isDark ? 'light' : 'dark');
 
@@ -83,77 +230,29 @@ export function PublicHeader() {
     };
   }, []);
 
-  const dynamicTitle = pathname === '/catalog' ? 'Gomitas Saludables' : 'MuytunaSys';
-
   return (
     <>
     {/* Header principal */}
     <header className="bg-white dark:bg-background backdrop-blur-sm shadow-sm sticky top-0 z-40">
-      {/* Reemplaza Container con div centrado y ancho máximo */}
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* HStack principal con ajustes responsivos */}
         <div className="flex items-center h-20 gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            {pathname !== '/catalog' && (
-              <button
-                type="button"
-                className="flex items-center space-x-4 cursor-pointer mx-auto md:mx-0"
-                onClick={() => router.push("/")}
-              >
-                <Image
-                  src={logoImg}
-                  alt="MuytunaSys"
-                  width={65}
-                  height={40}
-                  className="object-contain"
-                  priority={true}
-                />
-              </button>
-            )}
-
             <nav className="hidden md:flex items-center gap-6">
-              {NavLinks.map((link) => {
-                if (link.href === '/profile') {
-                  if (status === 'authenticated') {
-                    return (
-                      <button
-                        key={link.href}
-                        onClick={() => signOut({ callbackUrl: `${globalThis.location.origin}` })}
-                        className={`${commonClasses} flex items-center gap-2`}
-                      >
-                        <LogOut className="h-4 w-4" />
-                        <span>Cerrar Sesión</span>
-                      </button>
-                    );
-                  }
-
-                  return (
-                    <button
-                      key={link.href}
-                      onClick={() => setIsLoginOpen(true)}
-                      className={`${commonClasses} flex items-center gap-2`}
-                    >
-                      <link.icon className="h-4 w-4" />
-                      <span>{link.label}</span>
-                    </button>
-                  );
-                }
-
-                return (
-                  <Link key={link.href} href={link.href} className={`${commonClasses} flex items-center gap-2`}>
-                    <link.icon className="h-4 w-4" />
-                    <span>{link.label}</span>
-                  </Link>
-                );
-              })}
+              <DesktopNavLinks
+                links={NavLinks}
+                status={status}
+                session={session}
+                isActive={isActive}
+                commonClasses={commonClasses}
+                activeClasses={activeClasses}
+                onLogin={() => setIsLoginOpen(true)}
+              />
             </nav>
           </div>
 
-          {pathname === '/catalog' && (
+          {mobilePageTitle && (
             <div className="flex flex-1 justify-center text-center">
-              <h1 className="text-2xl font-bold text-foreground">
-                {dynamicTitle}
-              </h1>
+              <h1 className="text-2xl font-bold text-foreground md:hidden">{mobilePageTitle}</h1>
             </div>
           )}
 
@@ -192,6 +291,18 @@ export function PublicHeader() {
                 </Button>
               </div>
             )}
+            <div className="hidden md:flex">
+              <Link href="/" className="inline-flex">
+                <Image
+                  src="/images/logos/logo.png"
+                  alt="MuytunaSys"
+                  width={100}
+                  height={60}
+                  className="object-contain"
+                  priority
+                />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -236,12 +347,11 @@ export function PublicHeader() {
     {isSidebarMounted && (
       <>
         {/* Overlay */}
-        <div
+        <button
+          type="button"
           className={`fixed inset-0 z-30 md:hidden transition-opacity duration-300 ${overlayColor} ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           onClick={() => setIsSidebarOpen(false)}
-          role="button"
-          tabIndex={-1}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsSidebarOpen(false); }}
+          aria-label="Cerrar menú" 
         />
         {/* Sidebar */}
         <div
@@ -249,76 +359,55 @@ export function PublicHeader() {
         >
           {/* Header del Sidebar */}
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold">Menú</h2>
+            <div>
+              {status === 'authenticated' ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    {session?.user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <span className="text-lg font-semibold">{session?.user?.name || 'Usuario'}</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsLoginOpen(true);
+                    setIsSidebarOpen(false);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <User className="h-6 w-6" />
+                  <span className="text-lg font-semibold">Iniciar Sesión</span>
+                </button>
+              )}
+            </div>
             <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} aria-label="Cerrar menú">
               <X className="h-5 w-5" />
             </Button>
           </div>
           {/* Enlaces del Sidebar */}
-          <nav className="flex-1 p-4 space-y-4">
-            {NavLinks.map((link) => (
-              <button
-                key={link.href}
-                onClick={() => {
-                  if (link.href === '/profile') {
-                    if (status === 'authenticated') {
-                      signOut({ callbackUrl: `${globalThis.location.origin}` });
-                    } else {
-                      setIsLoginOpen(true);
-                    }
-                  } else {
-                    router.push(link.href);
-                  }
-                  setIsSidebarOpen(false);
-                }}
-                className="flex items-center gap-3 w-full text-left p-2 rounded-md hover:bg-primary transition-colors text-foreground"
-              >
-                <link.icon className="h-5 w-5" />
-                <span>{link.label}</span>
-              </button>
-            ))}
-            <hr className="border-t border-border" />
-            {/* Toggle Tema */}
-            <label className="flex items-center justify-between w-full p-2 rounded-md hover:bg-primary transition-colors cursor-pointer text-foreground">
-              <span className="flex items-center gap-3">
-                {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                <span>Modo Oscuro</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={isDark}
-                onChange={toggleTheme}
-                className="sr-only"
-              />
-              <div className="relative">
-                <div className={`w-10 h-6 rounded-full shadow-inner transition-colors ${isDark ? 'bg-amber-500/80' : 'bg-muted'}`}></div>
-                <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isDark ? 'translate-x-4' : 'translate-x-0'}`}></div>
-              </div>
-            </label>
-            {status === 'authenticated' ? (
-              <button
-                onClick={() => {
-                  signOut({ callbackUrl: `${globalThis.location.origin}` });
-                  setIsSidebarOpen(false);
-                }}
-                className="flex items-center gap-3 w-full text-left p-2 rounded-md hover:bg-primary transition-colors text-foreground"
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Cerrar Sesión</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setIsLoginOpen(true);
-                  setIsSidebarOpen(false);
-                }}
-                className="flex items-center gap-3 w-full text-left p-2 rounded-md hover:bg-primary transition-colors text-foreground"
-              >
-                <User className="h-5 w-5" />
-                <span>Ingresar</span>
-              </button>
-            )}
-          </nav>
+          <MobileNavList
+            isActive={isActive}
+            onNavigate={(href) => {
+              router.push(href);
+              setIsSidebarOpen(false);
+            }}
+            isAuthenticated={status === 'authenticated'}
+            activeClasses={activeClasses}
+          />
+          <hr className="border-t border-border" />
+          <MobileThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
+          {status === 'authenticated' && (
+            <button
+              onClick={() => {
+                signOut({ callbackUrl: `${globalThis.location.origin}` });
+                setIsSidebarOpen(false);
+              }}
+              className="flex items-center gap-3 w-full text-left p-2 rounded-md hover:bg-primary transition-colors text-foreground"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Cerrar Sesión</span>
+            </button>
+          )}
         </div>
       </>
     )}
