@@ -4,7 +4,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Menu, User, Package, ListOrdered, LogOut, Moon, Sun, X, ShoppingBag, Info, Phone, Home } from 'lucide-react'; // Iconos
+import { Menu, User, Package, ListOrdered, LogOut, Moon, Sun, X, ShoppingBag, Info, Phone } from 'lucide-react'; // Iconos
 import { useSession, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
@@ -16,22 +16,22 @@ import { Button } from "@/components/ui/button";
 const NavLinks = [
   { href: '/catalog', label: 'Tienda', icon: Package },
   { href: '/orders', label: 'Mis Pedidos', icon: ListOrdered },
-  { href: '/about', label: 'Sobre Nosotros', icon: Info },
+  { href: '/', label: 'Sobre Nosotros', icon: Info },
   { href: '/contact', label: 'Contactanos', icon: Phone },
   { href: '/profile', label: 'Mi Cuenta', icon: User },
 ];
 
 const MobileNavItems = [
-  { href: '/', label: 'Inicio', icon: Home },
+  { href: '/', label: 'Sobre Nosotros', icon: Info },
   { href: '/catalog', label: 'Tienda', icon: Package },
-  { href: '/orders', label: 'Mis Pedidos', icon: ListOrdered },
-  { href: '/about', label: 'Sobre Nosotros', icon: Info },
+  { href: '/orders', label: 'Mis Pedidos', icon: ListOrdered, requiresAuth: true },
   { href: '/contact', label: 'Contactanos', icon: Phone },
 ];
 
 const mobilePageTitles: Record<string, string> = {
+  '/': 'Bienvenido',
   '/catalog': 'Gomitas Saludables',
-  '/about': 'Sobre Nosotros',
+  '/orders': 'Mis Pedidos',  
   '/contact': 'Contáctanos',
 };
 
@@ -59,16 +59,25 @@ const DesktopNavLinks = ({
 }: DesktopNavLinksProps) => (
   <>
     {links.map((link) => {
+      if (link.href === '/orders' && status !== 'authenticated') {
+        return null;
+      }
+
       const itemClasses = `${commonClasses} flex items-center gap-1 ${isActive(link.href) ? activeClasses : ''}`;
 
       if (link.href === '/profile') {
         if (status === 'authenticated') {
           return (
-            <Link key={link.href} href={link.href} className={itemClasses}>
-              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs">
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`${itemClasses} justify-center`}
+              title="Ver perfil"
+            >
+              <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground font-semibold text-sm">
                 {session?.user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
-              <span>{session?.user?.name || 'Usuario'}</span>
+              <span className="sr-only">Perfil</span>
             </Link>
           );
         }
@@ -78,10 +87,11 @@ const DesktopNavLinks = ({
             key={link.href}
             type="button"
             onClick={onLogin}
-            className={`${commonClasses} flex items-center gap-1`}
+            className={`${commonClasses} flex items-center justify-center gap-1 text-foreground`}
+            title="Iniciar sesión"
           >
             <User className="h-6 w-6" />
-            <span>Iniciar Sesión</span>
+            <span className="sr-only">Iniciar Sesión</span>
           </button>
         );
       }
@@ -123,6 +133,10 @@ const MobileNavList = ({
     ) : null}
 
     {MobileNavItems.map((item) => {
+      if (item.requiresAuth && !isAuthenticated) {
+        return null;
+      }
+
       const Icon = item.icon;
       return (
         <button
@@ -173,12 +187,12 @@ export function PublicHeader() {
   const { resolvedTheme, setTheme } = useTheme();
   const pathname = usePathname();
 
-  const commonClasses = "text-sm font-medium text-foreground hover:bg-gray-100 dark:hover:bg-zinc-700 hover:text-primary transition-colors px-3 rounded-lg h-10";
+  const commonClasses = "text-sm font-medium text-foreground hover:text-yellow-400 dark:hover:text-yellow-400 transition-colors px-3 rounded-lg h-10";
 
   const isActive = (href: string) => pathname === href;
 
   const isDark = resolvedTheme === 'dark';
-  const activeClasses = isDark ? 'bg-primary text-zinc-900' : 'bg-yellow-400 text-zinc-900';
+  const activeClasses = 'text-yellow-400';
   const mobilePageTitle = mobilePageTitles[pathname] ?? null;
 
   useEffect(() => {
@@ -237,7 +251,24 @@ export function PublicHeader() {
     <header className="bg-white dark:bg-background backdrop-blur-sm shadow-sm sticky top-0 z-40">
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-20 gap-4">
-          <div className="flex items-center gap-4 flex-1 min-w-0">
+          <Link href="/" className="hidden md:flex">
+            <Image
+              src="/images/logos/logo.png"
+              alt="MuytunaSys"
+              width={60}
+              height={60}
+              className="object-contain"
+              priority
+            />
+          </Link>
+
+          {mobilePageTitle && (
+            <div className="flex flex-1 justify-center text-center">
+              <h1 className="text-2xl font-bold text-foreground md:hidden">{mobilePageTitle}</h1>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 ml-auto">
             <nav className="hidden md:flex items-center gap-6">
               <DesktopNavLinks
                 links={NavLinks}
@@ -249,22 +280,14 @@ export function PublicHeader() {
                 onLogin={() => setIsLoginOpen(true)}
               />
             </nav>
-          </div>
 
-          {mobilePageTitle && (
-            <div className="flex flex-1 justify-center text-center">
-              <h1 className="text-2xl font-bold text-foreground md:hidden">{mobilePageTitle}</h1>
-            </div>
-          )}
-
-          <div className="flex items-center justify-end gap-3 flex-1">
             <div className="hidden md:flex">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
                 aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-                className="text-foreground hover:bg-primary"
+                className="text-foreground hover:bg-transparent hover:text-yellow-400"
               >
                 {isDark ? (
                   <Sun className="h-5 w-5" />
@@ -274,35 +297,21 @@ export function PublicHeader() {
               </Button>
             </div>
 
-            {pathname.includes('/catalog') && (
-              <div className="hidden md:flex">
-                <Button
-                  variant="outline"
-                  className="relative h-12 w-12 rounded-full shadow-none hover:bg-zinc-200/50 dark:hover:bg-zinc-800 border-zinc-300 dark:border-zinc-600"
-                  onClick={() => globalThis.dispatchEvent(new Event('openCartModal'))}
-                  size="icon"
-                  title="Ver Carrito"
-                >
-                  <ShoppingBag className="h-6 w-6 text-foreground" />
-                  {totalItemsInCart > 0 && (
-                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-zinc-900 bg-yellow-500 dark:bg-primary rounded-full">
-                      {totalItemsInCart}
-                    </span>
-                  )}
-                </Button>
-              </div>
-            )}
             <div className="hidden md:flex">
-              <Link href="/" className="inline-flex">
-                <Image
-                  src="/images/logos/logo.png"
-                  alt="MuytunaSys"
-                  width={100}
-                  height={60}
-                  className="object-contain"
-                  priority
-                />
-              </Link>
+              <Button
+                variant="outline"
+                className="relative h-12 w-12 rounded-full shadow-none hover:bg-zinc-200/50 dark:hover:bg-zinc-800 border-zinc-300 dark:border-zinc-600"
+                onClick={() => globalThis.dispatchEvent(new Event('openCartModal'))}
+                size="icon"
+                title="Ver Carrito"
+              >
+                <ShoppingBag className="h-6 w-6 text-foreground" />
+                {totalItemsInCart > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-zinc-900 bg-yellow-500 dark:bg-primary rounded-full">
+                    {totalItemsInCart}
+                  </span>
+                )}
+              </Button>
             </div>
           </div>
         </div>

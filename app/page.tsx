@@ -1,150 +1,157 @@
 "use client";
 
-import Image, { StaticImageData } from 'next/image';
-
+import Link from "next/link";
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import { PublicFooter } from "@/components/layout/PublicFooter";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Leaf, HeartPulse, ShoppingBag } from "lucide-react";
 
-import gomitaBeterraga from './images/products/gomita/g-beterraga.png';
-import gomitaFrutilla from './images/products/gomita/g-frutilla.png';
-import pulpaMandarina from './images/products/pulpa/p-mandarina.png';
-import gomitaLimon from './images/products/gomita/g-limon.png';
+const heroImage =
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuCMvrHdwoa1ZWIkffYjhjchsI3rUwiIWMQf7kHN_vABwXcwCiWMXOWBf4IhIfe96VfdiHu2CSjYEIVURRu4qVhlcH7ja2kchjzm11tdgTdQFbPyRgn6-Ll5RKX9HOXhYoW2Jcpp1OusCvpD0wvAw6-oso8BHwfVoCJ0Sbr_a2DB4khTNfdM-LPDafPm3US1DE_n4b5fOuvGYa5rpOUUEz0JTO6N2WCPyOcfOOnmHVqRAPLBLA8Vc_8AO8fp_-RwvDs2wHMpgad1Ro-Z";
 
-interface ProductCardProps {
-  title: string;
-  description: string;
-  price: string;
-  imageSrc: string | StaticImageData;
-  imageAlt: string;
-}
+const beginningsImage =
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuAzzGzyTYuJ_u6N0G0sKBBGG6R7PXbVPsXsKTDHfhiD8P79F461tg82D5BtlDGOR8XHxHkZ8U_1BqwCBlizSuP9hgMl2G8G7Sq-7W9_btACHS2KQEyAEYiLd7P0zInrxRwoaSKVvFPYMqlAvYCTPIrYKjwmW7kcgdUJAXwXHoURjtuj8OalOM5ZetwZak-pSoZ0MZGE5aVYPCZpOCzfSWF9bw_phICxdAYgvgGx4zyXDJe8YHeoOIUQ_tVKw7RFtlrHUrUyhEJh-XAG";
 
-const isStaticImageData = (src: string | StaticImageData): src is StaticImageData =>
-  typeof src === 'object' && src !== null && 'width' in src && 'height' in src;
+const teamMembers = [
+  {
+    name: "Ana & Juan",
+    role: "Fundadores",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDXjhg3ykqGd3KhGjN7GJWcDUBuBuMuOtUWwtbrjJ47zdKsKhNVHb62u7Pqw-pcKWmcIxSFnSgq61mvcoLIhTkPhjQImjQAhmCeNFsERgmMMupEuG7COP5lMTzE3G17BJvVs6SvJD5v9JAT2t89rvgRluES-Veh7cTdCI72iRBnZjpct3GDHmwEm4eBTPqYI5Ro9QyQ4835iCTJGCYKX2kNMl8tegu0Eypr9eWqdgAKYxFvF49Y9xbjYT33w1sLEfApU1nKGrlFZy0G",
+  },
+  {
+    name: "Equipo de Cocina",
+    role: "Magos del Sabor",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDd-7u9xJWarPHHFfzBxyCmS84EHohPUzYkIIrW_Be0WAAnIwZsGcw08fe7oiMgS1AcSDQ7-OLysMNX2GQJ7F_VeXreHziG_o60iFqbBvuhX4Lxv3rIHsOf6sAXdSUUY0WzNbDa0CXb8hAGZ-dVhR5FMBjm31VlmTtbjIOIFyDcftn-LkA4LOx0c499zZtzojLnEtz3xbWRZX4XRR-JdQR-AVY69ABTwwr2tKWTWNj2VTA0hMosT5ihkxP-InG6bmz1Hz9XIPx0VqI-",
+  },
+];
 
-const ProductCard = ({ title, description, price, imageSrc, imageAlt }: ProductCardProps) => {
-  const isStatic = isStaticImageData(imageSrc);
-  const isPortrait = isStatic ? imageSrc.height > imageSrc.width : false;
+const highlights = [
+  {
+    icon: Leaf,
+    title: "100% Natural",
+    description: "Sin colorantes ni sabores artificiales.",
+  },
+  {
+    icon: HeartPulse,
+    title: "Saludable y Delicioso",
+    description: "Endulzadas naturalmente con la propia fruta.",
+  },
+];
 
-  if (isPortrait && isStatic) {
-    const ratio = imageSrc.width / imageSrc.height;
-    const targetHeight = 200;
-    const targetWidth = Math.round(targetHeight * ratio);
-
-    return (
-      <Card className="w-full max-w-xs shadow-md hover:shadow-lg transition-shadow duration-300">
-        <CardContent className="p-0">
-          <div className="relative h-56 bg-muted/50 rounded-t-lg overflow-hidden flex items-center justify-center p-4">
-            <Image
-              src={imageSrc}
-              alt={imageAlt}
-              width={targetWidth}
-              height={targetHeight}
-              style={{ objectFit: 'contain', objectPosition: 'center' }}
-            />
-          </div>
-        </CardContent>
-        <div className="p-6 text-center">
-          <CardTitle className="text-lg font-semibold mb-2 text-foreground">{title}</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground mb-4">{description}</CardDescription>
-          <p className="text-xl font-bold text-primary">{price}</p>
-        </div>
-      </Card>
-    );
-  }
-
+export default function AboutPage() {
   return (
-    <Card className="w-full max-w-xs shadow-md hover:shadow-lg transition-shadow duration-300">
-      <CardContent className="p-0">
-        <div className="relative h-56 bg-muted/50 rounded-t-lg overflow-hidden flex items-center justify-center p-4">
-          <div className="relative w-full h-full">
-            <Image
-              src={imageSrc}
-              alt={imageAlt}
-              fill
-              style={{ objectFit: 'cover', objectPosition: 'center' }}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          </div>
-        </div>
-      </CardContent>
-      <div className="p-6 text-center">
-        <CardTitle className="text-lg font-semibold mb-2 text-foreground">{title}</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground mb-4">{description}</CardDescription>
-        <p className="text-xl font-bold text-primary">{price}</p>
-      </div>
-    </Card>
-  );
-};
-
-export default function HomePage() {
-  const productData: ProductCardProps[] = [
-    {
-      title: 'Gomita Beterraga',
-      description: 'Gomita natural sabor beterraga',
-      price: 'Bs 1.5',
-      imageSrc: gomitaBeterraga,
-      imageAlt: 'Gomita Beterraga',
-    },
-    {
-      title: 'Gomita Frutilla',
-      description: 'Gomita natural sabor frutilla',
-      price: 'Bs 1.5',
-      imageSrc: gomitaFrutilla,
-      imageAlt: 'Gomita Frutilla',
-    },
-    {
-      title: 'Pulpa Mandarina',
-      description: 'Pulpa natural sabor mandarina',
-      price: 'Bs 5',
-      imageSrc: pulpaMandarina,
-      imageAlt: 'Pulpa Mandarina',
-    },
-    {
-      title: 'Gomita Limón',
-      description: 'Gomita natural sabor limón',
-      price: 'Bs 1.5',
-      imageSrc: gomitaLimon,
-      imageAlt: 'Gomita Limón',
-    },
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background text-foreground min-h-screen flex flex-col">
       <PublicHeader />
 
-      <div className="container max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
-        <div className="flex flex-col gap-12 items-center w-full">
-          <div className="flex flex-col gap-8 items-center max-w-4xl">
-            <h1 className="text-5xl font-extrabold tracking-tight text-foreground md:text-6xl lg:text-7xl">
-              Bienvenido a Nuestra Tienda de Gomitas
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl">
-              Descubre nuestra deliciosa colección de gomitas premium elaboradas con los mejores ingredientes.
+      <main className="flex-1">
+        <section
+          className="relative h-72 w-full bg-cover bg-center overflow-hidden"
+          style={{ backgroundImage: `url(${heroImage})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/80 to-transparent dark:from-background/90 dark:via-background/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-transparent to-transparent dark:from-background/80 dark:via-transparent" />
+          <div className="absolute inset-0 bg-white/25 backdrop-blur-sm dark:bg-transparent dark:backdrop-blur-0" />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="text-center space-y-3 max-w-2xl">
+              <h2 className="text-2xl md:text-3xl font-bold text-primary drop-shadow-sm">
+                Sobre Nosotros
+              </h2>
+              <p className="text-sm md:text-base text-muted-foreground font-medium">
+                Hecho con amor y fruta de verdad
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-6 py-10 md:py-16 space-y-10 md:space-y-14 max-w-4xl mx-auto">
+          <div className="space-y-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-[#f8842b] dark:text-[#f4c025]">Nuestra Misión</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Ofrecer una explosión de sabor en cada gomita, utilizando solo pulpa de fruta natural y los ingredientes más puros. Queremos ser tu opción saludable para un capricho delicioso y divertido.
             </p>
           </div>
 
-          <Separator className="w-24 h-1 bg-primary rounded-full mt-8 mb-4" />
+          <div className="space-y-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-[#f8842b] dark:text-[#f4c025]">Nuestra Visión</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Convertirnos en la marca líder de gomitas naturales, inspirando momentos de alegría y bienestar en personas de todas las edades, mientras promovemos un estilo de vida consciente y saludable.
+            </p>
+          </div>
 
-          <div className="w-full">
-            <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Productos Destacados</h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center max-w-6xl mx-auto">
-              {productData.map((product) => (
-                <ProductCard
-                  key={product.title}
-                  title={product.title}
-                  description={product.description}
-                  price={product.price}
-                  imageSrc={product.imageSrc}
-                  imageAlt={product.imageAlt}
-                />
+          <div className="space-y-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-[#f8842b] dark:text-[#f4c025]">El Comienzo</h3>
+            <div className="flex flex-col md:flex-row gap-4 md:items-center">
+              <div
+                className="w-full md:w-1/2 h-48 md:h-56 rounded-xl bg-cover bg-center"
+                style={{ backgroundImage: `url(${beginningsImage})` }}
+              />
+              <p className="leading-relaxed text-muted-foreground flex-1">
+                Todo comenzó en una pequeña cocina, con la idea de crear un dulce que nuestros hijos pudieran disfrutar sin culpas. Cansados de las golosinas artificiales, decidimos volver a lo básico: fruta de verdad. Lo que empezó como un hobby familiar pronto se convirtió en una pasión por compartir el sabor auténtico y natural con el mundo.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-[#f8842b] dark:text-[#f4c025]">Ingredientes que cuentan</h3>
+            <div className="space-y-4">
+              {highlights.map(({ icon: Icon, title, description }) => {
+                return (
+                  <div
+                    key={title}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-card shadow-sm"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full text-[#f4c025] dark:bg-primary dark:text-zinc-900">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-base md:text-lg">{title}</h4>
+                      <p className="text-sm text-muted-foreground">{description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-[#f8842b] dark:text-[#f4c025]">Nuestro Equipo</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+              {teamMembers.map((member) => (
+                <div
+                  key={member.name}
+                  className="flex flex-col items-center text-center space-y-2"
+                >
+                  <div
+                    className="w-24 h-24 rounded-full bg-cover bg-center shadow"
+                    style={{ backgroundImage: `url(${member.image})` }}
+                  />
+                  <p className="font-semibold text-sm md:text-base">{member.name}</p>
+                  <p className="text-xs text-muted-foreground">{member.role}</p>
+                </div>
               ))}
             </div>
           </div>
-        </div>
-      </div>
-      <PublicFooter />
+
+          <div className="rounded-2xl bg-card shadow-lg p-6 md:p-8 text-center space-y-4">
+            <h3 className="text-2xl md:text-3xl font-bold">¿Listo para probar nuestras gomitas?</h3>
+            <p className="text-muted-foreground">
+              Visita nuestra tienda y descubre todas las variaciones que tenemos listas para ti.
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full text-base font-semibold bg-[#f4c025] text-zinc-900 hover:bg-[#f4c025]/90 dark:bg-primary dark:text-zinc-900 dark:hover:bg-primary/80"
+            >
+              <Link href="/catalog" className="flex items-center justify-center gap-2">
+                <ShoppingBag className="h-5 w-5" />
+                Ir a la tienda
+              </Link>
+            </Button>
+          </div>
+        </section>
+      </main>
+
     </div>
   );
 }
