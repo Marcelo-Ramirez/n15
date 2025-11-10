@@ -33,7 +33,7 @@ export const ProductCard = (props: ProductCardProps) => {
 
     return (
         // Usamos h-full y flex flex-col para forzar el estiramiento vertical en el grid
-        <Card className="flex flex-col gap-2 relative bg-zinc-200/30 dark:bg-zinc-800/50 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border-none h-full">
+        <Card className="flex flex-col gap-2 relative bg-card dark:bg-zinc-800/50 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border-none h-[16rem]">
             
             {/* Imagen */}
             <div className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
@@ -63,19 +63,19 @@ export const ProductCard = (props: ProductCardProps) => {
 
             {/* Info del producto - CLAVE: flex-grow empuja el footer hacia abajo */}
             <div className="flex-grow">
-                <p className="text-zinc-800 dark:text-zinc-100 text-base font-bold leading-tight line-clamp-2">{name}</p>
+                <p className="text-black-800 dark:text-zinc-100 text-base font-bold leading-tight line-clamp-2">{name}</p>
                 {/* min-h-[2.5rem] asegura que haya espacio incluso sin descripción */}
                 <p className="text-zinc-500 dark:text-zinc-400 text-sm font-normal leading-normal line-clamp-2 min-h-[2.5rem]">{cardDescription}</p> 
             </div>
 
             {/* Footer (Precio y Botón Plus) */}
             <div className="flex items-center justify-between mt-1">
-                <p className="text-zinc-800 dark:text-zinc-100 text-base font-bold">Bs {pricePerUnit.toFixed(2)}</p>
+                <p className="text-black dark:text-zinc-100 text-base font-bold">Bs {pricePerUnit.toFixed(2)}</p>
                 
                 <Button 
                     onClick={() => onOpenAddModal(productProps)}
                     disabled={isOutOfStock}
-                    className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-zinc-900 transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-10 h-10 rounded-full bg-yellow-500 dark:bg-primary flex items-center justify-center text-zinc-900 dark:text-zinc-900 transition-colors hover:bg-yellow-400 dark:hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                     title={isOutOfStock ? "Agotado" : "Seleccionar Cantidad"}
                     size="icon" 
                 >

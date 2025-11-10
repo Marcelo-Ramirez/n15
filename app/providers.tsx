@@ -13,6 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultTheme="system" // Respeta el tema del sistema al iniciar
         enableSystem // Permite cambiar entre claro/oscuro/sistema
         disableTransitionOnChange // Evita transiciones bruscas al cambiar tema
+        storageKey="theme"
       >
         {children}
       </ThemeProvider>

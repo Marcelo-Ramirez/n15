@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, Fragment, useCallback } from "react";
 import { useSession} from "next-auth/react";
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import { PublicFooter } from "@/components/layout/PublicFooter"; 
+import { Search, Loader2 } from 'lucide-react'; 
 import { Button } from "@/components/ui/button";
 import { AddToCartModal } from '@/components/cart/AddToCartModal'; 
 import { CartSummaryModal } from '@/components/cart/carritohistorial'; 
@@ -107,14 +107,25 @@ export default function CatalogPage() {
             setLoading(false);
             setIsInitialLoad(false);
         }
-    }, [page, searchTerm, activeFilter]); 
+    }, [page, searchTerm, activeFilter, isInitialLoad, products.length]); 
 
     // 2. Control de cambios en filtros y búsqueda (Llama a fetchProducts)
     useEffect(() => {
         fetchProducts();
     }, [fetchProducts]); 
     
-    // 3. Lógica del Debounce (Retraso de 300ms)
+    // 3. Resetear página y productos (Se llama desde el debounce o el click de filtro)
+    const handleSearchOrFilterChange = useCallback((newTerm: string, newFilter: string) => {
+        if (newTerm !== searchTerm || newFilter !== activeFilter) {
+            setIsInitialLoad(true); 
+            setProducts([]); 
+            setPage(1); 
+            setSearchTerm(newTerm);
+            setActiveFilter(newFilter);
+        }
+    }, [searchTerm, activeFilter]);
+    
+    // 4. Lógica del Debounce (Retraso de 300ms)
     useEffect(() => {
         if (localSearchTerm === searchTerm) return;
 
@@ -125,19 +136,7 @@ export default function CatalogPage() {
         return () => {
             clearTimeout(timerId);
         };
-    }, [localSearchTerm, activeFilter]); 
-    
-    
-    // 4. Resetear página y productos (Se llama desde el debounce o el click de filtro)
-    const handleSearchOrFilterChange = (newTerm: string, newFilter: string) => {
-        if (newTerm !== searchTerm || newFilter !== activeFilter) {
-            setIsInitialLoad(true); 
-            setProducts([]); 
-            setPage(1); 
-            setSearchTerm(newTerm);
-            setActiveFilter(newFilter);
-        }
-    };
+    }, [localSearchTerm, activeFilter, handleSearchOrFilterChange, searchTerm]);
 
     // 5. Función para el botón "Cargar Más"
     const handleLoadMore = () => {
@@ -159,7 +158,29 @@ export default function CatalogPage() {
             console.error("Error al cargar carrito desde localStorage:", e);
             localStorage.removeItem('userCart');
         }
+        const timeoutId = globalThis.setTimeout(() => globalThis.dispatchEvent(new Event('cartUpdate')), 0);
+        return () => clearTimeout(timeoutId);
     }, []); 
+
+    const _totalItemsInCart = useMemo(() => {
+        return Object.values(cart).reduce((total, item) => total + item.quantity, 0);
+    }, [cart]);
+
+    const _handleOpenSummaryChecked = useCallback(() => {
+        if (status === 'loading') return; 
+
+        if (session) {
+            setIsSummaryModalOpen(true); 
+        } else {
+            setIsLoginModalOpen(true); 
+        }
+    }, [status, session]);
+
+    useEffect(() => {
+        const handleOpenCartModal = () => _handleOpenSummaryChecked();
+        globalThis.addEventListener('openCartModal', handleOpenCartModal);
+        return () => globalThis.removeEventListener('openCartModal', handleOpenCartModal);
+    }, [_handleOpenSummaryChecked]);
 
     useEffect(() => {
         try {
@@ -168,6 +189,8 @@ export default function CatalogPage() {
             } else if (localStorage.getItem('userCart')) {
                 localStorage.removeItem('userCart');
             }
+            const timeoutId = globalThis.setTimeout(() => globalThis.dispatchEvent(new Event('cartUpdate')), 0);
+            return () => clearTimeout(timeoutId);
         } catch (e) {
             console.error("Error al guardar carrito en localStorage:", e);
         }
@@ -183,7 +206,7 @@ export default function CatalogPage() {
         if (!productToAdd || productToAdd.currentQuantity === 0 || quantity < 1) { return; }
 
         setCart(prevCart => {
-            const existingItem = prevCart[productId];
+            const existingItem = prevCart[productId]; 
             const currentTotal = existingItem ? existingItem.quantity : 0;
             const newTotalQuantity = currentTotal + quantity;
             
@@ -198,23 +221,26 @@ export default function CatalogPage() {
             };
             return updatedCart;
         });
-    };
-
-    const totalItemsInCart = useMemo(() => {
-        return Object.values(cart).reduce((total, item) => total + item.quantity, 0);
-    }, [cart]);
-
-    const handleOpenSummaryChecked = () => {
-        if (status === 'loading') return; 
-
-        if (session) {
-            setIsSummaryModalOpen(true); 
-        } else {
-            setIsLoginModalOpen(true); 
-        }
+        setTimeout(() => globalThis.dispatchEvent(new Event('cartUpdate')), 0);
     };
 
     const filters = ["All", "Sweet", "Sour", "New", "Tropical"];
+
+    // Content for products rendering
+    let content;
+    if (isInitialLoad && loading) {
+        content = <div className="text-center py-12"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /><p className="mt-4 text-zinc-500 dark:text-zinc-400">Cargando...</p></div>;
+    } else if (fetchError) {
+        content = <div className="text-center py-12 p-4 border border-red-500 bg-red-500/10 text-red-500 rounded-md"><p className="font-bold">Error al cargar productos:</p><p className="text-sm">{fetchError}</p><Button className="mt-4" onClick={() => globalThis.location.reload()}>Recargar Página</Button></div>;
+    } else if (products.length === 0) {
+        content = <p className="text-center text-zinc-500 dark:text-zinc-400 py-12 text-lg">{searchTerm || activeFilter !== "All" ? `No se encontraron productos para "${searchTerm}" o el filtro "${activeFilter}"` : "No hay productos disponibles"}</p>;
+    } else {
+        content = <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 justify-items-center max-w-6xl mx-auto">
+            {products.map((product) => (
+                <ProductCard key={product.id} {...product} onOpenAddModal={handleOpenAddModal} />
+            ))}
+        </div>;
+    }
 
     // --- RENDERIZADO ---
 
@@ -223,18 +249,19 @@ export default function CatalogPage() {
             <PublicHeader />
 
             {/* --- LAYOUT DEL CATÁLOGO --- */}
-            <main className="min-h-screen bg-background pt-24"> 
+            <main className="min-h-screen bg-background"> 
 
                 {/* Barra de Búsqueda (CORREGIDA CON DEBOUNCE) */}
                 <div className="px-4 py-3 max-w-xl mx-auto"> 
                     <label className="flex flex-col min-w-40 h-14 w-full">
-                        <div className="flex w-full flex-1 items-stretch rounded-full h-full">
-                            <div className="text-zinc-500 dark:text-zinc-400 flex border-none bg-zinc-200/50 dark:bg-zinc-800 items-center justify-center pl-5 rounded-l-full border-r-0">
+                        <div className="flex w-full flex-1 items-stretch rounded-full h-full border-2 border-zinc-600">
+                            <div className="text-zinc-500 dark:text-zinc-400 flex border-none bg-primary dark:bg-zinc-800 items-center justify-center pl-5 rounded-l-full border-r-0">
                                 <Search className="h-5 w-5" />
                             </div>
                             <input 
-                                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-full text-zinc-800 dark:text-zinc-200 focus:outline-0 focus:ring-0 border-none bg-zinc-200/50 dark:bg-zinc-800 focus:border-none h-full placeholder:text-zinc-500 dark:placeholder:text-zinc-400 px-4 text-base font-normal" 
+                                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-full text-black dark:text-zinc-200 focus:outline-0 focus:ring-0 border-none bg-primary dark:bg-zinc-800 focus:border-none h-full placeholder:text-zinc-600 dark:placeholder:text-zinc-400 px-4 text-base font-normal" 
                                 placeholder="Buscar productos..." 
+                                aria-label="Buscar productos"
                                 value={localSearchTerm} // VINCULADO AL ESTADO LOCAL
                                 // Actualiza el estado local, lo que activa el Debounce
                                 onChange={(e) => setLocalSearchTerm(e.target.value)} 
@@ -252,11 +279,11 @@ export default function CatalogPage() {
                                 onClick={() => handleSearchOrFilterChange(searchTerm, filter)}
                                 className={`flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
                                     activeFilter === filter 
-                                    ? 'bg-primary text-zinc-900' 
-                                    : 'bg-zinc-200/50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-700'
+                                    ? 'bg-yellow-500 text-zinc-900' 
+                                    : 'bg-gray-100 dark:bg-zinc-800 text-black dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-600'
                                 }`}
                             >
-                                <p className={`text-sm leading-normal ${activeFilter === filter ? 'font-bold' : 'font-medium'}`}>
+                                <p className={`text-sm leading-normal font-bold`}>
                                     {filter}
                                 </p>
                             </button>
@@ -267,19 +294,7 @@ export default function CatalogPage() {
 
                 {/* --- Renderizado de Productos (Mantenido) --- */}
                 <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                    {isInitialLoad && loading ? (
-                        <div className="text-center py-12"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /><p className="mt-4 text-zinc-500 dark:text-zinc-400">Cargando...</p></div>
-                    ) : fetchError ? ( 
-                        <div className="text-center py-12 p-4 border border-red-500 bg-red-500/10 text-red-500 rounded-md"><p className="font-bold">Error al cargar productos:</p><p className="text-sm">{fetchError}</p><Button className="mt-4" onClick={() => window.location.reload()}>Recargar Página</Button></div>
-                    ) : products.length === 0 ? ( 
-                        <p className="text-center text-zinc-500 dark:text-zinc-400 py-12 text-lg">{searchTerm || activeFilter !== "All" ? `No se encontraron productos para "${searchTerm}" o el filtro "${activeFilter}"` : "No hay productos disponibles"}</p>
-                    ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 justify-items-center max-w-6xl mx-auto">
-                            {products.map((product) => (
-                                <ProductCard key={product.id} {...product} onOpenAddModal={handleOpenAddModal} />
-                            ))}
-                        </div>
-                    )}
+                    {content}
                 </div>
 
                 {/* --- Botón "Cargar Más" (Mantenido) --- */}
@@ -288,7 +303,7 @@ export default function CatalogPage() {
                         <button 
                             onClick={handleLoadMore}
                             disabled={loading} 
-                            className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-5 flex-1 bg-zinc-200/50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-base font-bold hover:bg-zinc-300/50 dark:hover:bg-zinc-700 transition-colors relative"
+                            className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-5 flex-1 bg-primary dark:bg-zinc-800 text-black dark:text-zinc-200 text-base font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors relative border-2 border-zinc-600 dark:border-zinc-600"
                         >
                             {loading && page > 1 ? (
                                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
@@ -318,7 +333,6 @@ export default function CatalogPage() {
                 />
                 
             </main>
-            <PublicFooter />
         </Fragment>
     );
 }
