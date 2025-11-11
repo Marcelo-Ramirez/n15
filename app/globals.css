@@ -1,72 +1,128 @@
+/* app/globals.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. VARIABLES CSS DE SHADCN Y NEXT-THEMES */
+
+/* NOTA: Las variables y la regla :root y .dark deben estar después de @tailwind */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    /* Variables de Radios (Solo para la estructura visual del theme) */
+    --radius: 0.625rem;
+    
+    /* Variables del Modo Claro (HSL compatible con Tailwind) */
+    --background: hsl(60 17% 96.1%);
+    --foreground: hsl(222.2 47.4% 11.2%); /* Gris muy oscuro */
+    --card: hsl(60 17% 96.7%);
+    --card-foreground: hsl(222.2 47.4% 11.2%);
+    --popover: hsl(60 17% 96.7%);
+    --popover-foreground: hsl(222.2 47.4% 11.2%);
+    --primary: hsl(45.4 90.2% 55.1%);
+    --primary-foreground: hsl(45 90% 25%);
+    --secondary: hsl(210 40% 94%);
+    --secondary-foreground: hsl(222.2 47.4% 11.2%);
+    --muted: hsl(210 40% 96.1%);
+    --muted-foreground: hsl(215.4 16.3% 46.9%);
+    --accent: hsl(210 40% 94%);
+    --accent-foreground: hsl(222.2 47.4% 11.2%);
+    --destructive: hsl(0 84.2% 60.2%);
+    --destructive-foreground: hsl(210 40% 98%);
+    --border: hsl(214.3 31.8% 91.4%);
+    --input: hsl(214.3 31.8% 91.4%);
+    --ring: hsl(222.2 84% 4.9%);
+    /* Chart variables (no esenciales para la corrección) */
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+    /* Sidebar variables (no esenciales para la corrección) */
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+
+    /* OTRAS REGLAS CSS */
+    max-width: 100vw;
+    overflow-x: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+
+/* 3. MODO OSCURO (DARK MODE) */
+.dark {
+    --background: 47 37% 10%; /* #221e10 approx */ /* #221e10 */
+    --foreground: 210 40% 98%;
+    --card: 47 36% 9.8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 47 36% 9.8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 45.4 90.2% 55.1%;
+    --primary-foreground: 45 90% 25%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 12 77% 46%;
+    --chart-2: 197 100% 50%;
+    --chart-3: 150 100% 36%;
+    --chart-4: 280 81% 50%;
+    --chart-5: 340 82% 52%;
+    --sidebar: 217.2 32.6% 17.5%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 212.7 26.8% 83.9%;
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* 4. ESTILOS BASE DE TAILWIND/SHADCN */
+@layer base {
+    /* Regla para el reseteo del navegador */
+    * {
+        box-sizing: border-box;
+        padding: 0;
+        margin: 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        @apply border-border outline-ring/50; /* Aplica bordes y outline usando las variables */
+    }
+    
+    /* Regla para el body */
+    body {
+        @apply bg-background text-foreground; /* Aplica el fondo y color de texto base */
+    }
+    
+    /* Ocultar el panel de desarrollo de Next.js (Mantenido) */
+    nextjs-portal,
+    [data-nextjs-dev-overlay],
+    button[data-nextjs-toast-close],
+    #__next-dev-client-pages-browser {
+        display: none !important;
+    }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+    .print-visible {
+        display: none;
+    }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}
-
-/* Ocultar el panel de desarrollo de Next.js */
-nextjs-portal {
-  display: none !important;
-}
-
-/* También ocultar cualquier overlay de desarrollo */
-[data-nextjs-dev-overlay] {
-  display: none !important;
-}
-
-/* Ocultar el botón flotante del panel de desarrollo */
-button[data-nextjs-toast-close] {
-  display: none !important;
-}
-
-/* Ocultar cualquier elemento con el ID del portal de Next.js */
-#__next-dev-client-pages-browser {
-  display: none !important;
-}
-
-.print-visible {
-  display: none;
-}
-
-@media print {
-  .print-visible {
-    display: block !important;
-  }
+    @media print {
+        .print-visible {
+            display: block !important;
+        }
+    }
 }

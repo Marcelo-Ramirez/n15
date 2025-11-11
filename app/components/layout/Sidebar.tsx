@@ -66,7 +66,8 @@ export default function Sidebar({
   const pathname = usePathname();
 
   const handleLogout = () => {
-    signOut({ callbackUrl: "/login" });
+  // Use current origin to avoid redirecting to localhost in production
+  signOut({ callbackUrl: `${window.location.origin}/login` });
   };
 
   const handleNavigation = (href: string) => {

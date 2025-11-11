@@ -1,13 +1,15 @@
-'use client'
+'use client';
 
-import { Box, Text, Button, VStack } from '@chakra-ui/react'
+// No necesitas Box, Text, VStack de Chakra UI
+import { Button } from '@/components/ui/button'; // Usamos el Button de Shadcn
 
+// --- Tipos (Mantenidos) ---
 interface EmptyStateProps {
-  title: string
-  description?: string
-  actionLabel?: string
-  onAction?: () => void
-  icon?: React.ReactNode
+  title: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  icon?: React.ReactNode; // Acepta cualquier componente de React, como un icono Lucide
 }
 
 export default function EmptyState({ 
@@ -18,38 +20,44 @@ export default function EmptyState({
   icon 
 }: EmptyStateProps) {
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      p={8}
-      textAlign="center"
-      minH="400px"
+    // Reemplaza Box con div (contenedor principal centrado)
+    <div 
+      className="flex flex-col items-center justify-center p-8 text-center min-h-[400px] w-full bg-card rounded-lg border border-dashed dark:border-gray-700"
     >
-      <VStack gap={4}>
+      {/* Reemplaza VStack con div flex-col y gap */}
+      <div className="flex flex-col gap-4 items-center max-w-lg">
+        
+        {/* Ícono */}
         {icon && (
-          <Box fontSize="4xl" color="gray.400">
+          // Reemplaza Box con div. text-4xl y color de Lucide
+          <div className="text-4xl text-muted-foreground/80 mb-2">
             {icon}
-          </Box>
+          </div>
         )}
         
-        <Text fontSize="xl" fontWeight="semibold" color="gray.700">
+        {/* Título */}
+        <h3 className="text-xl font-semibold text-foreground tracking-tight">
           {title}
-        </Text>
+        </h3>
         
+        {/* Descripción */}
         {description && (
-          <Text color="gray.500" maxW="400px">
+          <p className="text-sm text-muted-foreground max-w-md">
             {description}
-          </Text>
+          </p>
         )}
         
+        {/* Botón de Acción */}
         {actionLabel && onAction && (
-          <Button colorScheme="blue" onClick={onAction} mt={4}>
+          <Button 
+            onClick={onAction} 
+            className="mt-4" // Margen superior
+          >
             {actionLabel}
           </Button>
         )}
-      </VStack>
-    </Box>
-  )
+        
+      </div>
+    </div>
+  );
 }

@@ -1,21 +1,30 @@
 'use client'
 
-import { Box, Heading, Text, VStack } from '@chakra-ui/react'
+// Ya no necesitas importar nada de @chakra-ui/react
 import UserProfile from '@/components/system/UserProfile'
 
 export default function UserProfilePage() {
   return (
-    <Box>
-      <VStack gap={6} align="stretch">
-        <Box>
-          <Heading size="lg" mb={2}>Perfil de Usuario</Heading>
-          <Text color="gray.600">
-            Gestiona tu información personal y la configuración de seguridad.
-          </Text>
-        </Box>
+    // Reemplaza Box con div, usando padding responsivo
+    <div className="p-4 md:p-6">
+      {/* Reemplaza VStack con un div usando flex y gap */}
+      <div className="flex flex-col gap-6 items-stretch">
         
+        {/* Encabezado (Reemplaza Box) */}
+        <div>
+          {/* Reemplaza Heading size="lg" */}
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-1">
+            Perfil de Usuario
+          </h1>
+          {/* Reemplaza Text color="gray.600" */}
+          <p className="text-sm text-muted-foreground">
+            Gestiona tu información personal y la configuración de seguridad.
+          </p>
+        </div>
+        
+        {/* Renderiza el componente UserProfile (asume que ya está en Tailwind/Shadcn) */}
         <UserProfile />
-      </VStack>
-    </Box>
+      </div>
+    </div>
   )
 }

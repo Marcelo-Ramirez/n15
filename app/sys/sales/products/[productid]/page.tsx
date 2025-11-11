@@ -1,34 +1,43 @@
 'use client';
 
 import { useRouter, useParams } from "next/navigation";
-import {
-  Box,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  Button,
-  Spinner,
-  Input,
-} from "@chakra-ui/react";
-import { Select } from "@chakra-ui/select";
-import { useEffect, useState, useCallback } from "react";
-import { FiArrowLeft } from "react-icons/fi";
+import { useEffect, useState, useCallback, Suspense } from "react";
+import { ArrowLeft, Plus, Loader2 } from "lucide-react"; 
+import { toast } from "sonner";
 
-// interfaces
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+
+// Definición de interfaces
 interface ProductDetails {
   id: number;
   name: string;
   type: string;
   flavor: string;
-  currentQuantity: number;
-  pricePerUnit?: number;
+  currentQuantity: number; 
+  pricePerUnit: number;
 }
-
 interface Movement {
   id: number;
   movementType: string;
-  reason?: string;
+  reason: string;
   quantity: number;
   createdAt: string;
   user: {
@@ -36,218 +45,300 @@ interface Movement {
   };
 }
 
-export default function StockroomProductHistoryPage() {
+// --- Componente Lógico Interno ---
+function ProductHistoryInner() {
   const router = useRouter();
   const params = useParams();
-  const productid = (params?.productid || "") as string;
+  
+  const productId = (params.id || params.productId || '') as string;
+  
 
   const [movements, setMovements] = useState<Movement[]>([]);
   const [product, setProduct] = useState<ProductDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [registerData, setRegisterData] = useState({
-    movementType: '',
-    quantity: ''
-  });
+  const [registerData, setRegisterData] = useState({ quantity: '' });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
-  const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const isStockroomRole = typeof window !== 'undefined' && 
+    globalThis.location.pathname.includes('/stockroom/');
+  const role = isStockroomRole ? 'stockroom' : 'sales';
+
+
+  const fetchHistory = useCallback(async () => {
+    if (!productId) {
+      setIsLoading(false);
+      return; 
+    }
+
     setIsLoading(true);
-    setError(null);
     try {
-      const res = await fetch(`/api/inventory/products/${productid}`);
+      const apiUrl = `/api/system/inventory/products/${productId}/history`
+
+      const res = await fetch(apiUrl);
       const data = await res.json();
       
-      if (!res.ok) {
-        throw new Error(data.error || "Error al obtener datos");
-      }
-
-      setProduct(data.product);
-      setMovements(data.movements);
+      
+      if (!res.ok || !data.success) throw new Error(data.error || `Error del servidor: ${res.status}`);
+      
+      setMovements(data.movements || []);
+      setProduct(data.product ? { 
+        ...data.product, 
+        currentQuantity: data.product.currentQuantity || 0,
+        pricePerUnit: data.product.pricePerUnit || 0,
+      } : null);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Error desconocido al obtener historial");
     } finally {
       setIsLoading(false);
     }
-  }, [productid]);
+  }, [productId]);
 
   useEffect(() => {
-    if (productid) {
-      fetchData();
+    if (productId) {
+        fetchHistory();
     }
-  }, [productid, fetchData]);
-
-
-  const handleOpenRegister = () => {
-    setRegisterData({ movementType: '', quantity: '' });
-    setRegisterError(null);
-    setRegisterSuccess(null);
-    setShowRegisterModal(true);
-  };
-
-  const handleRegisterCancel = () => {
-    setShowRegisterModal(false);
-    setRegisterError(null);
-    setRegisterSuccess(null);
-  };
-
-  const handleRegisterAccept = useCallback(async () => {
-    if (!registerData.movementType || !registerData.quantity) {
-      setRegisterError('Completa todos los campos');
+  }, [productId, fetchHistory]);
+  
+  // --- Lógica de Modal (POST - USANDO RUTA SYSTEM) ---
+  const handleOpenRegister = () => { setRegisterData({ quantity: '' }); setRegisterError(null); setShowRegisterModal(true); };
+  const handleRegisterCancel = () => { setShowRegisterModal(false); };
+  
+  const handleRegisterAccept = async () => {
+    if (!registerData.quantity) {
+      setRegisterError('Por favor, ingresa la cantidad.');
       return;
     }
+    const numericQuantity = Number(registerData.quantity);
+    if (isNaN(numericQuantity) || numericQuantity <= 0) {
+        setRegisterError('La cantidad debe ser un número positivo.');
+        return;
+    }
+    
     setRegisterLoading(true);
     setRegisterError(null);
-    setRegisterSuccess(null);
     
     try {
-      const res = await fetch(`/api/inventory/products/${productid}`, { 
+      // ✅ USAMOS LA RUTA QUE TÚ CONFIRMASTE QUE FUNCIONA: /api/system/...
+      const res = await fetch(`/api/system/inventory/products/${productId}/history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 3,
-          movementType: registerData.movementType,
-          quantity: Number(registerData.quantity)
+          productId: Number(productId), 
+          movementType: 'salida',
+          reason: 'venta_mostrador',
+          quantity: numericQuantity
         })
       });
-      const data = await res.json();
       
-      if (!res.ok) throw new Error(data.error || 'Error al registrar movimiento');
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error);
       
       setShowRegisterModal(false);
-      setRegisterSuccess('¡Movimiento registrado exitosamente!');
-      setRegisterData({ movementType: '', quantity: '' });
-      await fetchData();
+      toast.success('¡Venta registrada exitosamente!');
+      setRegisterData({ quantity: '' });
+      await fetchHistory();
+      
     } catch (err) {
-      setRegisterError(err instanceof Error ? err.message : 'Error desconocido');
+      setRegisterError(err instanceof Error ? err.message : 'Error desconocido al registrar.');
     } finally {
       setRegisterLoading(false);
     }
-  }, [registerData.movementType, registerData.quantity, productid, fetchData]); // 💡 Dependencias: fetchData, productid, y registerData
+  };
 
+  // --- Función de Renderizado (Limpieza de Vistas) ---
+  const renderMovementList = () => {
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="ml-3 text-muted-foreground">Cargando historial...</p>
+            </div>
+        );
+    }
 
-  if (isLoading) {
+    if (error) {
+        return (
+            <Card className="p-4 border-destructive bg-destructive/10 text-destructive border-2">
+              <p className="font-medium">Error: {error}</p>
+            </Card>
+        );
+    }
+
+    if (movements.length === 0) {
+        return (
+            <Card className="p-8 text-center border-dashed border-2">
+              <p className="text-muted-foreground text-lg">No hay movimientos registrados</p>
+            </Card>
+        );
+    }
+  
+    // VISTA DE LISTA
     return (
-      <Box p={6} display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <Spinner size="xl" />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={6} display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <Text color="red.500">Error: {error}</Text>
-      </Box>
-    );
-  }
-
-  return (
-    <Box p={6}>
-      <Button variant="ghost" mb={4} onClick={() => router.back()}>
-        <HStack>
-          <FiArrowLeft />
-          <Text>Volver</Text>
-        </HStack>
-      </Button>
-      <VStack align="stretch" gap={4}>
-        <Box>
-          <Heading size="lg" mb={2}>Producto (Stockroom)</Heading>
-          <Text fontWeight="bold">Nombre: {product?.name || "N/A"}</Text>
-          <Text color="gray.400" fontSize="sm">Sabor: {product?.flavor || "-"}</Text>
-          <Text color="gray.400" fontSize="sm">Tipo: {product?.type || "-"}</Text>
-          <Text color="gray.400" fontSize="sm">Cantidad Actual: {product?.currentQuantity || 0}</Text>
-        </Box>
-        <Box h="1px" bg="gray.200" my={2} />
-        <HStack justify="space-between" align="center">
-          <Heading size="md">Historial de Movimientos</Heading>
-          <Button colorScheme="blue" size="sm" onClick={handleOpenRegister}>
-            Registrar Movimiento
-          </Button>
-        </HStack>
-        
-        {movements.length === 0 ? (
-          <Text color="gray.500">No hay movimientos registrados</Text>
-        ) : (
-          movements.map((m) => (
-            <Box key={m.id} borderWidth="1px" borderRadius="lg" p={4} mb={2}>
-              <HStack justify="space-between">
-                <Box>
-                  <Text fontWeight="bold">{m.movementType} {m.quantity > 0 ? "+" : "-"}{Math.abs(m.quantity)}</Text>
-                  <Text fontSize="sm">nameUser: {m.user?.name || "-"}</Text>
-                </Box>
-                <Text fontSize="sm" color="gray.600">{new Date(m.createdAt).toLocaleString()}</Text>
-              </HStack>
-            </Box>
-          ))
-        )}
-      
-      {/* Modal JSX */}
-      {showRegisterModal && (
-        <Box
-          position="fixed"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          bg="blackAlpha.600"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          zIndex={1000}
-        >
-          <Box
-            bg="white"
-            p={6}
-            borderRadius="lg"
-            boxShadow="xl"
-            maxW="500px"
-            w="90%"
-          >
-            <VStack gap={4} align="stretch">
-              <Heading size="md">Registrar Movimiento</Heading>
-              <VStack gap={3} align="stretch">
-                <Box>
-                  <Text fontWeight="medium" mb={2}>Tipo de Movimiento</Text>
-                  <Select
-                    value={registerData.movementType}
-                    onChange={(e) => setRegisterData(d => ({ ...d, movementType: e.target.value }))}
+      <div className="space-y-3">
+        {movements.map((movement) => {
+          const isEntry = movement.movementType === 'entrada';
+          const quantityDisplay = `${movement.quantity > 0 ? "+" : ""}${movement.quantity}`;
+          
+          return (
+            <Card key={movement.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start flex-wrap gap-2">
+                
+                {/* Detalles */}
+                <div className="flex flex-col gap-1">
+                  <Badge 
+                    variant={isEntry ? "default" : "destructive"} 
+                    className={cn("w-fit uppercase text-xs font-bold", isEntry && "bg-green-600")}
                   >
-                    <option value="">Selecciona tipo</option>
-                    <option value="entrada">Entrada</option>
-                    <option value="salida">Salida</option>
-                  </Select>
-                </Box>
-                <Box>
-                  <Text fontWeight="medium" mb={2}>Cantidad</Text>
-                  <Input
-                    type="number"
-                    placeholder="Cantidad"
-                    value={registerData.quantity}
-                    onChange={e => setRegisterData(d => ({ ...d, quantity: e.target.value }))}
-                  />
-                </Box>
-              </VStack>
-              {registerError && <Text color="red.500">{registerError}</Text>}
-              {registerSuccess && <Text color="green.600">{registerSuccess}</Text>}
-              <HStack gap={3} justify="flex-end" mt={4}>
-                <Button variant="ghost" onClick={handleRegisterCancel} disabled={registerLoading}>
-                  Cancelar
-                </Button>
-                <Button colorScheme="blue" onClick={handleRegisterAccept} loading={registerLoading}>
-                  Aceptar
-                </Button>
-              </HStack>
-            </VStack>
-          </Box>
-        </Box>
-      )}
-        </VStack>
-    </Box>
+                    {movement.movementType}
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Motivo:</span> {movement.reason}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Usuario:</span> {movement.user?.name || "Sistema"}
+                  </p>
+                </div>
+                
+                {/* Cantidad y Fecha */}
+                <div className="text-right">
+                  <p className={cn("font-extrabold text-xl", isEntry ? "text-green-600" : "text-red-600")}>
+                    {quantityDisplay}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(movement.createdAt).toLocaleString('es-ES', {
+                      year: 'numeric', month: 'short', day: 'numeric',
+                      hour: '2-digit', minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // --- JSX Principal ---
+  return (
+    <div className="p-4 md:p-6 space-y-6">
+      
+      {/* Botón Volver */}
+      <Button variant="ghost" onClick={() => router.back()} className="text-sm text-primary hover:bg-accent w-fit">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Volver
+      </Button>
+
+      <div className="space-y-6">
+        
+        {/* Información del Producto */}
+        <Card className="p-5">
+          <CardHeader className="p-0 mb-4">
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              {role === 'stockroom' ? 'Producto - Almacén' : 'Producto - Ventas'}
+            </CardTitle>
+          </CardHeader>
+          
+          <Separator className="mb-4" />
+          
+          {/* Detalles del Producto */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <p className="font-bold text-lg text-foreground">
+                {product?.name || "Cargando..."}
+              </p>
+              <Badge 
+                variant={product && product.currentQuantity > 0 ? "default" : "destructive"} 
+                className={cn("text-base px-3 py-1", product && product.currentQuantity > 0 && "bg-green-600")}
+              >
+                Stock: {product?.currentQuantity ?? '...'}
+              </Badge>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <p><span className="font-medium">Tipo:</span> {product?.type || '-'}</p>
+              <p><span className="font-medium">Sabor:</span> {product?.flavor || '-'}</p>
+              {role === 'sales' && (
+                <p><span className="font-medium">Precio:</span> Bs {product?.pricePerUnit?.toFixed(2) || "0.00"}</p>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Separator />
+
+        {/* Header del Historial */}
+        <div className="flex justify-between items-center flex-wrap gap-4">
+          <h2 className="text-xl font-semibold text-foreground">Historial de Movimientos</h2>
+          <Button onClick={handleOpenRegister} size="sm" disabled={!product}>
+            <Plus className="mr-2 h-4 w-4" />
+            Registrar Venta
+          </Button>
+        </div>
+
+        {/* Lista de Movimientos */}
+        {renderMovementList()} 
+      </div>
+
+      {/* --- MODAL DE REGISTRO (Dialog) --- */}
+      <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Venta</DialogTitle>
+            <DialogDescription>
+              Producto: <strong>{product?.name || "N/A"}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            {/* Cantidad */}
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Cantidad</Label>
+              <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  placeholder="Ingrese la cantidad"
+                  value={registerData.quantity}
+                  onChange={(e) => setRegisterData(d => ({ ...d, quantity: e.target.value }))}
+              />
+            </div>
+          </div>
+          
+          {registerError && (
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md">
+              <p className="text-destructive text-sm font-medium">{registerError}</p>
+            </div>
+          )}
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={handleRegisterCancel} disabled={registerLoading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRegisterAccept} disabled={registerLoading}>
+              {registerLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Registrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Componente Wrapper para Suspense
+export default function ProductHistoryPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    }>
+      <ProductHistoryInner />
+    </Suspense>
   );
 }

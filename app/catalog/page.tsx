@@ -1,198 +1,338 @@
-"use client";
+'use client';
 
-import { Box, Container, Text, SimpleGrid, Input, Button, HStack, Spinner } from "@chakra-ui/react";
-// ✅ 1. Importar Image de next/image y useEffect/useState
-import { useState, useEffect } from "react";
-import Image from 'next/image'; 
-// ❌ 1. 'PublicHeader' eliminado porque no se usa
-// import { PublicHeader } from "@/components/layout/PublicHeader"; 
-import { PublicFooter } from "@/components/layout/PublicFooter";
+import React, { useState, useEffect, useMemo, Fragment, useCallback } from "react";
+import { useSession} from "next-auth/react";
+import { PublicHeader } from "@/components/layout/PublicHeader";
+import { Search, Loader2 } from 'lucide-react'; 
+import { Button } from "@/components/ui/button";
+import { AddToCartModal } from '@/components/cart/AddToCartModal'; 
+import { CartSummaryModal } from '@/components/cart/carritohistorial'; 
+import { ClientLoginModal } from '@/components/auth/ClientLoginModal'; 
+import { ClientRegisterModal } from '@/components/auth/ClientRegisterModal'; 
 
-interface Product {
-  id: number;
-  name: string;
-  type: string;
-  flavor: string;
-  pricePerUnit: number;
-  currentQuantity: number;
-  imageUrl?: string | null;
-  description?: string | null; 
+import { ProductCard, Product} from '@/components/cart/ProductCards';
+
+const PAGE_LIMIT = 10; 
+
+interface CartItem {
+    productId: number;
+    name: string;
+    pricePerUnit: number;
+    quantity: number;
+}
+type Cart = Record<number, CartItem>;
+
+interface ProductResponse {
+    success: boolean;
+    products: Product[];
+    totalCount: number; 
 }
 
-export default function CatalogPage() {
-  // ✅ Variables 'products' y 'searchTerm' se mantienen porque SÍ se usan para calcular 'filteredProducts'
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [fetchError, setFetchError] = useState<string | null>(null); 
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      // ... (fetch logic remains the same - ensuring API returns all products) ...
-      try {
-        setLoading(true);
-        setFetchError(null);
-        const res = await fetch("/api/inventory/products"); 
-        if (!res.ok) {
-           const errorData = await res.json().catch(() => ({}));
-           throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-        }
-        const data = await res.json();
-        
-        if (data.success && Array.isArray(data.products)) {
-           setProducts(data.products); 
-        } else {
-            console.warn("API response was not successful or products array is missing:", data);
-            setProducts([]); 
-        }
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Error desconocido al cargar productos";
-        console.error("Error fetching products:", err);
-        setFetchError(errorMsg); 
-        setProducts([]); 
-      } finally {
-        setLoading(false);
-      }
+export default function CatalogPage() {
+    const { data: session, status } = useSession(); 
+    
+    // --- ESTADOS DE BÚSQUEDA ---
+    const [products, setProducts] = useState<Product[]>([]); 
+    const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState<string | null>(null);
+    
+    // 1. ESTADO REAL: Dispara la petición al servidor (Actualizado por el debounce)
+    const [searchTerm, setSearchTerm] = useState("");
+    // 2. ESTADO LOCAL: Vinculado directamente al campo de input (Actualizado inmediatamente)
+    const [localSearchTerm, setLocalSearchTerm] = useState(""); 
+    
+    const [activeFilter, setActiveFilter] = useState("All");
+
+    // --- ESTADOS DE PAGINACIÓN ---
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false); 
+    const [isInitialLoad, setIsInitialLoad] = useState(true); 
+
+    // --- ESTADOS DE CARRITO Y MODALES (Mantenidos) ---
+    const [cart, setCart] = useState<Cart>({});
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null); 
+    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+    const openLogin = () => { setIsLoginModalOpen(true); setIsRegisterModalOpen(false); };
+    const openRegister = () => { setIsRegisterModalOpen(true); setIsLoginModalOpen(false); };
+    
+    const handleLoginSuccess = () => {
+        setIsLoginModalOpen(false);
+        location.reload(); 
     };
 
-    fetchProducts();
-  }, []);
+    // --- FUNCIONES DE PAGINACIÓN/BÚSQUEDA ---
+    
+    // 1. Lógica principal de carga de productos (Server-Side)
+    const fetchProducts = useCallback(async () => {
+        const query = new URLSearchParams();
+        query.append('page', String(page));
+        query.append('limit', String(PAGE_LIMIT));
+        if (searchTerm) query.append('search', searchTerm);
+        if (activeFilter !== "All") query.append('filter', activeFilter);
+        
+        const url = `/api/inventory/products?${query.toString()}`;
 
-  // ✅ 2. Definición de 'filteredProducts' RE-AÑADIDA
-  // Filtrar productos basado en searchTerm y la exclusión
-  const filteredProducts = products
-    .filter(
-      (p) => !/galleta|pan|torta/i.test(p.name) // Excluir nombres específicos (case-insensitive)
-    )
-    .filter(
-      (p) => // Filtrar por término de búsqueda (case-insensitive)
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.flavor.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+        try {
+            if(isInitialLoad) setLoading(true); 
+            setFetchError(null);
+            
+            const res = await fetch(url); 
+            
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+            }
+            
+            const data: ProductResponse = await res.json();
+            
+            if (data.success && Array.isArray(data.products)) {
+                setProducts(prevProducts => page === 1 ? data.products : [...prevProducts, ...data.products]);
+                const currentTotal = page === 1 ? data.products.length : products.length + data.products.length;
+                setHasMore(currentTotal < data.totalCount);
+            } else {
+                setProducts([]); 
+                setHasMore(false);
+            }
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : "Error desconocido al cargar productos";
+            setFetchError(errorMsg); 
+            if (page === 1) setProducts([]); 
+            setHasMore(false);
+        } finally {
+            setLoading(false);
+            setIsInitialLoad(false);
+        }
+    }, [page, searchTerm, activeFilter, isInitialLoad, products.length]); 
 
-  return (
-    <Box minH="100vh" bg="gray.50">
-      {/* ❌ 1. Componente <PublicHeader /> eliminado si no se usa */}
-      {/* <PublicHeader /> */} 
-      
-      <Container maxW="7xl" py={8} mx="auto"> 
-        <Box mb={8} textAlign="center"> 
-          <Text fontSize="3xl" fontWeight="bold" mb={4}>
-            Our Gummies Catalog
-          </Text>
-          <Text fontSize="lg" color="gray.600" mb={6}>
-            Discover our delicious collection of premium gummies
-          </Text>
-          
-          <HStack maxW="400px" mx="auto">
-            <Input
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              bg="white"
-            />
-            <Button colorScheme="blue">Search</Button>
-          </HStack>
-        </Box>
+    // 2. Control de cambios en filtros y búsqueda (Llama a fetchProducts)
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]); 
+    
+    // 3. Resetear página y productos (Se llama desde el debounce o el click de filtro)
+    const handleSearchOrFilterChange = useCallback((newTerm: string, newFilter: string) => {
+        if (newTerm !== searchTerm || newFilter !== activeFilter) {
+            setIsInitialLoad(true); 
+            setProducts([]); 
+            setPage(1); 
+            setSearchTerm(newTerm);
+            setActiveFilter(newFilter);
+        }
+    }, [searchTerm, activeFilter]);
+    
+    // 4. Lógica del Debounce (Retraso de 300ms)
+    useEffect(() => {
+        if (localSearchTerm === searchTerm) return;
 
-        {/* Renderizado Condicional */}
-        {loading ? (
-          <Box textAlign="center" py={12}>
-            <Spinner size="xl" color="blue.500" />
-            <Text mt={4} color="gray.600">Cargando productos...</Text>
-          </Box>
-        ) : fetchError ? ( 
-            <Box textAlign="center" py={12} color="red.500">
-               <Text fontWeight="bold">Error al cargar productos:</Text>
-               <Text>{fetchError}</Text>
-               <Button mt={4} colorScheme="blue" onClick={() => window.location.reload()}>Recargar Página</Button>
-            </Box>
-        // ✅ 2. Usar 'filteredProducts' aquí (ahora está definido)
-        ) : filteredProducts.length === 0 ? ( 
-          <Text textAlign="center" color="gray.500" py={12}>
-            {searchTerm ? `No se encontraron productos para "${searchTerm}"` : "No hay productos disponibles"}
-          </Text>
-        ) : (
-          <SimpleGrid 
-            columns={{ base: 1, sm: 2, lg: 3 }} 
-            gap={8} 
-            justifyItems="center" 
-            maxW="1200px" 
-            mx="auto"
-          >
-            {/* ✅ 3. Añadido tipo explícito 'Product' al parámetro */}
-            {filteredProducts.map((product: Product) => ( 
-              <Box
-                key={product.id}
-                // ... (resto de props de Box)
-                w={{ base: "90%", sm: "320px", md:"360px" }} 
-                minH="420px"
-                display="flex"
-                flexDirection="column"
-                justifyContent="space-between"
-              >
-                <Box
-                  position="relative" 
-                  h="200px"
-                  bg="gray.100" 
-                  rounded="md"
-                  mb={4}
-                  overflow="hidden" 
-                >
-                  {product.imageUrl ? (
-                    <Image 
-                      src={product.imageUrl} 
-                      alt={product.name} 
-                      fill={true} 
-                      style={{ objectFit: 'contain' }}
-                      sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 33vw" 
-                      priority={filteredProducts.indexOf(product) < 3} 
-                    />
-                  ) : (
-                    <Text color="gray.400" h="100%" display="flex" alignItems="center" justifyContent="center">
-                      Imagen no disponible
-                    </Text>
-                  )}
-                </Box>
-                
-                <Box flexGrow={1} mb={4}> 
-                  {/* ✅ 4. Prop 'noOfLines' eliminada */}
-                  <Text fontWeight="semibold" fontSize="lg" mb={2}> 
-                    {product.name}
-                  </Text>
-                  {/* ✅ 4. Prop 'noOfLines' eliminada */}
-                  <Text color="gray.600" mb={4}> 
-                    {product.description || `Delicioso sabor ${product.flavor}`}
-                  </Text>
-                </Box>
+        const timerId = setTimeout(() => {
+            handleSearchOrFilterChange(localSearchTerm, activeFilter);
+        }, 300); 
 
-                 <Box> 
-                   <HStack justify="center" align="center" gap={4} mb={4}>
-                     <Text fontSize="xl" fontWeight="bold" color="blue.600">
-                       Bs {product.pricePerUnit.toFixed(2)} 
-                     </Text>
-                     <Text fontSize="sm" color="gray.500">
-                       Stock: {product.currentQuantity}
-                     </Text>
-                   </HStack>
-                   <Button 
-                     colorScheme="blue" 
-                     w="full" 
-                     disabled={product.currentQuantity === 0}
-                     // onClick={() => addToCart(product.id)} 
-                   >
-                     {product.currentQuantity === 0 ? 'Agotado' : 'Añadir al Carrito'}
-                   </Button>
-                 </Box>
+        return () => {
+            clearTimeout(timerId);
+        };
+    }, [localSearchTerm, activeFilter, handleSearchOrFilterChange, searchTerm]);
 
-              </Box>
+    // 5. Función para el botón "Cargar Más"
+    const handleLoadMore = () => {
+        if (!loading && hasMore) {
+            setPage(prevPage => prevPage + 1);
+        }
+    };
+
+
+    // --- LÓGICA DE CARRITO (Mantenida) ---
+
+    useEffect(() => {
+        try {
+            const storedCart = localStorage.getItem('userCart');
+            if (storedCart) {
+                setCart(JSON.parse(storedCart));
+            }
+        } catch (e) {
+            console.error("Error al cargar carrito desde localStorage:", e);
+            localStorage.removeItem('userCart');
+        }
+        const timeoutId = globalThis.setTimeout(() => globalThis.dispatchEvent(new Event('cartUpdate')), 0);
+        return () => clearTimeout(timeoutId);
+    }, []); 
+
+    const _totalItemsInCart = useMemo(() => {
+        return Object.values(cart).reduce((total, item) => total + item.quantity, 0);
+    }, [cart]);
+
+    const _handleOpenSummaryChecked = useCallback(() => {
+        if (status === 'loading') return; 
+
+        if (session) {
+            setIsSummaryModalOpen(true); 
+        } else {
+            setIsLoginModalOpen(true); 
+        }
+    }, [status, session]);
+
+    useEffect(() => {
+        const handleOpenCartModal = () => _handleOpenSummaryChecked();
+        globalThis.addEventListener('openCartModal', handleOpenCartModal);
+        return () => globalThis.removeEventListener('openCartModal', handleOpenCartModal);
+    }, [_handleOpenSummaryChecked]);
+
+    useEffect(() => {
+        try {
+            if (Object.keys(cart).length > 0) {
+                localStorage.setItem('userCart', JSON.stringify(cart));
+            } else if (localStorage.getItem('userCart')) {
+                localStorage.removeItem('userCart');
+            }
+            const timeoutId = globalThis.setTimeout(() => globalThis.dispatchEvent(new Event('cartUpdate')), 0);
+            return () => clearTimeout(timeoutId);
+        } catch (e) {
+            console.error("Error al guardar carrito en localStorage:", e);
+        }
+    }, [cart]); 
+    
+    const handleOpenAddModal = (product: Product) => { 
+        setSelectedProduct(product); 
+        setIsAddModalOpen(true); 
+    };
+
+    const handleAddToCart = (productId: number, quantity: number) => {
+        const productToAdd = products.find(p => p.id === productId); 
+        if (!productToAdd || productToAdd.currentQuantity === 0 || quantity < 1) { return; }
+
+        setCart(prevCart => {
+            const existingItem = prevCart[productId]; 
+            const currentTotal = existingItem ? existingItem.quantity : 0;
+            const newTotalQuantity = currentTotal + quantity;
+            
+            if (newTotalQuantity > productToAdd.currentQuantity) {
+                alert(`Stock insuficiente. Solo puedes tener ${productToAdd.currentQuantity} unidades en total.`);
+                return prevCart;
+            }
+
+            const updatedCart = {
+                ...prevCart,
+                [productId]: { productId, name: productToAdd.name, pricePerUnit: productToAdd.pricePerUnit, quantity: newTotalQuantity }
+            };
+            return updatedCart;
+        });
+        setTimeout(() => globalThis.dispatchEvent(new Event('cartUpdate')), 0);
+    };
+
+    const filters = ["All", "Sweet", "Sour", "New", "Tropical"];
+
+    // Content for products rendering
+    let content;
+    if (isInitialLoad && loading) {
+        content = <div className="text-center py-12"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /><p className="mt-4 text-zinc-500 dark:text-zinc-400">Cargando...</p></div>;
+    } else if (fetchError) {
+        content = <div className="text-center py-12 p-4 border border-red-500 bg-red-500/10 text-red-500 rounded-md"><p className="font-bold">Error al cargar productos:</p><p className="text-sm">{fetchError}</p><Button className="mt-4" onClick={() => globalThis.location.reload()}>Recargar Página</Button></div>;
+    } else if (products.length === 0) {
+        content = <p className="text-center text-zinc-500 dark:text-zinc-400 py-12 text-lg">{searchTerm || activeFilter !== "All" ? `No se encontraron productos para "${searchTerm}" o el filtro "${activeFilter}"` : "No hay productos disponibles"}</p>;
+    } else {
+        content = <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 justify-items-center max-w-6xl mx-auto">
+            {products.map((product) => (
+                <ProductCard key={product.id} {...product} onOpenAddModal={handleOpenAddModal} />
             ))}
-          </SimpleGrid>
-        )}
-      </Container>
+        </div>;
+    }
 
-      <PublicFooter />
-    </Box>
-  );
+    // --- RENDERIZADO ---
+
+    return (
+        <Fragment>
+            <PublicHeader />
+
+            {/* --- LAYOUT DEL CATÁLOGO --- */}
+            <main className="min-h-screen bg-background"> 
+
+                {/* Barra de Búsqueda (CORREGIDA CON DEBOUNCE) */}
+                <div className="px-4 py-3 max-w-xl mx-auto"> 
+                    <label className="flex flex-col min-w-40 h-14 w-full">
+                        <div className="flex w-full flex-1 items-stretch rounded-full h-full border-2 border-zinc-600">
+                            <div className="text-zinc-500 dark:text-zinc-400 flex border-none bg-primary dark:bg-zinc-800 items-center justify-center pl-5 rounded-l-full border-r-0">
+                                <Search className="h-5 w-5" />
+                            </div>
+                            <input 
+                                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-full text-black dark:text-zinc-200 focus:outline-0 focus:ring-0 border-none bg-primary dark:bg-zinc-800 focus:border-none h-full placeholder:text-zinc-600 dark:placeholder:text-zinc-400 px-4 text-base font-normal" 
+                                placeholder="Buscar productos..." 
+                                aria-label="Buscar productos"
+                                value={localSearchTerm} // VINCULADO AL ESTADO LOCAL
+                                // Actualiza el estado local, lo que activa el Debounce
+                                onChange={(e) => setLocalSearchTerm(e.target.value)} 
+                            />
+                        </div>
+                    </label>
+                </div>
+
+                {/* Filtros de Categoría (Mantenido: Usa el 'searchTerm' real) */}
+                <div className="px-4 py-2">
+                    <div className="flex gap-3 overflow-x-auto whitespace-nowrap justify-start lg:justify-center">
+                        {filters.map((filter) => (
+                            <button 
+                                key={filter}
+                                onClick={() => handleSearchOrFilterChange(searchTerm, filter)}
+                                className={`flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
+                                    activeFilter === filter 
+                                    ? 'bg-yellow-500 text-zinc-900' 
+                                    : 'bg-gray-100 dark:bg-zinc-800 text-black dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-600'
+                                }`}
+                            >
+                                <p className={`text-sm leading-normal font-bold`}>
+                                    {filter}
+                                </p>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                
+
+                {/* --- Renderizado de Productos (Mantenido) --- */}
+                <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+                    {content}
+                </div>
+
+                {/* --- Botón "Cargar Más" (Mantenido) --- */}
+                {hasMore && (
+                    <div className="flex px-4 py-6 justify-center">
+                        <button 
+                            onClick={handleLoadMore}
+                            disabled={loading} 
+                            className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-5 flex-1 bg-primary dark:bg-zinc-800 text-black dark:text-zinc-200 text-base font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors relative border-2 border-zinc-600 dark:border-zinc-600"
+                        >
+                            {loading && page > 1 ? (
+                                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                            ) : null}
+                            <span className="truncate">
+                                {loading && page > 1 ? "Cargando más..." : "Cargar Más Productos"}
+                            </span>
+                        </button>
+                    </div>
+                )}
+
+
+                {/* --- MODALS (Mantenido) --- */}
+                <AddToCartModal isOpen={isAddModalOpen} onClose={() => {setIsAddModalOpen(false); setSelectedProduct(null);}} product={selectedProduct} onConfirmAdd={handleAddToCart} />
+                <CartSummaryModal isOpen={isSummaryModalOpen} onClose={() => setIsSummaryModalOpen(false)} cart={cart} setCart={setCart} />
+                
+                <ClientLoginModal 
+                    isOpen={isLoginModalOpen} 
+                    onClose={() => setIsLoginModalOpen(false)} 
+                    onLoginSuccess={handleLoginSuccess}
+                    onOpenRegister={openRegister} 
+                />
+                <ClientRegisterModal
+                    isOpen={isRegisterModalOpen}
+                    onClose={() => setIsRegisterModalOpen(false)}
+                    onOpenLogin={openLogin} 
+                />
+                
+            </main>
+        </Fragment>
+    );
 }
