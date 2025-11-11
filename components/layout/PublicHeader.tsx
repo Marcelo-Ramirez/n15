@@ -251,7 +251,7 @@ export function PublicHeader() {
     <header className="bg-white dark:bg-background backdrop-blur-sm shadow-sm sticky top-0 z-40">
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-20 gap-4">
-          <Link href="/" className="hidden md:flex">
+          <Link href="/" className="hidden md:flex items-center gap-3">
             <Image
               src="/images/logos/logo.png"
               alt="MuytunaSys"
@@ -260,6 +260,7 @@ export function PublicHeader() {
               className="object-contain"
               priority
             />
+            <span className="text-xl font-semibold text-foreground">Muytuna</span>
           </Link>
 
           {mobilePageTitle && (
